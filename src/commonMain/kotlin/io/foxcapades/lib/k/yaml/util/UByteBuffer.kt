@@ -61,6 +61,13 @@ internal class UByteBuffer {
     return out
   }
 
+  fun peek(): UByte {
+    if (isEmpty)
+      throw IllegalStateException("attempted to peek a value from an empty UByteBuffer")
+
+    return raw[head]
+  }
+
   fun skip(count: Int) {
     if (count >= size)
       clear()

@@ -46,7 +46,13 @@ class YAMLReader {
     return false
   }
 
+  fun pop() = utf8Buffer.pop()
 
+  fun peek() = utf8Buffer.peek()
+
+  fun skip(bytes: Int) = utf8Buffer.skip(bytes)
+
+  operator fun get(offset: Int) = utf8Buffer[offset]
 
   private fun cacheRaw(count: Int): Boolean {
     while (!atEOF && rawBuffer.size < count)

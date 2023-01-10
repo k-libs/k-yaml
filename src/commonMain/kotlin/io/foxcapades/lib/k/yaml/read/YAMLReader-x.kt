@@ -1,4 +1,4 @@
-package io.foxcapades.lib.k.yaml.util
+package io.foxcapades.lib.k.yaml.read
 
 import io.foxcapades.lib.k.yaml.bytes.*
 
@@ -22,7 +22,7 @@ import io.foxcapades.lib.k.yaml.bytes.*
  * specific byte at [offset] is equal to [octet], otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.check(octet: UByte, offset: Int = 0) = size > offset && get(offset) == octet
+internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = buffered > offset && get(offset) == octet
 
 /**
  * Unsafe Check Octet
@@ -45,7 +45,7 @@ internal inline fun UByteBuffer.check(octet: UByte, offset: Int = 0) = size > of
  * [octet], otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.uCheck(octet: UByte, offset: Int = 0) = get(offset) == octet
+internal inline fun YAMLReader.uCheck(octet: UByte, offset: Int = 0) = get(offset) == octet
 
 /**
  * Is ASCII
@@ -64,7 +64,7 @@ internal inline fun UByteBuffer.uCheck(octet: UByte, offset: Int = 0) = get(offs
  * at the given `offset` is a valid ASCII character.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isASCII(offset: Int = 0) = size > offset && get(offset) <= Ub7F
+internal inline fun YAMLReader.isASCII(offset: Int = 0) = buffered > offset && get(offset) <= Ub7F
 
 /**
  * Is Alphanumeric
@@ -91,8 +91,8 @@ internal inline fun UByteBuffer.isASCII(offset: Int = 0) = size > offset && get(
  * otherwise `false`
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isAlphanumeric(offset: Int = 0) =
-  size > offset
+internal inline fun YAMLReader.isAlphanumeric(offset: Int = 0) =
+  buffered > offset
     && when (get(offset)) {
       in A_LO_A .. A_LO_Z -> true
       in A_UP_A .. A_UP_Z -> true
@@ -123,8 +123,8 @@ internal inline fun UByteBuffer.isAlphanumeric(offset: Int = 0) =
  * otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isDecDigit(offset: Int = 0) =
-  size > offset && get(offset) in A_0 .. A_9
+internal inline fun YAMLReader.isDecDigit(offset: Int = 0) =
+  buffered > offset && get(offset) in A_0 .. A_9
 
 /**
  * As Decimal Digit
@@ -143,7 +143,7 @@ internal inline fun UByteBuffer.isDecDigit(offset: Int = 0) =
  * @return The parsed value of the byte at the given offset.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.asDecDigit(offset: Int = 0) = get(offset) - A_0
+internal inline fun YAMLReader.asDecDigit(offset: Int = 0) = get(offset) - A_0
 
 /**
  * Is Hex Digit
@@ -169,8 +169,8 @@ internal inline fun UByteBuffer.asDecDigit(offset: Int = 0) = get(offset) - A_0
  * `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isHexDigit(offset: Int = 0) =
-  size > offset && when (get(offset)) {
+internal inline fun YAMLReader.isHexDigit(offset: Int = 0) =
+  buffered > offset && when (get(offset)) {
     in A_0    .. A_9    -> true
     in A_UP_A .. A_UP_F -> true
     in A_LO_A .. A_LO_F -> true
@@ -196,7 +196,7 @@ internal inline fun UByteBuffer.isHexDigit(offset: Int = 0) =
  * @return The parsed value of the byte at the given offset.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.asHexDigit(offset: Int = 0) =
+internal inline fun YAMLReader.asHexDigit(offset: Int = 0) =
   when (val x = get(offset)) {
     in A_0    .. A_9    -> x - A_0
     in A_UP_A .. A_UP_F -> x - A_UP_A + 10u
@@ -222,8 +222,8 @@ internal inline fun UByteBuffer.asHexDigit(offset: Int = 0) =
  * `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isBlank(offset: Int = 0) =
-  size > offset && (uCheck(A_SPACE, offset) || uCheck(A_TAB, offset))
+internal inline fun YAMLReader.isBlank(offset: Int = 0) =
+  buffered > offset && (uCheck(A_SPACE, offset) || uCheck(A_TAB, offset))
 
 /**
  * Is Break (YAML 1.1)
@@ -256,14 +256,14 @@ internal inline fun UByteBuffer.isBlank(offset: Int = 0) =
  * given `offset`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isBreak_1_1(offset: Int = 0) =
+internal inline fun YAMLReader.isBreak_1_1(offset: Int = 0) =
   // LF | CR
-  (size > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset)))
+  (buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset)))
   // Next Line (NEL)
-  || (size > offset + 1 && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1))
+  || (buffered > offset + 1 && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1))
   // Line Separator (LS) | Paragraph Separator (PS)
   || (
-    size > offset + 2
+    buffered > offset + 2
     && uCheck(UbE2, offset)
     && uCheck(Ub80, offset + 1)
     && (uCheck(UbA8, offset + 2) || uCheck(UbA9, offset + 2))
@@ -291,9 +291,9 @@ internal inline fun UByteBuffer.isBreak_1_1(offset: Int = 0) =
  * a valid line break indicator byte at the given offset, otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isBreak_1_2(offset: Int = 0) =
+internal inline fun YAMLReader.isBreak_1_2(offset: Int = 0) =
   // LF | CR
-  size > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
+  buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
 
 /**
  * Is CRLF
@@ -312,5 +312,5 @@ internal inline fun UByteBuffer.isBreak_1_2(offset: Int = 0) =
  * at the given offset, otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.isCRLF(offset: Int = 0) =
-  size > offset + 1 && uCheck(A_CR, offset) && uCheck(A_LF, offset + 1)
+internal inline fun YAMLReader.isCRLF(offset: Int = 0) =
+  buffered > offset + 1 && uCheck(A_CR, offset) && uCheck(A_LF, offset + 1)
