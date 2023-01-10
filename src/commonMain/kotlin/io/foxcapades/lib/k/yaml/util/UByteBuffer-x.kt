@@ -262,6 +262,22 @@ internal inline fun UByteBuffer.isBreak_1_2(offset: Int = 0) =
   // LF | CR
   size > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
 
+/**
+ * Is CRLF
+ *
+ * Tests whether the buffer contains the ASCII character combination CR+LF at
+ * the given [offset].
+ *
+ * If the buffer contains `offset + 1` bytes or fewer, this function will return
+ * `false`.
+ *
+ * @param offset Offset of the bytes to test.
+ *
+ * Defaults to `0`
+ *
+ * @return `true` if the buffer contains the ASCII character combination CR+LF
+ * at the given offset, otherwise `false`.
+ */
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isCRLF(offset: Int = 0) =
   size > offset + 1 && uCheck(A_CR, offset) && uCheck(A_LF, offset + 1)
