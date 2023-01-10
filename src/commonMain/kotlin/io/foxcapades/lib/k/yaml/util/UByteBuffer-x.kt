@@ -126,6 +126,22 @@ internal inline fun UByteBuffer.isAlphanumeric(offset: Int = 0) =
 internal inline fun UByteBuffer.isDecDigit(offset: Int = 0) =
   size > offset && get(offset) in A_0 .. A_9
 
+/**
+ * As Decimal Digit
+ *
+ * Parses the byte at the given [offset] in the buffer as an ASCII decimal digit
+ * character from the following character set:
+ *
+ * ```
+ * 0 1 2 3 4 5 6 7 8 9
+ * ```
+ *
+ * @param offset Offset of the byte to parse.
+ *
+ * Defaults to `0`
+ *
+ * @return The parsed value of the byte at the given offset.
+ */
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.asDecDigit(offset: Int = 0) =
   get(offset) - A_0
