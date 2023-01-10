@@ -1,12 +1,8 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.bytes.A_CR
 import io.foxcapades.lib.k.yaml.bytes.A_LF
-import io.foxcapades.lib.k.yaml.err.YAMLException
+import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.read.*
-import io.foxcapades.lib.k.yaml.read.isBreak_1_1
-import io.foxcapades.lib.k.yaml.read.isBreak_1_2
-import io.foxcapades.lib.k.yaml.read.isCRLF
 import io.foxcapades.lib.k.yaml.util.SourcePositionTracker
 import io.foxcapades.lib.k.yaml.util.UByteBuffer
 import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
@@ -14,6 +10,8 @@ import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
 class YAMLScanner {
   private var streamStarted = false
   private var streamEnded = false
+
+  private val tokens: TokenQueue
 
   private val reader: YAMLReader
 
@@ -25,7 +23,15 @@ class YAMLScanner {
     if (streamEnded)
       throw IllegalStateException("called nextToken on a YAMLScanner that has already consumed its entire input stream")
 
-    
+    if (tokens.isEmpty)
+      fetchMoreTokens()
+
+    val out = tokens.pop()
+
+    if (out.type == YAMLTokenType.StreamEnd)
+      streamEnded = true
+
+    return out
   }
 
   private fun _skip() {
@@ -69,15 +75,11 @@ class YAMLScanner {
       string.push(A_LF)
       reader.skipCodepoints(2)
       position.incLine(2u)
-    } else if (reader.isCR() || reader.isLF()) {
+    } else if (reader.isCROrLF() || reader.isNEL()) {
       string.push(A_LF)
       reader.skipCodepoint()
       position.incLine()
-    } else if (reader.isNEL()) {
-      string.push(A_LF)
-      reader.skipCodepoint()
-      position.incLine()
-    } else if (reader.isLS() || reader.isPS()) {
+    } else if (reader.isLSOrPS()) {
       string.takeCodepointFrom(reader.utf8Buffer)
       position.incLine()
     } else {
@@ -99,5 +101,8 @@ class YAMLScanner {
     }
   }
 
+  private fun fetchMoreTokens() {
+    
+  }
 
 }

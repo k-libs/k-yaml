@@ -225,6 +225,19 @@ internal inline fun YAMLReader.asHexDigit(offset: Int = 0) =
 internal inline fun YAMLReader.isBlank(offset: Int = 0) =
   buffered > offset && (uCheck(A_SPACE, offset) || uCheck(A_TAB, offset))
 
+internal inline fun YAMLReader.isCROrLF(offset: Int = 0) =
+  buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
+
+internal inline fun YAMLReader.isCR(offset: Int = 0) = check(A_CR)
+
+internal inline fun YAMLReader.isLF(offset: Int = 0) = check(A_LF)
+
+internal inline fun YAMLReader.isNEL(offset: Int = 0) =
+  buffered > offset + 1 && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1)
+
+internal inline fun YAMLReader.isLSOrPS(i: Int = 0) =
+  buffered > i + 2 && uCheck(UbE2, i) && uCheck(Ub80, i + 1) && (uCheck(UbA8, i + 2) || uCheck(UbA9, i + 2))
+
 /**
  * Is Break (YAML 1.1)
  *
@@ -239,35 +252,24 @@ internal inline fun YAMLReader.isBlank(offset: Int = 0) =
  * - Line Separator
  * - Paragraph Separator
  *
- * If the buffer contains [offset] or fewer bytes, this function will return
+ * If the buffer contains [i] or fewer bytes, this function will return
  * `false`.
  *
- * If this buffer contains greater than [offset] bytes but not enough bytes to
+ * If this buffer contains greater than [i] bytes but not enough bytes to
  * form a full line break UTF-8 sequence, this function will return `false`.
  *
- * @param offset Offset of the byte(s) to test.
+ * @param i Offset of the byte(s) to test.
  *
  * Defaults to `0`
  *
- * @return `true` if the buffer contains more than [offset] bytes and contains
+ * @return `true` if the buffer contains more than [i] bytes and contains
  * a complete UTF-8 line break sequence from the list of valid line breaks
  * defined above at the given `offset`.  `false` if the buffer contains fewer
- * than [offset] bytes or does not contain a valid line break sequence at the
+ * than [i] bytes or does not contain a valid line break sequence at the
  * given `offset`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.isBreak_1_1(offset: Int = 0) =
-  // LF | CR
-  (buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset)))
-  // Next Line (NEL)
-  || (buffered > offset + 1 && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1))
-  // Line Separator (LS) | Paragraph Separator (PS)
-  || (
-    buffered > offset + 2
-    && uCheck(UbE2, offset)
-    && uCheck(Ub80, offset + 1)
-    && (uCheck(UbA8, offset + 2) || uCheck(UbA9, offset + 2))
-  )
+internal inline fun YAMLReader.isBreak_1_1(i: Int = 0) = isCROrLF(i) || isNEL(i) || isLSOrPS(i)
 
 /**
  * Is Break (YAML 1.2)
@@ -280,20 +282,18 @@ internal inline fun YAMLReader.isBreak_1_1(offset: Int = 0) =
  * - CR
  * - LF
  *
- * If the buffer contains [offset] or fewer bytes, this function will return
+ * If the buffer contains [i] or fewer bytes, this function will return
  * `false`.
  *
- * @param offset Offset of the byte(s) to test.
+ * @param i Offset of the byte(s) to test.
  *
  * Defaults to `0`
  *
- * @return `true` if the buffer contains more than [offset] bytes and contains
+ * @return `true` if the buffer contains more than [i] bytes and contains
  * a valid line break indicator byte at the given offset, otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.isBreak_1_2(offset: Int = 0) =
-  // LF | CR
-  buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
+internal inline fun YAMLReader.isBreak_1_2(i: Int = 0) = isCROrLF(i)
 
 /**
  * Is CRLF

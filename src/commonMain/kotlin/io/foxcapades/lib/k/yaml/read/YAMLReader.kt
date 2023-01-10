@@ -52,6 +52,32 @@ class YAMLReader {
 
   fun skip(bytes: Int) = utf8Buffer.skip(bytes)
 
+  fun skipCodepoint() {
+    if (utf8Buffer.isEmpty)
+      throw IllegalStateException("attempted to skip a codepoint in an empty YAMLReader")
+
+    val width = peek().utf8Width()
+
+    if (width == 0)
+      throw IllegalStateException("invalid utf-8 codepoint in the utf-8 buffer in YAMLReader")
+
+    skip(width)
+  }
+
+  fun skipCodepoints(count: Int) {
+    for (i in 0 until count) {
+      if (utf8Buffer.isEmpty)
+        throw IllegalStateException("attempted to skip $count codepoints from a buffer that only contained $i codepoints")
+
+      val width = peek().utf8Width()
+
+      if (width == 0)
+        throw IllegalStateException("invalid utf-8 codepoint in the utf-8 buffer in YAMLReader")
+
+      skip(width)
+    }
+  }
+
   operator fun get(offset: Int) = utf8Buffer[offset]
 
   private fun cacheRaw(count: Int): Boolean {
