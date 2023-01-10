@@ -15,7 +15,7 @@ class YAMLReader {
   // TODO: MAKE SURE THIS THING IS UPDATED IN ALL THE PLACES THAT READ FROM THE RAW BUFFER INTO THE UTF-8 BUFFER
   private var index: ULong = 0UL
 
-  private val utf8Buffer: UByteBuffer
+  internal val utf8Buffer: UByteBuffer
 
   var atEOF: Boolean = false
     private set
