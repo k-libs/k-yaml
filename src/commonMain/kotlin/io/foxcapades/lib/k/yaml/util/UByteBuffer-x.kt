@@ -162,6 +162,24 @@ internal inline fun UByteBuffer.isHexDigit(offset: Int = 0) =
     else                -> false
   }
 
+/**
+ * As Hex Digit
+ *
+ * Parses the byte at the given [offset] in the buffer as an ASCII hex digit
+ * character from the following character set:
+ *
+ * ```
+ * 0 1 2 3 4 5 6 7 8 9
+ * A B C D E F
+ * a b c d e f
+ * ```
+ *
+ * @param offset Offset of the byte to parse.
+ *
+ * Defaults to `0`
+ *
+ * @return The parsed value of the byte at the given offset.
+ */
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.asHexDigit(offset: Int = 0) =
   when (val x = get(offset)) {
