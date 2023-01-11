@@ -5,6 +5,6 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 data class SimpleKey(
   var possible: Boolean,
   var required: Boolean,
-  var token: YAMLToken?,
+  var tokenNumber: Int,
   var mark: SourcePosition,
 )
