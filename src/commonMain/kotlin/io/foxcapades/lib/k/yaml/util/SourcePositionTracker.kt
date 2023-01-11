@@ -1,9 +1,9 @@
 package io.foxcapades.lib.k.yaml.util
 
 data class SourcePositionTracker(
-  var index: UInt,
-  var line: UInt,
-  var column: UInt
+  var index:  UInt = 0u,
+  var line:   UInt = 0u,
+  var column: UInt = 0u,
 ) {
   fun toSourcePosition() = SourcePosition(index, line, column)
 

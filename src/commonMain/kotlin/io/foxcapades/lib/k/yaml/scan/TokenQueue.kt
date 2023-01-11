@@ -4,9 +4,9 @@ import io.foxcapades.lib.k.yaml.util.max
 import io.foxcapades.lib.k.yaml.util.min
 
 class TokenQueue(
-      initialCapacity: Int,
-  val scaleFactor:     Float,
-  val maxCapacity:     Int = Int.MAX_VALUE,
+      initialCapacity: Int   = 16,
+  val scaleFactor:     Float = 1.5F,
+  val maxCapacity:     Int   = Int.MAX_VALUE,
 ) {
 
   private var raw  = arrayOfNulls<YAMLToken>(initialCapacity)
@@ -28,8 +28,8 @@ class TokenQueue(
   init {
     if (initialCapacity < maxCapacity)
       throw IllegalArgumentException("attempted to construct a TokenQueue instance with an initial capacity value ($initialCapacity) greater than the given max size value ($maxCapacity)")
-    if (scaleFactor <= 0)
-      throw IllegalArgumentException("attempted to construct a TokenQueue instance with a scale factor value that is less than or equal to zero")
+    if (scaleFactor <= 1)
+      throw IllegalArgumentException("attempted to construct a TokenQueue instance with a scale factor value that is less than or equal to 1")
   }
 
   fun ensureCapacity(minCapacity: Int) {
@@ -65,28 +65,34 @@ class TokenQueue(
       throw NoSuchElementException("attempted to pop the first value from an empty TokenQueue")
 
     val out = raw[head]!!
-    raw[head]
-    head = pMod(head)
-    
-
+    raw[head] = null
+    head = idx(1)
+    size--
+    return out
   }
 
-  fun push(token: YAMLToken)
+  fun push(token: YAMLToken) {
+    ensureCapacity(size + 1)
+    raw[idx(size++)] = token
+  }
 
-  fun clear()
+  fun clear() {
+    var i = 0
+    while (i < size) {
+      raw[idx(i)] = null
+      i++
+    }
 
-  operator fun get(i: Int): YAMLToken
+    head = 0
+    size = 0
+  }
+
+  operator fun get(i: Int) =
+    if (i < 0 || i >= size)
+      throw IndexOutOfBoundsException("attempted to access an item at index $i in a TokenQueue of size $size")
+    else
+      raw[idx(i)]!!
 
   @Suppress("NOTHING_TO_INLINE")
   private inline fun idx(i: Int) = if (head + i >= raw.size) head + i - raw.size else head + i
-
-  @Suppress("NOTHING_TO_INLINE")
-  private inline fun pMod(i: Int) = if (i + 1 >= raw.size) 0 else i + 1
-
-  @Suppress("NOTHING_TO_INLINE")
-  private inline fun vidx(i: Int) =
-    if (i >= size)
-      throw IndexOutOfBoundsException("attempted to access an item at index $i in a TokenQueue of size $size")
-    else
-      idx(i)
 }

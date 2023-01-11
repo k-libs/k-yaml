@@ -3,8 +3,12 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.util.max
 import io.foxcapades.lib.k.yaml.util.min
 
-class SimpleKeyStack(capacity: Int, val scaleFactor: Float, val maxSize: Int = Int.MAX_VALUE) {
-  private var raw = arrayOfNulls<SimpleKey>(capacity)
+class SimpleKeyStack(
+      initialCapacity: Int   = 16,
+  val scaleFactor:     Float = 1.5F,
+  val maxSize:         Int   = Int.MAX_VALUE,
+) {
+  private var raw = arrayOfNulls<SimpleKey>(initialCapacity)
 
   var size = 0
     private set
@@ -49,7 +53,7 @@ class SimpleKeyStack(capacity: Int, val scaleFactor: Float, val maxSize: Int = I
   }
 
   operator fun get(i: Int) =
-    if (i >= size)
+    if (i < 0 || i >= size)
       throw IndexOutOfBoundsException("attempted to access index $i in a SimpleKeyStack of size $size")
     else
       raw[lastIndex - i]!!

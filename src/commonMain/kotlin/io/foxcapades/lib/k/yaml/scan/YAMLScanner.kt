@@ -7,17 +7,62 @@ import io.foxcapades.lib.k.yaml.util.SourcePositionTracker
 import io.foxcapades.lib.k.yaml.util.UByteBuffer
 import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
 
+
+/*
+
+STREAM-START:
+  BOM:
+  !:
+    TAG
+  #:
+    Comment Line
+  %:
+    YAML Directive
+    TAG  Directive
+    Invalid Directive
+  
+
+
+
+- DIRECTIVE:
+  - YAML-DIRECTIVE
+  - TAG-DIRECTIVE
+- DOCUMENT-START
+- FLOW-SEQUENCE-START
+- FLOW-MAPPING-START
+- BLOCK-SEQUENCE-ENTRY-MARKER
+- BLOCK-MAPPING-COMPLEX-KEY
+- SCALAR
+- BLOCK-MAPPING-SIMPLE-KEY
+- STREAM-END
+
+
+*/
+
+
+
+
+
+private const val TOKEN_QUEUE_INIT_CAPACITY = 16
+private const val TOKEN_QUEUE_SCALE_FACTOR  = 1.5F
+private const val TOKEN_QUEUE_MAX_CAPACITY  = Int.MAX_VALUE
+
+private const val SIMPLE_KEYS_INIT_CAPACITY = 16
+private const val SIMPLE_KEYS_SCALE_FACTOR  = 1.5F
+private const val SIMPLE_KEYS_MAX_CAPACITY  = Int.MAX_VALUE
+
+
 class YAMLScanner {
   private var streamStarted = false
   private var streamEnded = false
 
-  private val simpleKeys: SimpleKeyStack
+  private val simpleKeys = SimpleKeyStack()
 
-  private val tokens: TokenQueue
+  private val tokens = TokenQueue()
+
+  private val position = SourcePositionTracker()
 
   private val reader: YAMLReader
-
-  private val position: SourcePositionTracker
 
   fun hasNextToken() = !streamEnded
 
@@ -104,7 +149,23 @@ class YAMLScanner {
   }
 
   private fun fetchMoreTokens() {
+    var needMoreTokens: Boolean
 
+    while (true) {
+      needMoreTokens = false
+
+      if (tokens.isEmpty) {
+        needMoreTokens = true
+      } else {
+        staleSimpleKeys()
+
+        var i = simpleKeys.size
+        while (i > 0) {
+          simpleKeys[--i].
+        }
+      }
+    }
   }
 
+  private fun staleSimpleKeys() {}
 }
