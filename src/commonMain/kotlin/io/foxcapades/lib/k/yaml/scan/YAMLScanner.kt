@@ -11,6 +11,8 @@ class YAMLScanner {
   private var streamStarted = false
   private var streamEnded = false
 
+  private val simpleKeys: SimpleKeyStack
+
   private val tokens: TokenQueue
 
   private val reader: YAMLReader
@@ -102,7 +104,7 @@ class YAMLScanner {
   }
 
   private fun fetchMoreTokens() {
-    
+
   }
 
 }
