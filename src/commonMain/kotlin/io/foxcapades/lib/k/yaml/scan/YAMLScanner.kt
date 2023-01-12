@@ -372,6 +372,37 @@ class YAMLScanner {
     // If the current position may start a simple key, save it.
     if (simpleKeyAllowed) {
       val sk = SimpleKey(true, required, tokensParsed + tokens.size, position.toSourcePosition())
+
+      removeSimpleKey()
+
+      simpleKeys[0] = sk
+    }
+  }
+
+  /**
+   * Remove a potential simple key at the current flow level.
+   *
+   * TODO: This doesn't remove shit, it just marks it as not possible
+   */
+  private fun removeSimpleKey() {
+    val sk = simpleKeys.peek()
+
+    if (sk.possible && sk.required) {
+      throw YAMLScannerException("while scanning a simple key could not find expected ':' character", sk.mark)
+    }
+
+    sk.possible = false
+  }
+
+  private fun increaseFlowLevel() {
+    simpleKeys.push(SimpleKey())
+    flowLevel++
+  }
+
+  private fun decreaseFlowLevel() {
+    if (inFlow) {
+      flowLevel--
+      simpleKeys.pop()
     }
   }
 }
