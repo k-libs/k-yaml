@@ -58,4 +58,10 @@ class SimpleKeyStack(
     else
       raw[lastIndex - i]!!
 
+  operator fun set(i: Int, sk: SimpleKey) {
+    if (i < 0 || i >= size)
+      throw IndexOutOfBoundsException("attempted to set a value at index $i in a SimpleKeyStack of size $size")
+    else
+      raw[lastIndex - i] = sk
+  }
 }

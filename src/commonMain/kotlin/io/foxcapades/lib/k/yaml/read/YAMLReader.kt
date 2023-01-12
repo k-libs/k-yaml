@@ -26,6 +26,12 @@ class YAMLReader {
   val buffered: Int
     get() = utf8Buffer.size
 
+  inline val isEmpty
+    get() = buffered == 0
+
+  inline val isNotEmpty
+    get() = buffered > 0
+
   constructor(capacity: Int, readerFn: ReaderFn) {
     this.rawBuffer  = UByteBuffer(capacity)
     this.utf8Buffer = UByteBuffer(capacity * 4)

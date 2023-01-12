@@ -1,5 +1,6 @@
 package io.foxcapades.lib.k.yaml.read
 
+import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.bytes.*
 
 /**
@@ -225,6 +226,18 @@ internal inline fun YAMLReader.asHexDigit(offset: Int = 0) =
 internal inline fun YAMLReader.isBlank(offset: Int = 0) =
   buffered > offset && (uCheck(A_SPACE, offset) || uCheck(A_TAB, offset))
 
+internal inline fun YAMLReader.uIsBlank(offset: Int = 0) = uCheck(A_SPACE, offset) || uCheck(A_TAB, offset)
+
+internal inline fun YAMLReader.uIsBlankOrBreak(version: YAMLVersion, offset: Int = 0) =
+  uCheck(A_SPACE, offset) || uCheck(A_TAB, offset) || isBreak(version, offset)
+
+internal inline fun YAMLReader.isBlankBreakOrEOF(version: YAMLVersion, offset: Int = 0) =
+  (atEOF && buffered <= offset)
+    || check(A_SPACE, offset)
+    || check(A_TAB, offset)
+    || isBreak(version, offset)
+
+
 internal inline fun YAMLReader.isCROrLF(offset: Int = 0) =
   buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
 
@@ -293,7 +306,28 @@ internal inline fun YAMLReader.isBreak_1_1(i: Int = 0) = isCROrLF(i) || isNEL(i)
  * a valid line break indicator byte at the given offset, otherwise `false`.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.isBreak_1_2(i: Int = 0) = isCROrLF(i)
+internal inline fun YAMLReader.isBreak_1_2(i: Int = 0) =
+  when {
+    isCROrLF(i) -> true
+
+    isNEL(i)    -> {
+      // TODO: surface warning about invalid line break character for YAML 1.2
+      true
+    }
+
+    isLSOrPS(i) -> {
+      // TODO: surface warning about invalid line break character for YAML 1.2
+      true
+    }
+
+    else        -> false
+  }
+
+internal inline fun YAMLReader.isBreak(version: YAMLVersion, offset: Int = 0) =
+  when (version) {
+    YAMLVersion.VERSION_1_1 -> isBreak_1_1(offset)
+    YAMLVersion.VERSION_1_2 -> isBreak_1_2(offset)
+  }
 
 /**
  * Is CRLF
