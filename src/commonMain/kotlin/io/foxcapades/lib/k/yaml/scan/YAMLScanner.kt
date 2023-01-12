@@ -31,6 +31,8 @@ class YAMLScanner {
 
   private var flowLevel = 0u
 
+  private var indents = IndentStack()
+
   private var indent = -1
 
   private var simpleKeyAllowed = false
@@ -405,4 +407,8 @@ class YAMLScanner {
       simpleKeys.pop()
     }
   }
+
+  /**
+   * Push the current indent level to the
+   */
 }
