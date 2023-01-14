@@ -1,14 +1,12 @@
-package io.foxcapades.lib.k.yaml.scan
+package io.foxcapades.lib.k.yaml.util
 
-import io.foxcapades.lib.k.yaml.util.max
-import io.foxcapades.lib.k.yaml.util.min
-
-class IndentStack(
+@OptIn(ExperimentalUnsignedTypes::class)
+class UIntStack(
       initialCapacity: Int   = 16,
   val scaleFactor:     Float = 1.5F,
   val maxCapacity:     Int   = Int.MAX_VALUE
 ) {
-  private var raw = IntArray(initialCapacity)
+  private var raw = UIntArray(initialCapacity)
 
   var size = 0
     private set
@@ -41,9 +39,9 @@ class IndentStack(
     else
       raw[size - 1]
 
-  fun push(indent: Int) {
+  fun push(value: UInt) {
     ensureCapacity(size + 1)
-    raw[size++] = indent
+    raw[size++] = value
   }
 
   fun ensureCapacity(minCapacity: Int) {
@@ -53,7 +51,7 @@ class IndentStack(
     if (raw.size >= minCapacity)
       return
 
-    raw = raw.copyInto(IntArray(min(max(minCapacity, (raw.size.toFloat() * scaleFactor).toInt()), maxCapacity)))
+    raw = raw.copyInto(UIntArray(min(max(minCapacity, (raw.size.toFloat() * scaleFactor).toInt()), maxCapacity)))
   }
 
   operator fun get(i: Int) =
@@ -62,10 +60,10 @@ class IndentStack(
     else
       raw[lastIndex - i]
 
-  operator fun set(i: Int, indent: Int) {
+  operator fun set(i: Int, value: UInt) {
     if (i < 0 || i >= size)
       throw IndexOutOfBoundsException("attempted to set a value at index $i in an IndentStack of size $size")
     else
-      raw[lastIndex - i] = indent
+      raw[lastIndex - i] = value
   }
 }

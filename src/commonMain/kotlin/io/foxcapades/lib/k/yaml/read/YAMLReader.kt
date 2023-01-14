@@ -42,7 +42,7 @@ class YAMLReader {
     if (utf8Buffer.size >= count)
       return true
 
-    while (!atEOF) {
+    while (!atEOF || rawBuffer.isNotEmpty) {
       fillUTF8Buffer()
 
       if (utf8Buffer.size >= count)

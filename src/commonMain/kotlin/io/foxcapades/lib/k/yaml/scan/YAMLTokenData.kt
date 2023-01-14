@@ -6,6 +6,9 @@ import kotlin.jvm.JvmInline
 sealed interface YAMLTokenData
 
 @JvmInline
+value class YAMLTokenDataDocumentStart(val explicit: Boolean) : YAMLTokenData
+
+@JvmInline
 @OptIn(ExperimentalUnsignedTypes::class)
 value class YAMLTokenDataAlias(val value: UByteArray) : YAMLTokenData
 
