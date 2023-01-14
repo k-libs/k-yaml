@@ -5,7 +5,7 @@ data class SourcePositionTracker(
   var line:   UInt = 0u,
   var column: UInt = 0u,
 ) {
-  fun toSourcePosition() = SourcePosition(index, line, column)
+  fun mark() = SourcePosition(index, line, column)
 
   fun become(other: SourcePositionTracker) {
     index  = other.index

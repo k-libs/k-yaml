@@ -1,6 +1,10 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package io.foxcapades.lib.k.yaml.read
 
 import io.foxcapades.lib.k.yaml.bytes.*
+
+private inline fun YAMLReader.has(offset: Int) = buffered >= offset
 
 /**
  * Check Octet
@@ -21,8 +25,8 @@ import io.foxcapades.lib.k.yaml.bytes.*
  * @return `true` if the buffer contains more than [offset] bytes and the
  * specific byte at [offset] is equal to [octet], otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = buffered > offset && get(offset) == octet
+internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = has(offset) && get(offset) == octet
+
 
 /**
  * Unsafe Check Octet
@@ -44,8 +48,8 @@ internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = buffered >
  * @return `true` if the value at the given [offset] equals the given test
  * [octet], otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun YAMLReader.uCheck(octet: UByte, offset: Int = 0) = get(offset) == octet
+
 
 /**
  * Is ASCII
@@ -63,8 +67,8 @@ internal inline fun YAMLReader.uCheck(octet: UByte, offset: Int = 0) = get(offse
  * @return `true` if the buffer contains more than [offset] bytes and the byte
  * at the given `offset` is a valid ASCII character.
  */
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.isASCII(offset: Int = 0) = buffered > offset && get(offset) <= Ub7F
+internal inline fun YAMLReader.isASCII(offset: Int = 0) = has(offset) && get(offset) <= Ub7F
+
 
 /**
  * Is Alphanumeric
@@ -90,7 +94,6 @@ internal inline fun YAMLReader.isASCII(offset: Int = 0) = buffered > offset && g
  * at the given `offset` is an alphanumeric character as defined above,
  * otherwise `false`
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun YAMLReader.isAlphanumeric(offset: Int = 0) =
   buffered > offset
     && when (get(offset)) {
@@ -100,6 +103,9 @@ internal inline fun YAMLReader.isAlphanumeric(offset: Int = 0) =
       A_DASH, A_UNDER     -> true
       else                -> false
     }
+
+
+// region Numeric Values
 
 /**
  * Is Decimal Digit
@@ -122,9 +128,8 @@ internal inline fun YAMLReader.isAlphanumeric(offset: Int = 0) =
  * at the given `offset` is a decimal digit character as defined above,
  * otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.isDecDigit(offset: Int = 0) =
-  buffered > offset && get(offset) in A_0 .. A_9
+internal inline fun YAMLReader.isDecDigit(offset: Int = 0) = has(offset) && get(offset) in A_0 .. A_9
+
 
 /**
  * As Decimal Digit
@@ -142,8 +147,8 @@ internal inline fun YAMLReader.isDecDigit(offset: Int = 0) =
  *
  * @return The parsed value of the byte at the given offset.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun YAMLReader.asDecDigit(offset: Int = 0) = get(offset) - A_0
+
 
 /**
  * Is Hex Digit
@@ -168,7 +173,6 @@ internal inline fun YAMLReader.asDecDigit(offset: Int = 0) = get(offset) - A_0
  * at the given `offset` is a hex digit character as defined above, otherwise
  * `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun YAMLReader.isHexDigit(offset: Int = 0) =
   buffered > offset && when (get(offset)) {
     in A_0    .. A_9    -> true
@@ -176,6 +180,7 @@ internal inline fun YAMLReader.isHexDigit(offset: Int = 0) =
     in A_LO_A .. A_LO_F -> true
     else                -> false
   }
+
 
 /**
  * As Hex Digit
@@ -204,47 +209,90 @@ internal inline fun YAMLReader.asHexDigit(offset: Int = 0) =
     else                -> throw IllegalStateException("attempted to parse a non-hex digit as a base-16 int")
   }
 
+// endregion Numeric Values
+
+// region Safe Indicator Character Tests
+
 internal inline fun YAMLReader.isBackslash(offset: Int = 0) = check(A_BACKSLASH, offset)
-internal inline fun YAMLReader.isColon(offset: Int = 0) = check(A_COLON, offset)
-internal inline fun YAMLReader.isComma(offset: Int = 0) = check(A_COMMA, offset)
-internal inline fun YAMLReader.isPound(offset: Int = 0) = check(A_POUND, offset)
-internal inline fun YAMLReader.isQuestion(offset: Int = 0) = check(A_QUESTION, offset)
+internal inline fun YAMLReader.isColon(offset: Int = 0)     = check(A_COLON, offset)
+internal inline fun YAMLReader.isComma(offset: Int = 0)     = check(A_COMMA, offset)
+internal inline fun YAMLReader.isDash(offset: Int = 0)      = check(A_DASH, offset)
+internal inline fun YAMLReader.isPercent(offset: Int = 0)   = check(A_PERCENT, offset)
+internal inline fun YAMLReader.isPeriod(offset: Int = 0)    = check(A_PERIOD, offset)
+internal inline fun YAMLReader.isPound(offset: Int = 0)     = check(A_POUND, offset)
+internal inline fun YAMLReader.isQuestion(offset: Int = 0)  = check(A_QUESTION, offset)
 
-/**
- * Is Blank
- *
- * Tests whether the byte at the given offset in the buffer is an ASCII `SPACE`
- * or ASCII `TAB` character.
- *
- * If the buffer contains [offset] or fewer bytes, this function will return
- * `false`.
- *
- * @param offset Offset of the byte to test.
- *
- * Defaults to `0`
- *
- * @return `true` if the buffer contains more than [offset] bytes and the byte
- * at the given `offset` is an ASCII `SPACE` or ASCII `TAB` character, otherwise
- * `false`.
- */
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLReader.isBlank(offset: Int = 0) =
-  buffered > offset && (uCheck(A_SPACE, offset) || uCheck(A_TAB, offset))
+// endregion Safe Indicator Character Tests
 
-internal inline fun YAMLReader.uIsBlank(offset: Int = 0) = uCheck(A_SPACE, offset) || uCheck(A_TAB, offset)
+// region Unsafe Indicator Character Tests
 
-internal inline fun YAMLReader.isCROrLF(offset: Int = 0) =
-  buffered > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
+internal inline fun YAMLReader.uIsBackslash(offset: Int = 0) = uCheck(A_BACKSLASH, offset)
+internal inline fun YAMLReader.uIsColon(offset: Int = 0)     = uCheck(A_COLON, offset)
+internal inline fun YAMLReader.uIsComma(offset: Int = 0)     = uCheck(A_COMMA, offset)
+internal inline fun YAMLReader.uIsDash(offset: Int = 0)      = uCheck(A_DASH, offset)
+internal inline fun YAMLReader.uIsPercent(offset: Int = 0)   = uCheck(A_PERCENT, offset)
+internal inline fun YAMLReader.uIsPeriod(offset: Int = 0)    = uCheck(A_PERIOD, offset)
+internal inline fun YAMLReader.uIsPound(offset: Int = 0)     = uCheck(A_POUND, offset)
+internal inline fun YAMLReader.uIsQuestion(offset: Int = 0)  = uCheck(A_QUESTION, offset)
 
-internal inline fun YAMLReader.isCR(offset: Int = 0) = check(A_CR)
+// endregion Unsafe Indicator Character Tests
 
-internal inline fun YAMLReader.isLF(offset: Int = 0) = check(A_LF)
+// region Whitespace Checks
 
+/** `<SPACE>` */
+internal inline fun YAMLReader.isSpace(offset: Int = 0) = check(A_SPACE, offset)
+
+/** `<SPACE>` */
+internal inline fun YAMLReader.uIsSpace(offset: Int = 0) = uCheck(A_SPACE, offset)
+
+/** `<TAB>` */
+internal inline fun YAMLReader.isTab(offset: Int = 0) = check(A_TAB, offset)
+
+/** `<TAB>` */
+internal inline fun YAMLReader.uIsTab(offset: Int = 0) = uCheck(A_TAB, offset)
+
+/** `<SPACE>` or `<TAB>` */
+internal inline fun YAMLReader.isBlank(offset: Int = 0) = has(offset) && (uIsSpace(offset) || uIsTab(offset))
+
+/** `<SPACE>` or `<TAB>` */
+internal inline fun YAMLReader.uIsBlank(offset: Int = 0) = uIsSpace(offset) || uCheck(A_TAB, offset)
+
+// endregion Whitespace Checks
+
+// region Newline Checks
+
+/** `\r` */
+internal inline fun YAMLReader.isCR(offset: Int = 0) = check(A_CR, offset)
+
+/** `\r` */
+internal inline fun YAMLReader.uIsCR(offset: Int = 0) = uCheck(A_CR, offset)
+
+/** `\n` */
+internal inline fun YAMLReader.isLF(offset: Int = 0) = check(A_LF, offset)
+
+/** `\n` */
+internal inline fun YAMLReader.uIsLF(offset: Int = 0) = uCheck(A_LF, offset)
+
+/** `\r` or `\n` */
+internal inline fun YAMLReader.isCROrLF(offset: Int = 0) = has(offset) && (uIsLF(offset) || uIsCR(offset))
+
+/** `\r` or `\n` */
+internal inline fun YAMLReader.uIsCROrLF(offset: Int = 0) = uIsLF(offset) || uIsCR(offset)
+
+/** `<NEL>` */
 internal inline fun YAMLReader.isNEL(offset: Int = 0) =
-  buffered > offset + 1 && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1)
+  has(offset + 1) && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1)
+
+/** `<LS>` */
+internal inline fun YAMLReader.isLS(offset: Int = 0) =
+  has(offset + 2)  && uCheck(UbE2, offset) && uCheck(Ub80, offset + 1) && uCheck(UbA8, offset + 2)
+
+/** `<PS>` */
+internal inline fun YAMLReader.isPS(offset: Int = 0) =
+  has(offset + 2)  && uCheck(UbE2, offset) && uCheck(Ub80, offset + 1) && uCheck(UbA9, offset + 2)
 
 internal inline fun YAMLReader.isLSOrPS(i: Int = 0) =
-  buffered > i + 2 && uCheck(UbE2, i) && uCheck(Ub80, i + 1) && (uCheck(UbA8, i + 2) || uCheck(UbA9, i + 2))
+  has(i + 2) && uCheck(UbE2, i) && uCheck(Ub80, i + 1) && (uCheck(UbA8, i + 2) || uCheck(UbA9, i + 2))
 
 /**
  * Is Break (YAML 1.1)
@@ -300,32 +348,19 @@ internal inline fun YAMLReader.isBreak_1_1(i: Int = 0) = isCROrLF(i) || isNEL(i)
  * @return `true` if the buffer contains more than [i] bytes and contains
  * a valid line break indicator byte at the given offset, otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun YAMLReader.isBreak_1_2(i: Int = 0) =
   when {
     isCROrLF(i) -> true
     else        -> false
   }
 
-/**
- * Is CRLF
- *
- * Tests whether the buffer contains the ASCII character combination CR+LF at
- * the given [offset].
- *
- * If the buffer contains `offset + 1` bytes or fewer, this function will return
- * `false`.
- *
- * @param offset Offset of the bytes to test.
- *
- * Defaults to `0`
- *
- * @return `true` if the buffer contains the ASCII character combination CR+LF
- * at the given offset, otherwise `false`.
- */
-@Suppress("NOTHING_TO_INLINE")
+/** `\r\n` */
 internal inline fun YAMLReader.isCRLF(offset: Int = 0) =
-  buffered > offset + 1 && uCheck(A_CR, offset) && uCheck(A_LF, offset + 1)
+  has(offset + 1) && uCheck(A_CR, offset) && uCheck(A_LF, offset + 1)
 
-@Suppress("NOTHING_TO_INLINE")
+// endregion Newline Checks
+
 internal inline fun YAMLReader.isEOF(offset: Int = 0) = atEOF && buffered <= offset
+
+internal inline fun YAMLReader.isBreakOrEOF(offset: Int = 0) =
+  isBreak_1_1(offset) || isEOF(offset)

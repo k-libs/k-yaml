@@ -7,3 +7,5 @@ open class YAMLException(message: String) : Throwable(message)
 open class YAMLReaderException(val index: ULong, message: String) : YAMLException(message)
 
 open class YAMLScannerException(message: String, val mark: SourcePosition) : YAMLException(message)
+
+open class YAMLVersionException(message: String) : YAMLException(message)

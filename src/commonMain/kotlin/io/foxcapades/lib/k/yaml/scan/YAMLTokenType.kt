@@ -29,4 +29,6 @@ enum class YAMLTokenType {
   Tag,
   Scalar,
   Comment,
+
+  InvalidToken,
 }
