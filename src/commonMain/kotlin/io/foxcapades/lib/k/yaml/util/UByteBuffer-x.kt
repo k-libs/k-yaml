@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package io.foxcapades.lib.k.yaml.util
 
 import io.foxcapades.lib.k.yaml.bytes.*
@@ -21,7 +23,6 @@ import io.foxcapades.lib.k.yaml.bytes.*
  * @return `true` if the buffer contains more than [offset] bytes and the
  * specific byte at [offset] is equal to [octet], otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.check(octet: UByte, offset: Int = 0) = size > offset && get(offset) == octet
 
 /**
@@ -44,7 +45,6 @@ internal inline fun UByteBuffer.check(octet: UByte, offset: Int = 0) = size > of
  * @return `true` if the value at the given [offset] equals the given test
  * [octet], otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.uCheck(octet: UByte, offset: Int = 0) = get(offset) == octet
 
 /**
@@ -63,7 +63,6 @@ internal inline fun UByteBuffer.uCheck(octet: UByte, offset: Int = 0) = get(offs
  * @return `true` if the buffer contains more than [offset] bytes and the byte
  * at the given `offset` is a valid ASCII character.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isASCII(offset: Int = 0) = size > offset && get(offset) <= Ub7F
 
 /**
@@ -90,7 +89,6 @@ internal inline fun UByteBuffer.isASCII(offset: Int = 0) = size > offset && get(
  * at the given `offset` is an alphanumeric character as defined above,
  * otherwise `false`
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isAlphanumeric(offset: Int = 0) =
   size > offset
     && when (get(offset)) {
@@ -122,7 +120,6 @@ internal inline fun UByteBuffer.isAlphanumeric(offset: Int = 0) =
  * at the given `offset` is a decimal digit character as defined above,
  * otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isDecDigit(offset: Int = 0) =
   size > offset && get(offset) in A_0 .. A_9
 
@@ -142,7 +139,6 @@ internal inline fun UByteBuffer.isDecDigit(offset: Int = 0) =
  *
  * @return The parsed value of the byte at the given offset.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.asDecDigit(offset: Int = 0) = get(offset) - A_0
 
 /**
@@ -168,7 +164,6 @@ internal inline fun UByteBuffer.asDecDigit(offset: Int = 0) = get(offset) - A_0
  * at the given `offset` is a hex digit character as defined above, otherwise
  * `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isHexDigit(offset: Int = 0) =
   size > offset && when (get(offset)) {
     in A_0    .. A_9    -> true
@@ -195,7 +190,6 @@ internal inline fun UByteBuffer.isHexDigit(offset: Int = 0) =
  *
  * @return The parsed value of the byte at the given offset.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.asHexDigit(offset: Int = 0) =
   when (val x = get(offset)) {
     in A_0    .. A_9    -> x - A_0
@@ -221,7 +215,6 @@ internal inline fun UByteBuffer.asHexDigit(offset: Int = 0) =
  * at the given `offset` is an ASCII `SPACE` or ASCII `TAB` character, otherwise
  * `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isBlank(offset: Int = 0) =
   size > offset && (uCheck(A_SPACE, offset) || uCheck(A_TAB, offset))
 
@@ -255,7 +248,6 @@ internal inline fun UByteBuffer.isBlank(offset: Int = 0) =
  * than [offset] bytes or does not contain a valid line break sequence at the
  * given `offset`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isBreak_1_1(offset: Int = 0) =
   // LF | CR
   (size > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset)))
@@ -290,7 +282,6 @@ internal inline fun UByteBuffer.isBreak_1_1(offset: Int = 0) =
  * @return `true` if the buffer contains more than [offset] bytes and contains
  * a valid line break indicator byte at the given offset, otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isBreak_1_2(offset: Int = 0) =
   // LF | CR
   size > offset && (uCheck(A_LF, offset) || uCheck(A_CR, offset))
@@ -311,6 +302,17 @@ internal inline fun UByteBuffer.isBreak_1_2(offset: Int = 0) =
  * @return `true` if the buffer contains the ASCII character combination CR+LF
  * at the given offset, otherwise `false`.
  */
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun UByteBuffer.isCRLF(offset: Int = 0) =
   size > offset + 1 && uCheck(A_CR, offset) && uCheck(A_LF, offset + 1)
+
+internal inline fun UByteBuffer.isCR(offset: Int = 0) = check(A_CR, offset)
+internal inline fun UByteBuffer.isLF(offset: Int = 0) = check(A_LF, offset)
+
+internal inline fun UByteBuffer.isNEL(offset: Int = 0) =
+  size > offset + 1 && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1)
+
+internal inline fun UByteBuffer.isLS(offset: Int = 0) =
+  size > offset + 2 && uCheck(UbE2, offset) && uCheck(Ub80, offset + 1) && uCheck(UbA8, offset + 2)
+
+internal inline fun UByteBuffer.isPS(offset: Int = 0) =
+  size > offset + 2 && uCheck(UbE2, offset) && uCheck(Ub80, offset + 1) && uCheck(UbA9, offset + 2)

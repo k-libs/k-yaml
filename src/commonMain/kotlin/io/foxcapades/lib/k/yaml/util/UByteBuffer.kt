@@ -167,17 +167,21 @@ internal class UByteBuffer {
 
   fun toArray() = toArray(size)
 
+  fun popToArray(): UByteArray {
+    val out = toArray()
+    clear()
+    return out
+  }
+
   operator fun get(index: Int): UByte = raw[vidx(index)]
 
-  fun takeFrom(other: UByteBuffer, count: Int) {
+  fun takeFrom(other: UByteBuffer, count: Int = other.size) {
     if (other.size < count)
       throw IllegalArgumentException("cannot take $count bytes from a UByteBuffer of size ${other.size}")
 
     var i = 0
-    while (i < count) {
+    while (i++ < count)
       push(other.pop())
-      i++
-    }
   }
 
   private fun idx(index: Int): Int {

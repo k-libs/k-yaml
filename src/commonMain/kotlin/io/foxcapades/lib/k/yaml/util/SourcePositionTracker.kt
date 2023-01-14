@@ -7,6 +7,12 @@ data class SourcePositionTracker(
 ) {
   fun toSourcePosition() = SourcePosition(index, line, column)
 
+  fun become(other: SourcePositionTracker) {
+    index  = other.index
+    line   = other.line
+    column = other.column
+  }
+
   fun incPosition(chars: UInt = 1u) {
     index += chars
     column += chars

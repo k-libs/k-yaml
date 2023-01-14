@@ -9,4 +9,3 @@ class YAMLToken(
   val end: SourcePosition,
   val warnings: Array<ScannerWarning>,
 )
-

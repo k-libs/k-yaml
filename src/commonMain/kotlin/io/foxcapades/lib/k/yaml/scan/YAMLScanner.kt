@@ -10,7 +10,6 @@ import io.foxcapades.lib.k.yaml.util.*
 import io.foxcapades.lib.k.yaml.util.UByteBuffer
 
 
-
 class YAMLScanner {
 
   /**
@@ -59,8 +58,6 @@ class YAMLScanner {
    */
   private val tokens = Queue<YAMLToken>(8)
 
-  private val tokenBuffer = UByteBuffer(2048)
-
   private var inDocument = false
 
   private var inFlow = false
@@ -72,11 +69,11 @@ class YAMLScanner {
 
   private val reader: YAMLReader
 
-  private val lineBreak: LineBreakType
+  private val lineBreakType: LineBreakType
 
   constructor(reader: YAMLReader, lineBreak: LineBreakType) {
-    this.reader    = reader
-    this.lineBreak = lineBreak
+    this.reader = reader
+    this.lineBreakType = lineBreak
   }
 
   val hasMoreTokens: Boolean
@@ -136,43 +133,64 @@ class YAMLScanner {
       A_TILDE     -> fetchTildeToken()
 
       // BAD NONO CHARACTERS: @ `
-      A_AT    -> fetchAtToken()
-      A_GRAVE -> fetchGraveToken()
+      A_AT        -> fetchAtToken()
+      A_GRAVE     -> fetchGraveToken()
 
       // Meh characters: ~ $ ^ ( ) _ + = \ ; < /
       // And everything else...
-      else -> fetchPlainScalar()
+      else        -> fetchPlainScalar()
     }
   }
 
   @OptIn(ExperimentalUnsignedTypes::class)
   private fun fetchPlainScalar() {
+    // Record the position of the first character in the plain scalar.
     val startMark = position.toSourcePosition()
 
-    val whitespaces  = UByteBuffer()
-    var lastWasBreak = true
+    // Create a rolling tracker that will be used to keep track of the position
+    // of the last non-blank, non-break character seen before the next token is
+    // encountered.
+    val endMark = position.copy()
+
+    // Whitespaces at the end of a line
+    val trailingWS = UByteBuffer()
+
+    // Line breaks in between
+    val lineBreaks = UByteBuffer()
+
+    // Buffer for the token value
+    val tokenBuffer = UByteBuffer(2048)
 
     while (true) {
+      // Load the next codepoint into the reader buffer
       reader.cache(1)
 
+      // If the reader is empty, then whatever we currently have in our token
+      // buffer
       if (!haveMoreInBuffer)
-        TODO("handle EOF in what is probably a scalar")
+        return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.toSourcePosition()))
 
+      // When we hit one of the following characters, then we pay attention to
+      // what's going on because we may have hit the start of a new token:
+      //
+      //   : , ? #
+      //
+      // When we hit a newline, or whitespace character, buffer it on the side
+      // in case we need it.
       when {
-        // Glorious!  A blank space!  A clearing in the noise!
-        reader.isBlank() -> {
-          // Append it to our whitespaces array because it may be a leading or
-          // trailing whitespace character that we want to omit
-          lastWasBreak = false
-          whitespaces.push(reader.pop())
+        reader.isBlank()               -> {
+          if (lineBreaks.isEmpty)
+            trailingWS.claimASCII()
+
+          continue
         }
 
-        // A colon.  Respectable.
-        reader.isColon() -> {
-          // So we've hit a colon character... this could be the break we've
-          // been looking for!   Perhaps it's a sign!  The end may be nigh!
-          lastWasBreak = false
+        reader.isBreak_1_1()              -> {
+          lineBreaks.claimNewLine()
+          continue
+        }
 
+        reader.isColon()               -> {
           // Attempt to cache another codepoint in the buffer, we need to look
           // ahead to the next character to determine if we've reached the end
           // of this scalar.
@@ -180,81 +198,60 @@ class YAMLScanner {
 
           // If the colon character is followed by any of this junk, then IT IS
           // THE END! (of the scalar we've been chewing on)
+          if (reader.isBlank(1) || reader.isBreak_1_1(1) || reader.isEOF(1))
+            return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.toSourcePosition())
+        }
+
+        reader.isComma() && inFlow     -> {
+          return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.toSourcePosition()))
+        }
+
+        reader.isQuestion() && !inFlow && position.column == 0u -> {
+          // If we are in a block context, the question mark was at column 0 and
+          // it is followed immediately by a whitespace, a newline, or the EOF
+          // then consider it the start of a new token (a complex mapping key).
+          reader.cache(2)
+
           if (
             reader.isBlank(1)
             || reader.isBreak_1_1(1)
             || reader.isEOF(1)
           ) {
-            tokens.push(
-              YAMLToken(
-                YAMLTokenType.Scalar,
-                YAMLTokenDataScalar(tokenBuffer.toArray(), YAMLScalarStyle.Plain),
-                startMark,
-                position.toSourcePosition(),
-                warnings.popToArray()
-              )
-            )
-          }
-
-          // Alas, it was just another false hope, write it, and all the
-          // preceding whitespaces to the token buffer and on we drudge.
-          else {
-            while (whitespaces.isNotEmpty)
-              tokenBuffer.push(whitespaces.pop())
-
-            writeASCII(tokenBuffer)
+            return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.toSourcePosition())
           }
         }
 
-        // `, ` && inFlow
-        reader.isComma() && inFlow -> TODO("fetch mystery comma")
-
-        // `? ` && !inFlow
-        reader.isQuestion() && !inFlow -> {
-          TODO("""
-            If we hit a "\n?<WS>" combo and we are not in a flow context, then
-            we done found ourselves at the beginning of
-          """.trimIndent())
-        }
-
-        reader.isPound() -> {
-          if (whitespaces.isNotEmpty) {
-            // So what we had was a freakin scalar the whole dang time!
-
-            TODO("OOPS WE'VE HIT A COMMENT, TIME TO END THIS TOKEN WHICH IS JUST A STRING OR SOMETHING?")
-          } else {
-            writeUTF8(tokenBuffer)
-          }
-        }
-
-        reader.isBreak_1_2() -> {
-          whitespaces.clear()
-
-          if (lastWasBreak)
-            writeLine(whitespaces)
-          else
-            lastWasBreak = true
-        }
-
-        reader.isBreak_1_1() -> {
-          whitespaces.clear()
-
-          if (version == YAMLVersion.VERSION_1_2)
-            warn("illegal line break character; YAML 1.2 permits only the line breaks CRLF, CR, or LF for compatibility with JSON")
-
-          if (lastWasBreak)
-            writeLine(whitespaces)
-          else
-            lastWasBreak = true
+        reader.isPound()               -> {
+          // If we've hit a `#` character that was preceded immediately by a
+          // whitespace or newline character, then we are starting a comment.
+          if (trailingWS.isNotEmpty || lineBreaks.isNotEmpty)
+            return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.toSourcePosition()))
         }
       }
 
-      // Is it a valid character to be a plain scalar or mapping key?
-      // Eat it and look for `:<WS>` to form a mapping key, unless it goes to
-      // beyond 1024 characters at which point it must be a scalar value (which
-      // may not be allowed if we are looking for a continuation of a block
-      // mapping)
+      // If there were no line breaks in the pile of whitespaces, then we
+      // only may have trailing whitespace characters:
+      if (lineBreaks.isEmpty) {
+        tokenBuffer.takeFrom(trailingWS)
+      } else {
+        // Ignore the first line break
+        lineBreaks.skip(lineBreaks.utf8Width())
 
+        // If there was only one line break, convert it to a single space
+        if (lineBreaks.isEmpty) {
+          tokenBuffer.push(A_SPACE)
+        }
+
+        // If there were additional line breaks then append them to the
+        // token buffer
+        else {
+          while (lineBreaks.isNotEmpty)
+            tokenBuffer.claimNewLine(lineBreaks)
+        }
+
+        tokenBuffer.claimUTF8()
+        endMark.become(position)
+      }
     }
   }
 
@@ -296,23 +293,52 @@ class YAMLScanner {
 
   // region Buffer Writing Helpers
 
-  private fun writeASCII(buffer: UByteBuffer) {
-    buffer.push(reader.pop())
+  private fun UByteBuffer.claimASCII() {
+    push(reader.pop())
     position.incPosition()
   }
 
-  private fun writeUTF8(buffer: UByteBuffer) {
-    if (!buffer.takeCodepointFrom(reader.utf8Buffer))
+  private fun UByteBuffer.claimUTF8() {
+    if (!takeCodepointFrom(reader.utf8Buffer))
       throw IllegalStateException("invalid utf-8 codepoint in the reader buffer or buffer is offset")
     position.incPosition()
   }
 
-  private fun writeLine(buffer: UByteBuffer) {
+  private fun UByteBuffer.claimNewLine() {
     reader.cache(4)
+    claimNewLine(reader.utf8Buffer)
+  }
 
-    if (reader.isCRLF()) {
-      reader.skip(2)
-      // What kind of line break do we write to the stream?
+  private fun UByteBuffer.claimNewLine(from: UByteBuffer) {
+    if (from.isCRLF()) {
+      appendNewLine(NL.CRLF)
+      skipLine(NL.CRLF)
+    } else if (from.isCR()) {
+      appendNewLine(NL.CR)
+      skipLine(NL.CR)
+    } else if (from.isLF()) {
+      appendNewLine(NL.LF)
+      skipLine(NL.LF)
+    } else if (from.isNEL()) {
+      appendNewLine(NL.NEL)
+      skipLine(NL.NEL)
+    } else if (from.isLS()) {
+      appendNewLine(NL.LS)
+      skipLine(NL.LS)
+    } else if (from.isPS()) {
+      appendNewLine(NL.PS)
+      skipLine(NL.PS)
+    } else {
+      throw IllegalStateException("called #claimNewLine() when the reader was not on a new line character")
+    }
+  }
+
+  private fun UByteBuffer.appendNewLine(nl: NL) {
+    when (lineBreakType) {
+      LineBreakType.CRLF        -> NL.CRLF.writeUTF8(this)
+      LineBreakType.CR          -> NL.CR.writeUTF8(this)
+      LineBreakType.LF          -> NL.LF.writeUTF8(this)
+      LineBreakType.SameAsInput -> nl.writeUTF8(this)
     }
   }
 
@@ -335,33 +361,52 @@ class YAMLScanner {
     reader.cache(4)
 
     if (reader.isCRLF()) {
-      reader.skip(2)
-      position.incLine(2u)
-    }
-
-    else if (reader.isCROrLF()) {
-      reader.skip(1)
-      position.incLine()
-    }
-
-    // Separate block for the rest as they are not supported by YAML 1.2.
-    // This block emits a warning if the current line break is occurring in a
-    else {
-
-      if (reader.isNEL()) {
-        reader.skip(2)
-      } else if (reader.isLSOrPS()) {
-        reader.skip(3)
-      } else {
-        throw IllegalStateException("called #skipLine() when the reader was not on a newline character")
-      }
-
-      if (inDocument && version == YAMLVersion.VERSION_1_2)
-        warn("invalid line break character; YAML 1.2 only permits line breaks consisting of CRLF, CR, or LF")
-
-      position.incLine()
+      skipLine(NL.CRLF)
+    } else if (reader.isCR()) {
+      skipLine(NL.CR)
+    } else if (reader.isLF()) {
+      skipLine(NL.LF)
+    } else if (reader.isNEL()) {
+      skipLine(NL.NEL)
+    } else if (reader.isLS()) {
+      skipLine(NL.LS)
+    } else if (reader.isPS()) {
+      skipLine(NL.PS)
+    } else {
+      throw IllegalStateException("called #skipLine() when the reader was not on a newline character")
     }
   }
 
+  private fun skipLine(nl: NL) {
+    if (inDocument) {
+      when (nl) {
+        NL.NEL,
+        NL.LS,
+        NL.PS,
+        -> {
+          if (version != YAMLVersion.VERSION_1_1)
+            warn("invalid line break character; YAML 1.2 only permits line breaks consisting of CRLF, CR, or LF")
+        }
+
+        // CRLF
+        // CRinternal fun newPlainScalarYAMLToken()
+        // LF
+        else -> { /* nothing special to for these line breaks */ }
+      }
+    }
+
+    reader.skip(nl.width)
+    position.incLine(nl.characters.toUInt())
+  }
+
   // endregion Reader Helpers
+
+  // region Token Constructors
+
+  @Suppress("NOTHING_TO_INLINE")
+  @OptIn(ExperimentalUnsignedTypes::class)
+  private inline fun newPlainScalarToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, warnings.popToArray())
+
+  // endregion Token Constructors
 }
