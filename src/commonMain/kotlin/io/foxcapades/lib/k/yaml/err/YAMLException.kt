@@ -9,3 +9,5 @@ open class YAMLReaderException(val index: ULong, message: String) : YAMLExceptio
 open class YAMLScannerException(message: String, val mark: SourcePosition) : YAMLException(message)
 
 open class YAMLVersionException(message: String) : YAMLException(message)
+
+open class UIntOverflowException(val startMark: SourcePosition) : Throwable()

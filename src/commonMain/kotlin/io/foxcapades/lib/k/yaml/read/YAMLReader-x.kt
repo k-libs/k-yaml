@@ -283,6 +283,9 @@ internal inline fun YAMLReader.uIsCROrLF(offset: Int = 0) = uIsLF(offset) || uIs
 internal inline fun YAMLReader.isNEL(offset: Int = 0) =
   has(offset + 1) && uCheck(UbC2, offset) && uCheck(Ub85, offset + 1)
 
+/** `<NEL>` */
+internal inline fun YAMLReader.uIsNEL(offset: Int = 0) = uCheck(UbC2, offset) && uCheck(Ub85, offset + 1)
+
 /** `<LS>` */
 internal inline fun YAMLReader.isLS(offset: Int = 0) =
   has(offset + 2)  && uCheck(UbE2, offset) && uCheck(Ub80, offset + 1) && uCheck(UbA8, offset + 2)
@@ -293,6 +296,9 @@ internal inline fun YAMLReader.isPS(offset: Int = 0) =
 
 internal inline fun YAMLReader.isLSOrPS(i: Int = 0) =
   has(i + 2) && uCheck(UbE2, i) && uCheck(Ub80, i + 1) && (uCheck(UbA8, i + 2) || uCheck(UbA9, i + 2))
+
+internal inline fun YAMLReader.uIsLSOrPS(offset: Int = 0) =
+  uCheck(UbE2, offset) && uCheck(Ub80, offset + 1) && (uCheck(UbA8, offset + 2) || uCheck(UbA9, offset + 2))
 
 /**
  * Is Break (YAML 1.1)
@@ -364,3 +370,23 @@ internal inline fun YAMLReader.isEOF(offset: Int = 0) = atEOF && buffered <= off
 
 internal inline fun YAMLReader.isBreakOrEOF(offset: Int = 0) =
   isBreak_1_1(offset) || isEOF(offset)
+
+/** `SPACE | TAB | CR | LF | NEL | LS | PS` */
+internal inline fun YAMLReader.isBlankOrBreak(offset: Int = 0): Boolean {
+  return when {
+    buffered > offset + 2 -> uIsSpace(offset) || uIsTab(offset) || uIsCROrLF(offset) || uIsNEL(offset) || uIsLSOrPS(offset)
+    buffered > offset + 1 -> uIsSpace(offset) || uIsTab(offset) || uIsCROrLF(offset) || uIsNEL(offset)
+    buffered > offset     -> uIsSpace(offset) || uIsTab(offset) || uIsCROrLF(offset)
+    else                  -> false
+  }
+}
+
+/** `SPACE | TAB | CR | LF | NEL | LS | PS` or `EOF` */
+internal inline fun YAMLReader.isBlankBreakOrEOF(offset: Int = 0): Boolean {
+  return when {
+    buffered > offset + 2 -> uIsSpace(offset) || uIsTab(offset) || uIsCROrLF(offset) || uIsNEL(offset) || uIsLSOrPS(offset)
+    buffered > offset + 1 -> uIsSpace(offset) || uIsTab(offset) || uIsCROrLF(offset) || uIsNEL(offset)
+    buffered > offset     -> uIsSpace(offset) || uIsTab(offset) || uIsCROrLF(offset)
+    else                  -> atEOF
+  }
+}

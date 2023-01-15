@@ -1,7 +1,9 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.DefaultYAMLVersion
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.bytes.*
+import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.read.*
 import io.foxcapades.lib.k.yaml.read.isCRLF
@@ -37,7 +39,7 @@ class YAMLScanner {
    * Queue of warnings that have been encountered while scanning through the
    * YAML stream for tokens.
    */
-  private val warnings = Queue<ScannerWarning>()
+  private val warnings = Queue<SourceWarning>()
 
   /**
    * Queue of tokens that have been generated but not yet returned to the
@@ -73,7 +75,7 @@ class YAMLScanner {
 
   // endregion Context Indicators
 
-  private inline val haveMoreInBuffer
+  private inline val haveMoreCharactersAvailable
     get() = !reader.atEOF || reader.isNotEmpty
 
   private var version = YAMLVersion.VERSION_1_2
@@ -109,7 +111,7 @@ class YAMLScanner {
     return out
   }
 
-  fun nextWarning(): ScannerWarning = warnings.pop()
+  fun nextWarning(): SourceWarning = warnings.pop()
 
   private fun fetchNextToken() {
     if (!streamStartProduced)
@@ -119,7 +121,7 @@ class YAMLScanner {
 
     cache(1)
 
-    if (!haveMoreInBuffer)
+    if (!haveMoreCharactersAvailable)
       return fetchStreamEndToken()
 
     when (reader[0]) {
@@ -178,7 +180,7 @@ class YAMLScanner {
 
       // If the reader is empty, then whatever we currently have in our token
       // buffer
-      if (!haveMoreInBuffer)
+      if (!haveMoreCharactersAvailable)
         return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
 
       // When we hit one of the following characters, then we pay attention to
@@ -244,7 +246,7 @@ class YAMLScanner {
 
           // If the question mark character is followed by any of this stuff,
           // then it is, in fact, the start of a complex mapping key indicator.
-          if (isBlank(1) || isAnyBreak(1) || isEOF(1)) {
+          if (isBlankBreakOrEOF(1)) {
             return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
           }
         }
@@ -323,7 +325,7 @@ class YAMLScanner {
 
     // Nothing more in the buffer?  That means the stream ended on a `%`
     // character which means an invalid token directive.
-    if (!haveMoreInBuffer)
+    if (!haveMoreCharactersAvailable)
       throw YAMLScannerException("stream ended on an incomplete or invalid directive", startMark)
 
     // See if the next 5 characters are "YAML<WS>"
@@ -342,11 +344,13 @@ class YAMLScanner {
     return fetchInvalidDirectiveToken(startMark)
   }
 
+  // region YAML Directive Token
+
   /**
-   * Attempts to parse the rest of the current line as a YAML directive.
+   * # Fetch `YAML-DIRECTIVE` Token
    *
-   * At the time this function is called, we know that we have seen what appears
-   * to be the beginning of a valid `%YAML` directive.
+   * Attempts to parse the rest of the current line as a `YAML-DIRECTIVE` token
+   * assuming the start of the line is `%YAML<WS>`.
    *
    * The next step is to try and parse the version value which _should_ be one
    * of `1.1` or `1.2` but it could be anything because input be weird
@@ -358,73 +362,289 @@ class YAMLScanner {
     // We have already skipped over `%YAML<WS>`.  Eat any extra whitespaces
     // until we encounter something else, which will hopefully be a decimal
     // digit.
-    eatBlanks()
+    var trailingSpaceCount = eatBlanks()
 
-    var major = 0u
-    var minor = 0u
-    var width = 0
+    // If after skipping over the blank space characters after `%YAML` we hit
+    // the EOF, a line break, or a `#` character (the start of a comment), then
+    // we have an incomplete token because there can be no version number
+    // following on this line.
+    if (isPound() || isBreakOrEOF())
+      return fetchIncompleteYAMLDirectiveToken(
+        startMark,
+        position.mark(modIndex = -trailingSpaceCount, modColumn = -trailingSpaceCount)
+      )
 
-    val versionStartMark = position.mark()
+    // If the next character we see is not a decimal digit, then we've got some
+    // junk characters instead of a version number.
+    if (!isDecimal())
+      return fetchMalformedYAMLDirectiveToken(startMark)
+
+    // Okay, so we are on a decimal digit, that is _hopefully_ the start of our
+    // major version.
+
+    // Try and parse the major version as a UInt from the stream.
+    val major = try {
+      parseUInt()
+    } catch (e: UIntOverflowException) {
+      version = DefaultYAMLVersion
+      return fetchOverflowYAMLDirectiveToken(startMark, e.startMark, true)
+    }
+
+    // Now we have to ensure that the value right after the major version int
+    // value is a period character.
+
+    cache(1)
+    if (isBreakOrEOF())
+      return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
+    if (!isPeriod())
+      return fetchMalformedYAMLDirectiveToken(startMark)
+
+    // Skip the `.` character.
+    skipASCII()
+
+    cache(1)
+    if (isBreakOrEOF())
+      return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
+    if (!isDecimal())
+      return fetchMalformedYAMLDirectiveToken(startMark)
+
+    val minor = try {
+      parseUInt()
+    } catch (e: UIntOverflowException) {
+      version = DefaultYAMLVersion
+      return fetchOverflowYAMLDirectiveToken(startMark, e.startMark, false)
+    }
+
+    // Okay, so at this point we have parsed the following:
+    //
+    //   ^%YAML[ \t]+\d+\.\d+
+    //
+    // Now we need to make sure that there is nothing else on this line except
+    // for maybe trailing whitespace characters and optionally a comment.
+
+    cache(1)
+    trailingSpaceCount = 0
+
+    // If the next character after the minor version int is a whitespace
+    // character:
+    if (isBlank()) {
+      // Eat the whitespace(s) until we hit something else.
+      trailingSpaceCount = eatBlanks()
+
+      // Attempt to cache a character in our reader buffer
+      cache(1)
+
+      // If the next character after the whitespace(s) is NOT a `#`, is NOT a
+      // line break, and is NOT the EOF, then we have some extra junk at the
+      // end of our token line and the token is considered malformed.
+      if (!(isPound() || isBreakOrEOF()))
+        return fetchMalformedYAMLDirectiveToken(startMark)
+    }
+
+    // Else (meaning we're not at a whitespace), if the next thing in the reader
+    // buffer is NOT a line break and is NOT the EOF, then we have extra junk
+    // right after our minor version number, meaning the token is malformed.
+    else if (!isBreakOrEOF()) {
+      return fetchMalformedYAMLDirectiveToken(startMark)
+    }
+
+    // If we've made it this far then we have parsed the following:
+    //
+    //   ^%YAML[ \t]+\d+\.\d+[ \t]*$
+    //
+    // This means that we have a valid _looking_ YAML directive.  We now need to
+    // verify that the major and minor version numbers that the input gave us
+    // actually amount to a valid YAML version.
+
+    val endMark = position.mark(modIndex = -trailingSpaceCount, modColumn = -trailingSpaceCount)
+
+    // If the major version is not `1`, then we should emit a warning for an
+    // unsupported version and attempt to parse it as the default YAML version.
+    if (major != 1u)
+      return fetchUnsupportedYAMLDirectiveToken(major, minor, startMark, endMark)
+
+    if (minor == 1u)
+      version = YAMLVersion.VERSION_1_1
+    else if (minor == 2u)
+      version = YAMLVersion.VERSION_1_2
+    else
+      return fetchUnsupportedYAMLDirectiveToken(major, minor, startMark, endMark)
+
+    tokens.push(newYAMLDirectiveToken(major, minor, startMark, endMark))
+  }
+
+  /**
+   * # Fetch Invalid YAML Token for UInt Overflow
+   *
+   * Emits a warning, then fetches an `<INVALID>` token for the situation where
+   * we were attempting to parse a part of the version number segment of a
+   * `%YAML` token and either the major or minor version number overflows a the
+   * `uint32` type.
+   *
+   * ## Generating the Warning
+   *
+   * The primary purpose of this function is to generate a helpful warning
+   * before passing the invalid token up to the caller.  This warning is
+   * generated by counting the number digits in the total major/minor version
+   * number as it appears in the source YAML to provide a start and end mark for
+   * the number value that would have overflowed our `uint32`.
+   *
+   * This allows consumers of these tokens to generate markup to render errors
+   * with context hints such as underlining the invalid value.
+   *
+   * **Example Error Hint**
+   * ```log
+   * WARN: uint32 overflow while attempting to parse a %YAML directive major version
+   * ----
+   * %YAML 99999999999999999999.1 # this is an invalid YAML version
+   *       ^^^^^^^^^^^^^^^^^^^^
+   * ----
+   * ```
+   *
+   * ## Generating the Invalid Token
+   *
+   * This function simply calls out to [finishInvalidDirectiveToken] to wrap up
+   * finding the end of the invalid token.
+   *
+   * @param tokenStartMark Mark for the beginning of the `%YAML` token in the
+   * source stream.  This value is passed through to
+   * [finishInvalidDirectiveToken].
+   *
+   * @param intStartMark Mark for the beginning of the `int` value that is too
+   * long to be a `uint32`.  This value is used for creating the warning which
+   * will have the start and end marks for the invalid `int` value.
+   *
+   * @param isMajor Whether this was the major section of the version number or
+   * not.  `true` if it was the major version, `false` if it was the minor
+   * version.
+   */
+  private fun fetchOverflowYAMLDirectiveToken(
+    tokenStartMark: SourcePosition,
+    intStartMark:   SourcePosition,
+    isMajor:        Boolean,
+  ) {
+    // Ensure that we have a character in the buffer to test against.
+    cache(1)
+
+    // Skip over all the decimal digit characters until we hit the end of this
+    // absurdly long int value.
+    while (isDecimal()) {
+      // Skip it as ASCII because if it's a decimal digit then we know it's an
+      // ASCII character
+      skipASCII()
+
+      // Cache another character to test on the next pass of the loop
+      cache(1)
+    }
+
+    // Emit a warning about the overflow, passing in:
+    //
+    // - A warning message that is slightly customized based on whether it is a
+    //   major or minor version number that was overflowed,
+    // - A mark for the start of the absurdly long int value
+    // - The current position (which will be the first non-digit character after
+    //   the start of the long int, or the EOF
+    warn(
+      "uint32 overflow while attempting to parse a %YAML directive ${if (isMajor) "major" else "minor"} version",
+      intStartMark,
+      position.mark()
+    )
+
+    // Skip to the end of the directive
+    var trailingWS = 0
+    val endMark: SourcePosition
+    while (true) {
+      cache(1)
+      if (isBlank()) {
+        trailingWS++
+        skipASCII()
+      } else if (isBreakOrEOF()) {
+        endMark = position.mark(modIndex = -trailingWS, modColumn = -trailingWS)
+        break
+      } else if (isPound() && trailingWS > 0) {
+        endMark = position.mark(modIndex = -trailingWS, modColumn = -trailingWS)
+        break
+      } else {
+        trailingWS = 0
+        skipUTF8()
+      }
+    }
+
+    tokens.push(newInvalidToken(tokenStartMark, endMark))
+  }
+
+  /**
+   * Fetches an [`INVALID`][YAMLTokenType.Invalid] token for the case where the
+   * YAML directive token contains some junk characters.
+   *
+   * When called, the reader buffer cursor will be on the first junk character.
+   *
+   * The job of this method is to find the end of the junk on the line and
+   * create a warning highlighting that junk before queueing up an `INVALID`
+   * token and returning.
+   */
+  private fun fetchMalformedYAMLDirectiveToken(tokenStartMark: SourcePosition) {
+    val junkStart = position.mark()
+    val junkEnd: SourcePosition
+
+    var trailingWhitespace = 0
 
     while (true) {
       cache(1)
 
-      if (isDecimal()) {
-        // If this is a decimal digit then we have to append it to our running
-        // major value.
-        //
-        // Since we are parsing a series of decimal digits of an unknown size,
-        // it is possible that the input contains a value that would overflow
-        // the UInt data type and cause undefined behavior.
-        //
-        // This means we have to do overflow detection to catch that case.
-
-        // Overflow detection:
-        //
-        // Verify that we can safely multiply our major version by 10 to
-        // accommodate the next digit we will be adding.
-        if (major > UInt.MAX_VALUE / 10u)
-          TODO("we overflowed the UInt value attempting to parse the major version, this is a malformed token. assume version 1.2")
-
-        major *= 10u
-
-        val add = asDecimal()
-
-        // Overflow detection:
-        //
-        // Verify we can safely add the next digit to our major version.
-        if (major > UInt.MAX_VALUE - add)
-          TODO("we overflowed the UInt value attempting to parse the major version, this is a malformed token. assume version 1.2")
-
-        major += add
-      }
-
-      else if (isPeriod()) {
-        // Skip the period character and break from the loop to move on to
-        // parsing the minor version.
+      if (isBlank()) {
+        trailingWhitespace++
         skipASCII()
+      } else if (isBreakOrEOF()) {
+        junkEnd = position.mark(modIndex = -trailingWhitespace, modColumn = -trailingWhitespace)
         break
-      }
-
-      else {
-        TODO("we've ")
+      } else if (isPound() && trailingWhitespace > 0) {
+        junkEnd = position.mark(modIndex = -trailingWhitespace, modColumn = -trailingWhitespace)
+        break
+      } else {
+        trailingWhitespace = 0
+        skipUTF8()
       }
     }
 
-
-
+    warn("malformed %YAML directive", junkStart, junkEnd)
+    tokens.push(newInvalidToken(tokenStartMark, junkEnd))
   }
 
+  private fun fetchIncompleteYAMLDirectiveToken(start: SourcePosition, end: SourcePosition) {
+    version = DefaultYAMLVersion
+    warn("incomplete %YAML directive; assuming YAML version $DefaultYAMLVersion", start, end)
+    tokens.push(newInvalidToken(start, end))
+  }
+
+  private fun fetchUnsupportedYAMLDirectiveToken(
+    major: UInt,
+    minor: UInt,
+    start: SourcePosition,
+    end:   SourcePosition
+  ) {
+    version = DefaultYAMLVersion
+    warn("unsupported YAML version $major.$minor; attempting to scan input as YAML version $DefaultYAMLVersion")
+    tokens.push(newYAMLDirectiveToken(major, minor, start, end))
+  }
+
+  // endregion YAML Directive Token
+
+  // region Tag Directive Token
 
   private fun fetchTagDirectiveToken(startMark: SourcePosition) {
-    TODO()
+    TODO("fetch tag directive token")
   }
-
-  private fun fetchInvalidDirectiveToken(startMark: SourcePosition)
 
   private fun fetchInvalidTagDirectiveToken(startMark: SourcePosition) {
     warn("malformed %TAG token", startMark)
     finishInvalidDirectiveToken(startMark)
+  }
+
+  // endregion Tag Directive Token
+
+  private fun fetchInvalidDirectiveToken(startMark: SourcePosition) {
+    TODO("fetch invalid directive token")
   }
 
   private fun finishInvalidDirectiveToken(startMark: SourcePosition) {
@@ -451,22 +671,60 @@ class YAMLScanner {
 
   // endregion Ambiguous Character Tokens
 
+  private fun parseUInt(): UInt {
+    val intStart = position.mark()
+    var intValue = 0u
+    var addValue: UInt
+
+    while (true) {
+      cache(1)
+
+      if (isDecimal()) {
+        if (intValue > UInt.MAX_VALUE / 10u)
+          throw UIntOverflowException(intStart)
+
+        intValue *= 10u
+        addValue = asDecimal()
+
+        if (intValue > UInt.MAX_VALUE - addValue)
+          throw UIntOverflowException(intStart)
+
+        intValue += addValue
+      } else {
+        break
+      }
+    }
+
+    return intValue
+  }
+
   /**
-   * Skips over whitespace characters in the reader buffer, incrementing the
-   * position tracker as it does.
+   * Skips over `<SPACE>` and `<TAB>` characters in the reader buffer,
+   * incrementing the position tracker as it goes.
+   *
+   * @return The number of blank characters that were skipped.
    */
-  private fun eatBlanks() {
+  private fun eatBlanks(): Int {
+    var out = 0
+
     cache(1)
     while (isBlank()) {
       skipASCII()
       cache(1)
+      out++
     }
+
+    return out
   }
 
   // region Warning Helpers
 
-  private fun warn(message: String, mark: SourcePosition = position.mark()) {
-    warnings.push(ScannerWarning(message, mark))
+  private fun warn(
+    message: String,
+    start:   SourcePosition = position.mark(),
+    end:     SourcePosition = position.mark(),
+  ) {
+    warnings.push(SourceWarning(message, start, end))
   }
 
   // endregion Warning Helpers
@@ -617,17 +875,28 @@ class YAMLScanner {
       && reader.uCheck(octet3, 2)
       && reader.uCheck(octet4, 3)
 
+  private inline fun isDecimal(offset: Int = 0) = reader.isDecDigit(offset)
   private inline fun asDecimal(offset: Int = 0) = reader.asDecDigit(offset)
 
-  private inline fun isAnyBreak  (offset: Int = 0) = reader.isBreak_1_1(offset)
-  private inline fun isBlank     (offset: Int = 0) = reader.isBlank(offset)
+  /** `<CR> | <LF> | <NEL> | <LS> | <PS>` */
+  private inline fun isAnyBreak(offset: Int = 0) = reader.isBreak_1_1(offset)
+
+  /** `<SPACE> | <TAB>` */
+  private inline fun isBlank(offset: Int = 0) = reader.isBlank(offset)
+
+  /** `SPACE | TAB | CR | LF | NEL | LS | PS` */
+  private inline fun isBlankOrBreak(offset: Int = 0) = reader.isBlankOrBreak(offset)
+
+  /** `SPACE | TAB | CR | LF | NEL | LS | PS` or `EOF` */
+  private inline fun isBlankBreakOrEOF(offset: Int = 0) = reader.isBlankBreakOrEOF(offset)
+
   private inline fun isBreakOrEOF(offset: Int = 0) = reader.isBreakOrEOF(offset)
+  private inline fun isEOF(offset: Int = 0) = reader.isEOF(offset)
+
   private inline fun isColon     (offset: Int = 0) = reader.isColon(offset)
   private inline fun isComma     (offset: Int = 0) = reader.isComma(offset)
   private inline fun isCR        (offset: Int = 0) = reader.isCR(offset)
   private inline fun isCRLF      (offset: Int = 0) = reader.isCRLF(offset)
-  private inline fun isDecimal   (offset: Int = 0) = reader.isDecDigit(offset)
-  private inline fun isEOF       (offset: Int = 0) = reader.isEOF(offset)
   private inline fun isLF        (offset: Int = 0) = reader.isLF(offset)
   private inline fun isLS        (offset: Int = 0) = reader.isLS(offset)
   private inline fun isNEL       (offset: Int = 0) = reader.isNEL(offset)
@@ -636,16 +905,19 @@ class YAMLScanner {
   private inline fun isPS        (offset: Int = 0) = reader.isPS(offset)
   private inline fun isQuestion  (offset: Int = 0) = reader.isQuestion(offset)
 
-
-
   // endregion Reader Tests
 
   // region Token Constructors
 
-  @Suppress("NOTHING_TO_INLINE")
   @OptIn(ExperimentalUnsignedTypes::class)
   private inline fun newPlainScalarToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
     YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, warnings.popToArray())
+
+  private inline fun newInvalidToken(start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.Invalid, null, start, end, warnings.popToArray())
+
+  private inline fun newYAMLDirectiveToken(major: UInt, minor: UInt, start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.VersionDirective, YAMLTokenDataVersionDirective(major, minor), start, end, warnings.popToArray())
 
   // endregion Token Constructors
 }

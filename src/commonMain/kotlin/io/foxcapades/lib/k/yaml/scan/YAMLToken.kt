@@ -4,8 +4,8 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 class YAMLToken(
   val type: YAMLTokenType,
-  val data: YAMLTokenData,
+  val data: YAMLTokenData?,
   val start: SourcePosition,
   val end: SourcePosition,
-  val warnings: Array<ScannerWarning>,
+  val warnings: Array<SourceWarning>,
 )

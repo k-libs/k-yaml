@@ -30,5 +30,5 @@ enum class YAMLTokenType {
   Scalar,
   Comment,
 
-  InvalidToken,
+  Invalid,
 }
