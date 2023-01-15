@@ -25,7 +25,7 @@ private inline fun YAMLReader.has(offset: Int) = buffered >= offset
  * @return `true` if the buffer contains more than [offset] bytes and the
  * specific byte at [offset] is equal to [octet], otherwise `false`.
  */
-internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = has(offset) && get(offset) == octet
+internal inline fun YAMLReader.testReaderOctet(octet: UByte, offset: Int = 0) = has(offset) && get(offset) == octet
 
 
 /**
@@ -34,7 +34,7 @@ internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = has(offset
  * Tests whether the byte at the given offset in the buffer is equal to the
  * given test octet.
  *
- * Unlike [check], this method does not verify that the buffer is long enough to
+ * Unlike [testReaderOctet], this method does not verify that the buffer is long enough to
  * contain a value at [offset], and instead relies on the calling function to
  * perform that check.
  *
@@ -213,19 +213,27 @@ internal inline fun YAMLReader.asHexDigit(offset: Int = 0) =
 
 // region Safe Indicator Character Tests
 
-internal inline fun YAMLReader.isBackslash(offset: Int = 0) = check(A_BACKSLASH, offset)
-internal inline fun YAMLReader.isColon(offset: Int = 0)     = check(A_COLON, offset)
-internal inline fun YAMLReader.isComma(offset: Int = 0)     = check(A_COMMA, offset)
-internal inline fun YAMLReader.isDash(offset: Int = 0)      = check(A_DASH, offset)
-internal inline fun YAMLReader.isPercent(offset: Int = 0)   = check(A_PERCENT, offset)
-internal inline fun YAMLReader.isPeriod(offset: Int = 0)    = check(A_PERIOD, offset)
-internal inline fun YAMLReader.isPound(offset: Int = 0)     = check(A_POUND, offset)
-internal inline fun YAMLReader.isQuestion(offset: Int = 0)  = check(A_QUESTION, offset)
+internal inline fun YAMLReader.isAmp(offset: Int = 0)         = testReaderOctet(A_AMP, offset)
+internal inline fun YAMLReader.isAsterisk(offset: Int = 0)    = testReaderOctet(A_ASTERISK, offset)
+internal inline fun YAMLReader.isBackslash(offset: Int = 0)   = testReaderOctet(A_BACKSLASH, offset)
+internal inline fun YAMLReader.isColon(offset: Int = 0)       = testReaderOctet(A_COLON, offset)
+internal inline fun YAMLReader.isComma(offset: Int = 0)       = testReaderOctet(A_COMMA, offset)
+internal inline fun YAMLReader.isCurlyClose(offset: Int = 0)  = testReaderOctet(A_CU_CL, offset)
+internal inline fun YAMLReader.isCurlyOpen(offset: Int = 0)   = testReaderOctet(A_CU_OP, offset)
+internal inline fun YAMLReader.isDash(offset: Int = 0)        = testReaderOctet(A_DASH, offset)
+internal inline fun YAMLReader.isPercent(offset: Int = 0)     = testReaderOctet(A_PERCENT, offset)
+internal inline fun YAMLReader.isPeriod(offset: Int = 0)      = testReaderOctet(A_PERIOD, offset)
+internal inline fun YAMLReader.isPound(offset: Int = 0)       = testReaderOctet(A_POUND, offset)
+internal inline fun YAMLReader.isQuestion(offset: Int = 0)    = testReaderOctet(A_QUESTION, offset)
+internal inline fun YAMLReader.isSquareOpen(offset: Int = 0)  = testReaderOctet(A_SQ_OP, offset)
+internal inline fun YAMLReader.isSquareClose(offset: Int = 0) = testReaderOctet(A_SQ_CL, offset)
 
 // endregion Safe Indicator Character Tests
 
 // region Unsafe Indicator Character Tests
 
+internal inline fun YAMLReader.uIsAmp(offset: Int = 0)       = uCheck(A_AMP, offset)
+internal inline fun YAMLReader.uIsAsterisk(offset: Int = 0)  = uCheck(A_ASTERISK, offset)
 internal inline fun YAMLReader.uIsBackslash(offset: Int = 0) = uCheck(A_BACKSLASH, offset)
 internal inline fun YAMLReader.uIsColon(offset: Int = 0)     = uCheck(A_COLON, offset)
 internal inline fun YAMLReader.uIsComma(offset: Int = 0)     = uCheck(A_COMMA, offset)
@@ -240,13 +248,13 @@ internal inline fun YAMLReader.uIsQuestion(offset: Int = 0)  = uCheck(A_QUESTION
 // region Whitespace Checks
 
 /** `<SPACE>` */
-internal inline fun YAMLReader.isSpace(offset: Int = 0) = check(A_SPACE, offset)
+internal inline fun YAMLReader.isSpace(offset: Int = 0) = testReaderOctet(A_SPACE, offset)
 
 /** `<SPACE>` */
 internal inline fun YAMLReader.uIsSpace(offset: Int = 0) = uCheck(A_SPACE, offset)
 
 /** `<TAB>` */
-internal inline fun YAMLReader.isTab(offset: Int = 0) = check(A_TAB, offset)
+internal inline fun YAMLReader.isTab(offset: Int = 0) = testReaderOctet(A_TAB, offset)
 
 /** `<TAB>` */
 internal inline fun YAMLReader.uIsTab(offset: Int = 0) = uCheck(A_TAB, offset)
@@ -262,13 +270,13 @@ internal inline fun YAMLReader.uIsBlank(offset: Int = 0) = uIsSpace(offset) || u
 // region Newline Checks
 
 /** `\r` */
-internal inline fun YAMLReader.isCR(offset: Int = 0) = check(A_CR, offset)
+internal inline fun YAMLReader.isCR(offset: Int = 0) = testReaderOctet(A_CR, offset)
 
 /** `\r` */
 internal inline fun YAMLReader.uIsCR(offset: Int = 0) = uCheck(A_CR, offset)
 
 /** `\n` */
-internal inline fun YAMLReader.isLF(offset: Int = 0) = check(A_LF, offset)
+internal inline fun YAMLReader.isLF(offset: Int = 0) = testReaderOctet(A_LF, offset)
 
 /** `\n` */
 internal inline fun YAMLReader.uIsLF(offset: Int = 0) = uCheck(A_LF, offset)

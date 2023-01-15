@@ -124,14 +124,17 @@ class YAMLScanner {
     if (!haveMoreCharactersAvailable)
       return fetchStreamEndToken()
 
-    when (reader[0]) {
+    when {
       // Good boy characters: % - . # & * [ ] { } | : ' " > , ?
-      A_PERCENT   -> fetchDirectiveToken()
-      A_DASH      -> fetchDashToken()
-      A_PERIOD    -> fetchPeriodToken()
-      A_POUND     -> fetchCommentToken()
-      A_AMP       -> fetchAnchorToken()
-      A_ASTERISK  -> fetchAliasToken()
+      uIsPercent() && atStartOfLine -> fetchDirectiveToken()
+      uIsDash()                     -> fetchDashToken()
+      uIsPeriod()                   -> fetchPeriodToken()
+      uIsPound()                    -> fetchCommentToken()
+      uIsAmp()                      -> fetchAnchorToken()
+      uIsAsterisk()                 -> fetchAliasToken()
+    }
+
+    when (reader[0]) {
       A_SQ_OP     -> fetchFlowSequenceStartToken()
       A_SQ_CL     -> fetchFlowSequenceEndToken()
       A_CU_OP     -> fetchFlowMappingStartToken()
@@ -329,13 +332,13 @@ class YAMLScanner {
       throw YAMLScannerException("stream ended on an incomplete or invalid directive", startMark)
 
     // See if the next 5 characters are "YAML<WS>"
-    if (check(A_UP_Y, A_UP_A, A_UP_M, A_UP_L) && isBlank(4)) {
+    if (testReaderOctets(A_UP_Y, A_UP_A, A_UP_M, A_UP_L) && isBlank(4)) {
       skipASCII(5)
       return fetchYAMLDirectiveToken(startMark)
     }
 
     // See if the next 4 characters are "TAG<WS>"
-    if (check(A_UP_T, A_UP_A, A_UP_G) && isBlank(3)) {
+    if (testReaderOctets(A_UP_T, A_UP_A, A_UP_G) && isBlank(3)) {
       skipASCII(4)
       return fetchTagDirectiveToken(startMark)
     }
@@ -860,20 +863,89 @@ class YAMLScanner {
 
   // region Reader Tests
 
-  private inline fun check(octet: UByte, offset: Int = 0) = reader.check(octet, offset)
+  // region Size Checking
 
-  private inline fun check(octet1: UByte, octet2: UByte) =
-    reader.buffered > 1 && reader.uCheck(octet1, 0) && reader.uCheck(octet2, 1)
+  private inline fun hasOffset(offset: Int) = reader.buffered > offset
 
-  private inline fun check(octet1: UByte, octet2: UByte, octet3: UByte) =
-    reader.buffered > 2 && reader.uCheck(octet1, 0) && reader.uCheck(octet2, 1) && reader.uCheck(octet3, 2)
+  // endregion Size Checking
 
-  private inline fun check(octet1: UByte, octet2: UByte, octet3: UByte, octet4: UByte) =
-    reader.buffered > 3
-      && reader.uCheck(octet1, 0)
-      && reader.uCheck(octet2, 1)
-      && reader.uCheck(octet3, 2)
-      && reader.uCheck(octet4, 3)
+  // region Octet Checking
+
+  // region Safe Octet Checking
+
+  /**
+   * Tests the `UByte` at the given [offset] in the [reader] against the given
+   * [octet] value to see if they are equal.
+   *
+   * If reader buffer does not contain enough characters to contain [offset],
+   * this method returns `false`.
+   *
+   * **Examples**
+   * ```
+   * // Given the following reader buffer:
+   * // YAMLReader('A', 'B', 'C')
+   *
+   * // The following will return true
+   * testReaderOctet('A')
+   * testReaderOctet('B', 1)
+   * testReaderOctet('C', 2)
+   *
+   * // And the following will return false
+   * testReader('D', 3)  // false because the reader buffer does not contain
+   *                     // offset 3 (would require 4 characters)
+   * testReader('B')     // false because reader[0] != 'B'
+   * ```
+   *
+   * @param octet Octet to compare the [reader] value to.
+   *
+   * @param offset Offset in the reader buffer of the `UByte` value to test.
+   *
+   * @return `true` if the reader buffer contains enough characters to have a
+   * value at [offset] and the value at `offset` is equal to the given [octet]
+   * value.  `false` if the reader buffer does not contain enough characters to
+   * contain `offset` or if the value at `offset` in the reader buffer is not
+   * equal to the given `octet` value.
+   */
+  private inline fun testReaderOctet(octet: UByte, offset: Int = 0) =
+    hasOffset(offset) && unsafeTestReaderOctet(octet, offset)
+
+  /**
+   * Tests the `UByte` values at offsets `0` and `1` in the reader buffer
+   * against the given octet values to see if they are equal.
+   */
+  private inline fun testReaderOctets(octet1: UByte, octet2: UByte) =
+    hasOffset(1) && unsafeTestReaderOctet(octet1) && unsafeTestReaderOctet(octet2, 1)
+
+  /**
+   * Tests the `UByte` values at offsets `0`, `1`, and `2` in the reader buffer
+   * against the given octet values to see if they are equal.
+   */
+  private inline fun testReaderOctets(octet1: UByte, octet2: UByte, octet3: UByte) =
+    hasOffset(2)
+      && unsafeTestReaderOctet(octet1)
+      && unsafeTestReaderOctet(octet2, 1)
+      && unsafeTestReaderOctet(octet3, 2)
+
+  /**
+   * Tests the `UByte` values at offsets `0`, `1`, `2`, and `3` in the reader
+   * buffer against the given octet values to see if they are equal.
+   */
+  private inline fun testReaderOctets(octet1: UByte, octet2: UByte, octet3: UByte, octet4: UByte) =
+    hasOffset(3)
+      && unsafeTestReaderOctet(octet1)
+      && unsafeTestReaderOctet(octet2, 1)
+      && unsafeTestReaderOctet(octet3, 2)
+      && unsafeTestReaderOctet(octet4, 3)
+
+  // endregion Safe Octet Checking
+
+  // region Unsafe Octet Checking
+
+  private inline fun unsafeTestReaderOctet(octet: UByte, offset: Int = 0) = reader[offset] == octet
+
+  // endregion Unsafe Octet Checking
+
+  // endregion Octet Checking
 
   private inline fun isDecimal(offset: Int = 0) = reader.isDecDigit(offset)
   private inline fun asDecimal(offset: Int = 0) = reader.asDecDigit(offset)
@@ -893,17 +965,51 @@ class YAMLScanner {
   private inline fun isBreakOrEOF(offset: Int = 0) = reader.isBreakOrEOF(offset)
   private inline fun isEOF(offset: Int = 0) = reader.isEOF(offset)
 
-  private inline fun isColon     (offset: Int = 0) = reader.isColon(offset)
-  private inline fun isComma     (offset: Int = 0) = reader.isComma(offset)
-  private inline fun isCR        (offset: Int = 0) = reader.isCR(offset)
   private inline fun isCRLF      (offset: Int = 0) = reader.isCRLF(offset)
-  private inline fun isLF        (offset: Int = 0) = reader.isLF(offset)
-  private inline fun isLS        (offset: Int = 0) = reader.isLS(offset)
-  private inline fun isNEL       (offset: Int = 0) = reader.isNEL(offset)
-  private inline fun isPound     (offset: Int = 0) = reader.isPound(offset)
-  private inline fun isPeriod    (offset: Int = 0) = reader.isPeriod(offset)
-  private inline fun isPS        (offset: Int = 0) = reader.isPS(offset)
-  private inline fun isQuestion  (offset: Int = 0) = reader.isQuestion(offset)
+
+  // region Single Character Tests
+
+  // region Safe Tests
+
+  private inline fun isAmp        (offset: Int = 0) = reader.isAmp(offset)
+  private inline fun isAsterisk   (offset: Int = 0) = reader.isAsterisk(offset)
+  private inline fun isBackslash  (offset: Int = 0) = reader.isBackslash(offset)
+  private inline fun isColon      (offset: Int = 0) = reader.isColon(offset)
+  private inline fun isComma      (offset: Int = 0) = reader.isComma(offset)
+  private inline fun isCR         (offset: Int = 0) = reader.isCR(offset)
+  private inline fun isCurlyClose (offset: Int = 0) = reader.isCurlyClose(offset)
+  private inline fun isCurlyOpen  (offset: Int = 0) = reader.isCurlyOpen(offset)
+  private inline fun isDash       (offset: Int = 0) = reader.isDash(offset)
+  private inline fun isLF         (offset: Int = 0) = reader.isLF(offset)
+  private inline fun isLS         (offset: Int = 0) = reader.isLS(offset)
+  private inline fun isNEL        (offset: Int = 0) = reader.isNEL(offset)
+  private inline fun isPercent    (offset: Int = 0) = reader.isPercent(offset)
+  private inline fun isPeriod     (offset: Int = 0) = reader.isPeriod(offset)
+  private inline fun isPound      (offset: Int = 0) = reader.isPound(offset)
+  private inline fun isPS         (offset: Int = 0) = reader.isPS(offset)
+  private inline fun isQuestion   (offset: Int = 0) = reader.isQuestion(offset)
+  private inline fun isSquareClose(offset: Int = 0) = reader.isSquareClose(offset)
+  private inline fun isSquareOpen (offset: Int = 0) = reader.isSquareOpen(offset)
+
+  // endregion Safe Tests
+
+  // region Unsafe Tests
+
+  private inline fun uIsAmp(offset: Int = 0) = reader.uIsAmp(offset)
+  private inline fun uIsAsterisk(offset: Int = 0) = reader.uIsAsterisk(offset)
+  private inline fun uIsColon(offset: Int = 0) = reader.uIsColon(offset)
+  private inline fun uIsComma(offset: Int = 0) = reader.uIsComma(offset)
+  private inline fun uIsCurlyClose (offset: Int = 0) = reader.uIsCurlyClose(offset)
+  private inline fun uIsCurlyOpen  (offset: Int = 0) = reader.uIsCurlyOpen(offset)
+  private inline fun uIsDash(offset: Int = 0) = reader.uIsDash(offset)
+  private inline fun uIsPercent(offset: Int = 0) = reader.uIsPercent(offset)
+  private inline fun uIsPeriod(offset: Int = 0) = reader.uIsPeriod(offset)
+  private inline fun uIsPound(offset: Int = 0) = reader.uIsPound(offset)
+
+  // endregion Unsafe Tests
+
+
+  // endregion Single Character Tests
 
   // endregion Reader Tests
 
