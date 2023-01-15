@@ -15,14 +15,14 @@ internal enum class NL(val width: Int, val characters: Int) {
   fun writeUTF8(buffer: UByteBuffer) {
     when (this) {
       CRLF -> {
-        buffer.push(A_CR)
-        buffer.push(A_LF)
+        buffer.push(A_CARRIAGE_RETURN)
+        buffer.push(A_LINE_FEED)
       }
       CR   -> {
-        buffer.push(A_CR)
+        buffer.push(A_CARRIAGE_RETURN)
       }
       LF   -> {
-        buffer.push(A_LF)
+        buffer.push(A_LINE_FEED)
       }
       NEL  -> {
         buffer.push(UbC2)
