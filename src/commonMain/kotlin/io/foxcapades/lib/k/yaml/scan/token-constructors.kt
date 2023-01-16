@@ -31,13 +31,12 @@ internal inline fun YAMLScanner.newTagDirectiveToken(
 /**
  * [STREAM-START][YAMLTokenType.StreamStart]
  */
-internal /*inline*/ fun YAMLScanner.newStreamStartToken(
+internal inline fun YAMLScanner.newStreamStartToken(
   encoding: YAMLEncoding,
   start:    SourcePosition,
   end:      SourcePosition,
 ): YAMLToken {
-  val warnings = getWarnings()
-  return YAMLToken(YAMLTokenType.StreamStart, YAMLTokenDataStreamStart(encoding), start, end, warnings)
+  return YAMLToken(YAMLTokenType.StreamStart, YAMLTokenDataStreamStart(encoding), start, end, getWarnings())
 }
 
 /**
@@ -46,9 +45,27 @@ internal /*inline*/ fun YAMLScanner.newStreamStartToken(
 internal inline fun YAMLScanner.newStreamEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.StreamEnd, null, start, end, getWarnings())
 
+/**
+ * [DOCUMENT-START][YAMLTokenType.DocumentStart]
+ */
+internal inline fun YAMLScanner.newDocumentStartToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.DocumentStart, null, start, end, getWarnings())
+
+/**
+ * [SCALAR][YAMLTokenType.Scalar]
+ */
 @OptIn(ExperimentalUnsignedTypes::class)
 internal inline fun YAMLScanner.newPlainScalarToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, getWarnings())
+
+/**
+ * [MAPPING-VALUE][YAMLTokenType.MappingValue]
+ */
+internal inline fun YAMLScanner.newMappingValueIndicatorToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.MappingValue, null, start, end, getWarnings())
+
+internal inline fun YAMLScanner.newSequenceEntryIndicatorToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.BlockEntry, null, start, end, getWarnings())
 
 internal inline fun YAMLScanner.newInvalidToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.Invalid, null, start, end, getWarnings())

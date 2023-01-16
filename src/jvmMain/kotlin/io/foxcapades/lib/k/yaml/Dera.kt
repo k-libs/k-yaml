@@ -10,11 +10,12 @@ import kotlin.math.min
 
 val input1 = """
 %YAML 1.2
+---
+asdfasdf
 
-"""
 
-val input2 = """
-asdfasdfasdf
+
+asd:
 """
 
 class ByteArrayReader(val input: ByteArray) : ByteReader {
@@ -39,7 +40,7 @@ class ByteArrayReader(val input: ByteArray) : ByteReader {
 
 
 fun main() {
-  val scanner = YAMLScanner(YAMLReader(2048, ByteArrayReader(input2.toByteArray(Charsets.UTF_8))), LineBreakType.LF)
+  val scanner = YAMLScanner(YAMLReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))), LineBreakType.LF)
 
   while (scanner.hasMoreTokens)
     println(scanner.nextToken())

@@ -6,9 +6,6 @@ import kotlin.jvm.JvmInline
 sealed interface YAMLTokenData
 
 @JvmInline
-value class YAMLTokenDataDocumentStart(val explicit: Boolean) : YAMLTokenData
-
-@JvmInline
 @OptIn(ExperimentalUnsignedTypes::class)
 value class YAMLTokenDataAlias(val value: UByteArray) : YAMLTokenData
 
@@ -17,7 +14,7 @@ value class YAMLTokenDataAlias(val value: UByteArray) : YAMLTokenData
 value class YAMLTokenDataAnchor(val value: UByteArray) : YAMLTokenData
 
 @OptIn(ExperimentalUnsignedTypes::class)
-class YAMLTokenDataScalar(val value: UByteArray, val style: YAMLScalarStyle) : YAMLTokenData
+data class YAMLTokenDataScalar(val value: UByteArray, val style: YAMLScalarStyle) : YAMLTokenData
 
 @JvmInline
 value class YAMLTokenDataStreamStart(val encoding: YAMLEncoding) : YAMLTokenData

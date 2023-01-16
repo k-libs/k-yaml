@@ -1,10 +1,32 @@
 package io.foxcapades.lib.k.yaml.util
 
-data class SourcePositionTracker(
-  var index:  UInt = 0u,
-  var line:   UInt = 0u,
-  var column: UInt = 0u,
-) {
+/**
+ * # Source Position Tracker
+ *
+ * @author Elizabeth Paige Harper - https://github.com/foxcapades
+ * @since 0.1.0
+ */
+class SourcePositionTracker {
+  var index: UInt
+    private set
+
+  var line: UInt
+    private set
+
+  var column: UInt
+    private set
+
+  constructor() {
+    index  = 0u
+    line   = 0u
+    column = 0u
+  }
+
+  private constructor(index: UInt, line: UInt, column: UInt) {
+    this.index  = index
+    this.line   = line
+    this.column = column
+  }
 
   /**
    * # Create Mark
@@ -127,6 +149,14 @@ data class SourcePositionTracker(
     column = other.column
   }
 
+  fun reset() {
+    index  = 0u
+    line   = 0u
+    column = 0u
+  }
+
+  fun copy() = SourcePositionTracker(index, line, column)
+
   fun incPosition(chars: UInt = 1u) {
     index += chars
     column += chars
@@ -136,5 +166,18 @@ data class SourcePositionTracker(
     index += chars
     line++
     column = 0u
+  }
+
+  override fun toString() =
+    "SourcePositionTracker(index=$index, line=$line, column=$column)"
+
+  override fun equals(other: Any?) =
+    this === other || (other is SourcePosition && index == other.index && line == other.line  && column == other.column)
+
+  override fun hashCode(): Int {
+    var result = index.hashCode()
+    result = 31 * result + line.hashCode()
+    result = 31 * result + column.hashCode()
+    return result
   }
 }
