@@ -175,7 +175,7 @@ class YAMLScanner {
         }
 
         // CRLF
-        // CRinternal fun newPlainScalarYAMLToken()
+        // CR
         // LF
         else -> { /* nothing special to for these line breaks */ }
       }
@@ -344,22 +344,28 @@ class YAMLScanner {
   internal fun UByteBuffer.claimNewLine(from: UByteBuffer) {
     if (from.isCRLF()) {
       appendNewLine(NL.CRLF)
-      skipLine(NL.CRLF)
+      from.skipLine(NL.CRLF)
+      position.incLine(NL.CRLF.characters.toUInt())
     } else if (from.isCR()) {
       appendNewLine(NL.CR)
-      skipLine(NL.CR)
+      from.skipLine(NL.CR)
+      position.incLine(NL.CR.characters.toUInt())
     } else if (from.isLF()) {
       appendNewLine(NL.LF)
-      skipLine(NL.LF)
+      from.skipLine(NL.LF)
+      position.incLine(NL.LF.characters.toUInt())
     } else if (from.isNEL()) {
       appendNewLine(NL.NEL)
-      skipLine(NL.NEL)
+      from.skipLine(NL.NEL)
+      position.incLine(NL.NEL.characters.toUInt())
     } else if (from.isLS()) {
       appendNewLine(NL.LS)
-      skipLine(NL.LS)
+      from.skipLine(NL.LS)
+      position.incLine(NL.LS.characters.toUInt())
     } else if (from.isPS()) {
       appendNewLine(NL.PS)
-      skipLine(NL.PS)
+      from.skipLine(NL.PS)
+      position.incLine(NL.PS.characters.toUInt())
     } else {
       throw IllegalStateException("called #claimNewLine() when the reader was not on a new line character")
     }
@@ -372,6 +378,27 @@ class YAMLScanner {
       LineBreakType.LF          -> NL.LF.writeUTF8(this)
       LineBreakType.SameAsInput -> nl.writeUTF8(this)
     }
+  }
+
+  private fun UByteBuffer.skipLine(nl: NL) {
+    if (inDocument) {
+      when (nl) {
+        NL.NEL,
+        NL.LS,
+        NL.PS,
+             -> {
+          if (version != YAMLVersion.VERSION_1_1)
+            warn("invalid line break character; YAML 1.2 only permits line breaks consisting of CRLF, CR, or LF")
+        }
+
+        // CRLF
+        // CR
+        // LF
+        else -> { /* nothing special to for these line breaks */ }
+      }
+    }
+
+    skip(nl.width)
   }
 
   // endregion Buffer Writing Helpers

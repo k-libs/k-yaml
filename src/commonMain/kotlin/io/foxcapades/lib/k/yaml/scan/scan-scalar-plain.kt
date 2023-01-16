@@ -128,8 +128,9 @@ internal fun YAMLScanner.fetchPlainScalar() {
       // If there were additional line breaks then append them to the
       // token buffer
       else {
-        while (lineBreaks.isNotEmpty)
+        while (lineBreaks.isNotEmpty) {
           tokenBuffer.claimNewLine(lineBreaks)
+        }
       }
     }
 
