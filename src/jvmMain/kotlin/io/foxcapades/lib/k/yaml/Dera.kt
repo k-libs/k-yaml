@@ -2,20 +2,43 @@ package io.foxcapades.lib.k.yaml
 
 import io.foxcapades.lib.k.yaml.util.*
 
+import io.foxcapades.lib.k.yaml.io.ByteReader
+import io.foxcapades.lib.k.yaml.read.YAMLReader
+import io.foxcapades.lib.k.yaml.scan.LineBreakType
+import io.foxcapades.lib.k.yaml.scan.YAMLScanner
+import kotlin.math.min
+
+val input1 = """
+%YAML 1.2
+
+"""
+
+class ByteArrayReader(val input: ByteArray) : ByteReader {
+  private var position = 0
+
+  override fun read(buffer: ByteArray, offset: Int, maxLen: Int): Int {
+    if (position >= input.size)
+      return -1
+
+    val availableLength = input.size - position
+    val fillableLength = buffer.size - offset
+
+    val targetLength = min(min(availableLength, fillableLength), maxLen)
+
+    input.copyInto(buffer, offset, position, position + targetLength)
+    position += targetLength
+
+    return targetLength
+  }
+
+}
+
+
 fun main() {
-  val tmp = UByteBuffer()
-  tmp.push(0x01u)
-  tmp.push(0xD8u)
-  tmp.push(0x37u)
-  tmp.push(0xDCu)
+  val scanner = YAMLScanner(YAMLReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_16))), LineBreakType.LF)
 
-  val buffer = UByteBuffer(4)
-
-  tmp.popUTF16LE().toUTF8(buffer)
-
-  buffer.toArray().forEach { println(it.toString(16)) }
-
-  println(buffer.toArray().asByteArray().toString(Charsets.UTF_8))
+  while(scanner.hasMoreTokens)
+    println(scanner.nextToken())
 }
 
 // 10000000101000

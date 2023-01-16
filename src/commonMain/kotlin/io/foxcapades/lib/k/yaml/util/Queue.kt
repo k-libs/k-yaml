@@ -4,7 +4,7 @@ package io.foxcapades.lib.k.yaml.util
  * Generic Queue
  */
 class Queue<T> {
-  private var raw: Array<Any?>
+  private var raw: Array<T?>
 
   private var head: Int
 
@@ -94,13 +94,18 @@ class Queue<T> {
    * @param maxCapacity The maximum size the new [Queue] instance is allowed to
    * grow to.
    */
-  constructor(initialCapacity: Int = 16, scaleFactor: Float = 1.5f, maxCapacity: Int = Int.MAX_VALUE) {
+  @Suppress("UNCHECKED_CAST")
+  constructor(
+    initialCapacity: Int   = 16,
+    scaleFactor:     Float = 1.5f,
+    maxCapacity:     Int   = Int.MAX_VALUE
+  ) {
     if (initialCapacity > maxCapacity)
       throw IllegalArgumentException("attempted to construct a Queue instance with an initial capacity value ($initialCapacity) that is greater than the given max capacity value ($maxCapacity)")
     if (scaleFactor <= 1)
       throw IllegalArgumentException("attempted to construct a Queue instance with a scale factor value that is less than or equal to 1")
 
-    this.raw = arrayOfNulls(initialCapacity)
+    this.raw = arrayOfNulls<Any>(initialCapacity) as Array<T?>
     this.head = 0
     this.size = 0
     this.scaleFactor = scaleFactor
@@ -296,8 +301,9 @@ class Queue<T> {
     return out
   }
 
-  private fun toArray(size: Int): Array<Any?> {
-    val out = arrayOfNulls<Any>(size)
+  @Suppress("UNCHECKED_CAST")
+  private fun toArray(size: Int): Array<T?> {
+    val out = arrayOfNulls<Any>(size) as Array<T?>
 
     if (isNotEmpty) {
       val tail = idx(lastIndex)

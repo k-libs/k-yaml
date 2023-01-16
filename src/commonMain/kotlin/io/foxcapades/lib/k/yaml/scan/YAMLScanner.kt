@@ -13,7 +13,7 @@ class YAMLScanner {
    * Whether the STREAM-START token has been returned to the consumer of the
    * YAMLScanner via the [nextToken] method.
    */
-  private var streamStartProduced = false
+  internal var streamStartProduced = false
 
   /**
    * Whether the STREAM-END token has been returned to the consumer of the
@@ -229,6 +229,32 @@ class YAMLScanner {
       // And everything else...
       else                    -> fetchPlainScalar()
     }
+  }
+
+  private fun skipToNextToken() {
+    // TODO:
+    //   | This method needs to differentiate between tabs and spaces when
+    //   | slurping up those delicious, delicious bytes.
+    //   |
+    //   | This is because TAB characters are not permitted as part of
+    //   | indentation.
+    //   |
+    //   | If we choose to warn about tab characters rather than throwing an
+    //   | error, we need to determine the width of the tab character so as to
+    //   | keep the column index correct...
+
+    while (true) {
+      cache(1)
+
+      when {
+        haveEOF()   -> TODO("we are at the end of the stream")
+        haveSpace() -> skipASCII()
+        haveTab()   -> TODO("What manner of tomfuckery is this")
+
+      }
+    }
+
+    TODO("Skip to the next token")
   }
 
   internal fun parseUInt(): UInt {

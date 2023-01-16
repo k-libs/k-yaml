@@ -37,12 +37,14 @@ internal inline fun YAMLScanner.newTagDirectiveToken(
 /**
  * [STREAM-START][YAMLTokenType.StreamStart]
  */
-internal inline fun YAMLScanner.newStreamStartToken(
+internal /*inline*/ fun YAMLScanner.newStreamStartToken(
   encoding: YAMLEncoding,
   start:    SourcePosition,
   end:      SourcePosition,
-) =
-  YAMLToken(YAMLTokenType.StreamStart, YAMLTokenDataStreamStart(encoding), start, end, warnings.popToArray())
+): YAMLToken {
+  val warnings = warnings.popToArray()
+  return YAMLToken(YAMLTokenType.StreamStart, YAMLTokenDataStreamStart(encoding), start, end, warnings)
+}
 
 /**
  * [STREAM-END][YAMLTokenType.StreamEnd]

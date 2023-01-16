@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.util
 
-import io.foxcapades.lib.k.yaml.io.ReaderFn
+import io.foxcapades.lib.k.yaml.io.ByteReader
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal class UByteBuffer {
@@ -90,7 +90,7 @@ internal class UByteBuffer {
       raw = toArray(max(capacity, raw.size * 2))
   }
 
-  fun fill(readerFn: ReaderFn): Int {
+  fun fill(readerFn: ByteReader): Int {
     // If the buffer is already full, then we can't read anything more.
     if (raw.size - size == 0)
       return 0
