@@ -52,6 +52,12 @@ internal inline fun YAMLScanner.newDocumentStartToken(start: SourcePosition, end
   YAMLToken(YAMLTokenType.DocumentStart, null, start, end, getWarnings())
 
 /**
+ * [DOCUMENT-END][YAMLTokenType.DocumentEnd]
+ */
+internal inline fun YAMLScanner.newDocumentEndToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.DocumentEnd, null, start, end, getWarnings())
+
+/**
  * [SCALAR][YAMLTokenType.Scalar]
  */
 @OptIn(ExperimentalUnsignedTypes::class)

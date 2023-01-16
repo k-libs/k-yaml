@@ -33,6 +33,14 @@ internal fun YAMLScanner.fetchPlainScalar() {
     if (!haveMoreCharactersAvailable)
       return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
 
+    // TODO:
+    //   | fetchPlainScalar is too greedy, it should stop parsing when it hits the
+    //   | start of another token on a new line.
+    //   |
+    //   | This means that when starting a new line, if we are at the first column,
+    //   | we need to perform a check that detects whether we have a possible token
+    //   | leader.
+
     // When we hit one of the following characters, then we pay attention to
     // what's going on because we may have hit the start of a new token:
     //
@@ -106,6 +114,33 @@ internal fun YAMLScanner.fetchPlainScalar() {
       havePound() && (trailingWS.isNotEmpty || lineBreaks.isNotEmpty) -> {
         // Then we've found the start of a comment, so wrap up our scalar.
         return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
+      }
+
+      lineBreaks.isNotEmpty && trailingWS.isEmpty -> {
+        var breakNow = false
+
+        if (havePercent()) {
+          breakNow = true
+        }
+
+        else if (haveDash()) {
+          cache(4)
+          if (haveBlankAnyBreakOrEOF(1)) {
+            breakNow = true
+          } else if (haveDash(1) && haveDash(2) && haveBlankAnyBreakOrEOF(3)) {
+            breakNow = true
+          }
+        }
+
+        else if (havePeriod()) {
+          cache(4)
+          if (havePeriod(1) && havePeriod(2) && haveBlankAnyBreakOrEOF(3)) {
+            breakNow = true
+          }
+        }
+
+        if (breakNow)
+          return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
       }
     }
 

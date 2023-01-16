@@ -1,7 +1,5 @@
 package io.foxcapades.lib.k.yaml
 
-import io.foxcapades.lib.k.yaml.util.*
-
 import io.foxcapades.lib.k.yaml.io.ByteReader
 import io.foxcapades.lib.k.yaml.read.YAMLReader
 import io.foxcapades.lib.k.yaml.scan.LineBreakType
@@ -15,7 +13,8 @@ asdfasdf
 
 
 
-asd:
+asd: hello
+...
 """
 
 class ByteArrayReader(val input: ByteArray) : ByteReader {
