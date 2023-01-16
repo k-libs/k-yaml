@@ -247,14 +247,14 @@ class YAMLScanner {
       cache(1)
 
       when {
-        haveEOF()   -> TODO("we are at the end of the stream")
-        haveSpace() -> skipASCII()
-        haveTab()   -> TODO("What manner of tomfuckery is this")
-
+        // We found the end of the stream.
+        haveEOF()       -> break
+        haveSpace()     -> skipASCII()
+        haveTab()       -> TODO("What manner of tomfuckery is this")
+        haveAnyBreak() -> skipLine()
+        else           -> break
       }
     }
-
-    TODO("Skip to the next token")
   }
 
   internal fun parseUInt(): UInt {
@@ -276,6 +276,8 @@ class YAMLScanner {
           throw UIntOverflowException(intStart)
 
         intValue += addValue
+
+        skipASCII()
       } else {
         break
       }
@@ -312,6 +314,8 @@ class YAMLScanner {
   ) {
     warnings.push(SourceWarning(message, start, end))
   }
+
+  internal fun getWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
 
   // endregion Warning Helpers
 

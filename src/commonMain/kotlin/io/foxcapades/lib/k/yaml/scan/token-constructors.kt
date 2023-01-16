@@ -14,13 +14,7 @@ internal inline fun YAMLScanner.newYAMLDirectiveToken(
   start: SourcePosition,
   end:   SourcePosition,
 ) =
-  YAMLToken(
-    YAMLTokenType.VersionDirective,
-    YAMLTokenDataVersionDirective(major, minor),
-    start,
-    end,
-    warnings.popToArray()
-  )
+  YAMLToken(YAMLTokenType.VersionDirective, YAMLTokenDataVersionDirective(major, minor), start, end, getWarnings())
 
 /**
  * [TAG-DIRECTIVE][YAMLTokenType.TagDirective]
@@ -32,7 +26,7 @@ internal inline fun YAMLScanner.newTagDirectiveToken(
   start:  SourcePosition,
   end:    SourcePosition,
 ) =
-  YAMLToken(YAMLTokenType.TagDirective, YAMLTokenDataTagDirective(handle, prefix), start, end, warnings.popToArray())
+  YAMLToken(YAMLTokenType.TagDirective, YAMLTokenDataTagDirective(handle, prefix), start, end, getWarnings())
 
 /**
  * [STREAM-START][YAMLTokenType.StreamStart]
@@ -42,7 +36,7 @@ internal /*inline*/ fun YAMLScanner.newStreamStartToken(
   start:    SourcePosition,
   end:      SourcePosition,
 ): YAMLToken {
-  val warnings = warnings.popToArray()
+  val warnings = getWarnings()
   return YAMLToken(YAMLTokenType.StreamStart, YAMLTokenDataStreamStart(encoding), start, end, warnings)
 }
 
@@ -50,11 +44,11 @@ internal /*inline*/ fun YAMLScanner.newStreamStartToken(
  * [STREAM-END][YAMLTokenType.StreamEnd]
  */
 internal inline fun YAMLScanner.newStreamEndToken(start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.StreamEnd, null, start, end, warnings.popToArray())
+  YAMLToken(YAMLTokenType.StreamEnd, null, start, end, getWarnings())
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal inline fun YAMLScanner.newPlainScalarToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, warnings.popToArray())
+  YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, getWarnings())
 
 internal inline fun YAMLScanner.newInvalidToken(start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.Invalid, null, start, end, warnings.popToArray())
+  YAMLToken(YAMLTokenType.Invalid, null, start, end, getWarnings())

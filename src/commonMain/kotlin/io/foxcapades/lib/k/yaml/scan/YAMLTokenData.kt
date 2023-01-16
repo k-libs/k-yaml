@@ -28,4 +28,4 @@ class YAMLTokenDataTag(val handle: UByteArray, val suffix: UByteArray) : YAMLTok
 @OptIn(ExperimentalUnsignedTypes::class)
 class YAMLTokenDataTagDirective(val handle: UByteArray, val prefix: UByteArray) : YAMLTokenData
 
-class YAMLTokenDataVersionDirective(val major: UInt, val minor: UInt) : YAMLTokenData
+data class YAMLTokenDataVersionDirective(val major: UInt, val minor: UInt) : YAMLTokenData

@@ -13,6 +13,10 @@ val input1 = """
 
 """
 
+val input2 = """
+asdfasdfasdf
+"""
+
 class ByteArrayReader(val input: ByteArray) : ByteReader {
   private var position = 0
 
@@ -35,9 +39,9 @@ class ByteArrayReader(val input: ByteArray) : ByteReader {
 
 
 fun main() {
-  val scanner = YAMLScanner(YAMLReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_16))), LineBreakType.LF)
+  val scanner = YAMLScanner(YAMLReader(2048, ByteArrayReader(input2.toByteArray(Charsets.UTF_8))), LineBreakType.LF)
 
-  while(scanner.hasMoreTokens)
+  while (scanner.hasMoreTokens)
     println(scanner.nextToken())
 }
 

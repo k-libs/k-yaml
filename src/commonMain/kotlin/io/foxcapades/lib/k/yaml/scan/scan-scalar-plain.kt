@@ -131,20 +131,21 @@ internal fun YAMLScanner.fetchPlainScalar() {
         while (lineBreaks.isNotEmpty)
           tokenBuffer.claimNewLine(lineBreaks)
       }
-
-      // TODO:
-      //   | Before popping the next character from the reader to the token
-      //   | buffer:
-      //   |
-      //   | What are the limitations or rules placed on what characters are
-      //   | allowed in a plain scalar?  Do they have to be displayable?
-      //   |
-      //   | We're gonna take the codepoint no matter what, but we should emit
-      //   | a warning about the invalid characters, and potentially escape
-      //   | control characters?
-
-      tokenBuffer.claimUTF8()
-      endMark.become(position)
     }
+
+    // TODO:
+    //   | Before popping the next character from the reader to the token
+    //   | buffer:
+    //   |
+    //   | What are the limitations or rules placed on what characters are
+    //   | allowed in a plain scalar?  Do they have to be displayable?
+    //   |
+    //   | We're gonna take the codepoint no matter what, but we should emit
+    //   | a warning about the invalid characters, and potentially escape
+    //   | control characters?
+
+    tokenBuffer.claimUTF8()
+    endMark.become(position)
+
   }
 }

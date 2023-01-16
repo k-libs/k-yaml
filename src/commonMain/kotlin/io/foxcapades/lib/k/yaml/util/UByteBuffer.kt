@@ -71,8 +71,10 @@ internal class UByteBuffer {
   fun skip(count: Int) {
     if (count >= size)
       clear()
-    else
+    else {
       head = idx(count)
+      size -= count
+    }
   }
 
   fun push(value: UByte) {
@@ -191,7 +193,7 @@ internal class UByteBuffer {
 
   @Suppress("NOTHING_TO_INLINE")
   private inline fun vidx(index: Int): Int =
-    if (index >= size)
+    if (index < 0 || index >= size)
       throw IndexOutOfBoundsException("attempted to access index $index of a UByteBuffer with a size of $size")
     else
       idx(index)
