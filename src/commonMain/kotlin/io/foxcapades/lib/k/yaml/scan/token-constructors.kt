@@ -65,6 +65,12 @@ internal inline fun YAMLScanner.newPlainScalarToken(value: UByteArray, start: So
   YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, getWarnings())
 
 /**
+ * [MAPPING-KEY][YAMLTokenType.MappingKey]
+ */
+internal inline fun YAMLScanner.newMappingKeyIndicatorToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.MappingKey, null, start, end, getWarnings())
+
+/**
  * [MAPPING-VALUE][YAMLTokenType.MappingValue]
  */
 internal inline fun YAMLScanner.newMappingValueIndicatorToken(start: SourcePosition, end: SourcePosition) =
