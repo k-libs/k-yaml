@@ -1,187 +1,159 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
+import io.foxcapades.lib.k.yaml.util.SourcePositionTracker
 import io.foxcapades.lib.k.yaml.util.UByteBuffer
 import io.foxcapades.lib.k.yaml.util.utf8Width
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScanner.fetchPlainScalar() {
-  // Record the position of the first character in the plain scalar.
   val startMark = position.mark()
 
-  // Create a rolling tracker that will be used to keep track of the position
-  // of the last non-blank, non-break character seen before the next token is
-  // encountered.
-  val endMark = position.copy()
+  // Rolling end position of this scalar value (don't create a mark every time
+  // because that's a new class instantiation per stream character).
+  val endPosition = position.copy()
 
-  // Whitespaces at the end of a line
-  val trailingWS = UByteBuffer()
+  val startOfLinePosition = position.copy()
 
-  // Line breaks in between
-  val lineBreaks = UByteBuffer()
-
-  // Buffer for the token value
-  val tokenBuffer = UByteBuffer(2048)
+  // TODO:
+  //  | these things should be class properties so as to be reusable rather
+  //  | than creating 4 hecking buffer instances for every plain scalar token
+  //  | we scan.
+  val confirmedBuffer = UByteBuffer(1024)
+  val ambiguousBuffer = UByteBuffer(1024)
+  val trailingWS      = UByteBuffer(16)
+  val trailingNL      = UByteBuffer(4)
 
   while (true) {
-    // Load the next codepoint into the reader buffer
-    cache(1)
+    reader.cache(1)
 
-    // If the reader is empty, then whatever we currently have in our token
-    // buffer
-    if (!haveMoreCharactersAvailable)
-      return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
+    if (haveEOF()) {
+      collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
+      tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+      return
+    }
 
-    // TODO:
-    //   | fetchPlainScalar is too greedy, it should stop parsing when it hits the
-    //   | start of another token on a new line.
-    //   |
-    //   | This means that when starting a new line, if we are at the first column,
-    //   | we need to perform a check that detects whether we have a possible token
-    //   | leader.
+    if (haveBlank()) {
+      trailingWS.push(reader.pop())
+      position.incPosition()
+      continue
+    }
 
-    // When we hit one of the following characters, then we pay attention to
-    // what's going on because we may have hit the start of a new token:
-    //
-    //   `:` `,` `?` `#`
-    //
-    // When we hit a newline, or whitespace character, buffer it on the side
-    // in case we need it.
-    when {
+    if (haveAnyBreak()) {
+      trailingWS.clear()
 
-      // If we hit a whitespace character
-      haveBlank() -> {
-        // And the last character was not a line break
-        if (lineBreaks.isEmpty)
-        // Pop it from the reader buffer and append it to our trailing
-        // whitespace buffer for possible use if we encounter a non-space
-        // character on this line.
-          trailingWS.claimASCII()
+      if (ambiguousBuffer.isNotEmpty)
+        collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
 
-        // Skip to the next character
-        continue
+      trailingNL.claimNewLine(reader.utf8Buffer, position)
+      continue
+    }
+
+    if (haveColon()) {
+      reader.cache(2)
+
+      if (haveBlankAnyBreakOrEOF(1)) {
+        if (confirmedBuffer.isNotEmpty)
+          tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+
+        tokens.push(newPlainScalarToken(ambiguousBuffer.popToArray(), startOfLinePosition.mark(), position.mark()))
+
+        return
+      }
+    }
+
+    if (haveDash() && trailingNL.isNotEmpty) {
+      reader.cache(4)
+
+      if (haveBlankAnyBreakOrEOF(1)) {
+        tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        return
+      }
+    }
+
+    if (atStartOfLine) {
+      startOfLinePosition.become(position)
+
+      // If we are in this block, then the last character we saw was a newline
+      // character.  This means that we don't need to worry about the contents
+      // of the ambiguous buffer inside this if block as that buffer will always
+      // be empty.
+
+      if (haveDash()) {
+        reader.cache(4)
+
+        if (haveDash(1) && haveDash(2) && haveBlankAnyBreakOrEOF(3)) {
+          tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          return
+        }
       }
 
-      // If we hit a newline character
-      haveAnyBreak() -> {
-        // Append it to our newline buffer in case we need it to collapse into
-        // a space or shortened set of newlines as per the YAML specification.
-        lineBreaks.claimNewLine()
+      if (havePeriod()) {
+        cache (4)
 
-        // Continue to the next character.
-        continue
+        if (havePeriod(1) && havePeriod(2) && haveBlankAnyBreakOrEOF(3)) {
+          tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          return
+        }
       }
 
-      // If we hit a `:` character
-      haveColon() -> {
-        // Attempt to cache another codepoint in the buffer, we need to look
-        // ahead to the next character to determine if we've reached the end
-        // of this scalar.
+      if (haveQuestion()) {
         cache(2)
 
-        // If the colon character is followed by any of this junk, then IT IS
-        // THE END! (of the scalar we've been chewing on, but the beginning of
-        // a mapping value indicator)
-        if (haveBlankAnyBreakOrEOF(1))
-          return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
-      }
-
-      // If we hit a `,` character AND we are in a flow context
-      haveComma() && inFlow -> {
-        // Then we have reached the end of our scalar token (and the start of
-        // a flow entry separator token
-        return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
-      }
-
-      // If we hit a `?` character AND we are at the start of a line AND we
-      // are NOT in a flow context.
-      haveQuestion() && !inFlow && atStartOfLine -> {
-        // Attempt to cache another codepoint in the buffer, we need to look
-        // ahead to the next character to determine whether we've reached the
-        // end of this scalar
-        cache(2)
-
-        // If the question mark character is followed by any of this stuff,
-        // then it is, in fact, the start of a complex mapping key indicator.
         if (haveBlankAnyBreakOrEOF(1)) {
-          return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
+          tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          return
         }
       }
 
-      // If we hit a `#` character AND we were preceded by a whitespace or
-      // line breaks
-      havePound() && (trailingWS.isNotEmpty || lineBreaks.isNotEmpty) -> {
-        // Then we've found the start of a comment, so wrap up our scalar.
-        return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
+      if (
+        havePercent()
+        || haveSquareOpen()
+        || haveCurlyOpen()
+      ) {
+        tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        return
       }
+    } // end if (atStartOfLine)
 
-      lineBreaks.isNotEmpty && trailingWS.isEmpty -> {
-        var breakNow = false
+    // Catch-all: append it to the ambiguous buffer
+    ambiguousBuffer.claimUTF8()
+  }
+}
 
-        if (havePercent()) {
-          breakNow = true
-        }
+private fun YAMLScanner.collapseNewlinesAndMergeBuffers(
+  endPosition: SourcePositionTracker,
+  to: UByteBuffer,
+  from: UByteBuffer,
+  spaces: UByteBuffer,
+  newLines: UByteBuffer,
+) {
+  if (from.isEmpty)
+    return
 
-        else if (haveDash()) {
-          cache(4)
-          if (haveBlankAnyBreakOrEOF(1)) {
-            breakNow = true
-          } else if (haveDash(1) && haveDash(2) && haveBlankAnyBreakOrEOF(3)) {
-            breakNow = true
-          }
-        }
+  if (newLines.isNotEmpty) {
 
-        else if (havePeriod()) {
-          cache(4)
-          if (havePeriod(1) && havePeriod(2) && haveBlankAnyBreakOrEOF(3)) {
-            breakNow = true
-          }
-        }
-
-        if (breakNow)
-          return tokens.push(newPlainScalarToken(tokenBuffer.popToArray(), startMark, endMark.mark()))
-      }
-    }
-
-    // If we didn't hit `continue` or `return` above, then we can just append
-    // it to the token value buffer.
-
-    // If there were no line breaks in the pile of whitespaces, then we
-    // only may have trailing whitespace characters:
-    if (lineBreaks.isEmpty) {
-      tokenBuffer.takeFrom(trailingWS)
+    if (newLines.size == 1) {
+      to.push(A_SPACE)
+      endPosition.incPosition()
     } else {
-      // Ignore the first line break
-      lineBreaks.skip(lineBreaks.utf8Width())
-
-      // If there was only one line break, convert it to a single space
-      if (lineBreaks.isEmpty) {
-        tokenBuffer.push(A_SPACE)
-      }
-
-      // If there were additional line breaks then append them to the
-      // token buffer
-      else {
-        while (lineBreaks.isNotEmpty) {
-          tokenBuffer.claimNewLine(lineBreaks)
-        }
-      }
+      newLines.skip(newLines.utf8Width())
+      to.claimNewLine(newLines, endPosition)
     }
 
-    // TODO:
-    //   | Before popping the next character from the reader to the token
-    //   | buffer:
-    //   |
-    //   | What are the limitations or rules placed on what characters are
-    //   | allowed in a plain scalar?  Do they have to be displayable?
-    //   |
-    //   | We're gonna take the codepoint no matter what, but we should emit
-    //   | a warning about the invalid characters, and potentially escape
-    //   | control characters?
+  } else {
+    while (spaces.isNotEmpty) {
+      to.push(spaces.pop())
+      endPosition.incPosition()
+    }
+  }
 
-    tokenBuffer.claimUTF8()
-    endMark.become(position)
+  spaces.clear()
+  newLines.clear()
 
+  while (from.isNotEmpty) {
+    to.push(from.pop())
+    endPosition.incPosition()
   }
 }

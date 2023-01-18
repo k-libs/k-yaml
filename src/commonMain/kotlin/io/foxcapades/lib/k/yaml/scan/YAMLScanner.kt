@@ -76,7 +76,7 @@ class YAMLScanner {
 
   internal val reader: YAMLReader
 
-  private val lineBreakType: LineBreakType
+  internal val lineBreakType: LineBreakType
 
   constructor(reader: YAMLReader, lineBreak: LineBreakType) {
     this.reader = reader
@@ -338,10 +338,10 @@ class YAMLScanner {
 
   internal fun UByteBuffer.claimNewLine() {
     reader.cache(4)
-    claimNewLine(reader.utf8Buffer)
+    claimNewLine(reader.utf8Buffer, position)
   }
 
-  internal fun UByteBuffer.claimNewLine(from: UByteBuffer) {
+  internal fun UByteBuffer.claimNewLine(from: UByteBuffer, position: SourcePositionTracker) {
     if (from.isCRLF()) {
       appendNewLine(NL.CRLF)
       from.skipLine(NL.CRLF)

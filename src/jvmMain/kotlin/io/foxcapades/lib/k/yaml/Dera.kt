@@ -9,11 +9,6 @@ import kotlin.math.min
 val input1 = """
 %YAML 1.2
 ---
-? ?asdfasdf
-
-
-
-asd: hello
 - - asdds: butt
     butts: ass
   - ass: butts
