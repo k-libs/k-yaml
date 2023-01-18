@@ -59,10 +59,20 @@ class YAMLScanner {
 
   private var inDocument = false
 
-  private var flowLevel = 0u
+  // region Flows
 
-  internal val inFlow: Boolean
-    get() = flowLevel == 0u
+  internal val flows = ByteStack(4)
+
+  internal inline val inFlow: Boolean
+    get() = flows.isNotEmpty
+
+  internal inline val inFlowSequence: Boolean
+    get() = inFlow && flows.peek() == FlowTypeSequence
+
+  internal inline val inFlowMapping
+    get() = inFlow && flows.peek() == FlowTypeMapping
+
+  // endregion Flows
 
   internal val atStartOfLine: Boolean
     get() = position.column == 0u

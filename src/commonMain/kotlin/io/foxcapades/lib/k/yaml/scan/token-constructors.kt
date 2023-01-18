@@ -79,5 +79,29 @@ internal inline fun YAMLScanner.newMappingValueIndicatorToken(start: SourcePosit
 internal inline fun YAMLScanner.newSequenceEntryIndicatorToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.BlockEntry, null, start, end, getWarnings())
 
+/**
+ * [FLOW-MAPPING-START][YAMLTokenType.FlowMappingStart]
+ */
+internal inline fun YAMLScanner.newFlowMappingStartToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.FlowMappingStart, null, start, end, getWarnings())
+
+/**
+ * [FLOW-MAPPING-END][YAMLTokenType.FlowMappingEnd]
+ */
+internal inline fun YAMLScanner.newFlowMappingEndToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.FlowMappingEnd, null, start, end, getWarnings())
+
+/**
+ * [FLOW-SEQUENCE-START][YAMLTokenType.FlowSequenceStart]
+ */
+internal inline fun YAMLScanner.newFlowSequenceStartToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.FlowSequenceStart, null, start, end, getWarnings())
+
+/**
+ * [FLOW-SEQUENCE-END][YAMLTokenType.FlowSequenceEnd]
+ */
+internal inline fun YAMLScanner.newFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.FlowSequenceEnd, null, start, end, getWarnings())
+
 internal inline fun YAMLScanner.newInvalidToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.Invalid, null, start, end, getWarnings())

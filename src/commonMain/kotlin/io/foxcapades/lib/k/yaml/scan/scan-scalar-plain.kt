@@ -1,8 +1,11 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.bytes.A_CURLY_BRACKET_CLOSE
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
+import io.foxcapades.lib.k.yaml.bytes.A_SQUARE_BRACKET_CLOSE
 import io.foxcapades.lib.k.yaml.util.SourcePositionTracker
 import io.foxcapades.lib.k.yaml.util.UByteBuffer
+import io.foxcapades.lib.k.yaml.util.uCheck
 import io.foxcapades.lib.k.yaml.util.utf8Width
 
 
@@ -29,6 +32,33 @@ internal fun YAMLScanner.fetchPlainScalar() {
     reader.cache(1)
 
     if (haveEOF()) {
+      // Here we examine if the entire line last line we just ate (not counting
+      // whitespaces) was a closing square or curly bracket character.
+      //
+      // This is handled as a special case just for trying to make sense of an
+      // invalid, multiline plain scalar value.  In this special case,
+      // regardless of whether we are in a flow, we will consider the closing
+      // bracket a flow end token.
+      //
+      // In addition to this, because the closing brace will have already been
+      // "consumed" from the reader, we will need to also emit the appropriate
+      // token.
+      //
+      // This logic and comment appear twice in this file and nowhere else.
+      if (ambiguousBuffer.size == 1) {
+        if (ambiguousBuffer.uCheck(A_SQUARE_BRACKET_CLOSE)) {
+          if (confirmedBuffer.isNotEmpty)
+            tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1)))
+          return
+        } else if (ambiguousBuffer.uCheck(A_CURLY_BRACKET_CLOSE)) {
+          if (confirmedBuffer.isNotEmpty)
+            tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1)))
+          return
+        }
+      }
+
       collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
       tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
       return
@@ -41,11 +71,35 @@ internal fun YAMLScanner.fetchPlainScalar() {
     }
 
     if (haveAnyBreak()) {
+      // Here we examine if the entire line last line we just ate (not counting
+      // whitespaces) was a closing square or curly bracket character.
+      //
+      // This is handled as a special case just for trying to make sense of an
+      // invalid, multiline plain scalar value.  In this special case,
+      // regardless of whether we are in a flow, we will consider the closing
+      // bracket a flow end token.
+      //
+      // In addition to this, because the closing brace will have already been
+      // "consumed" from the reader, we will need to also emit the appropriate
+      // token.
+      //
+      // This logic and comment appear twice in this file and nowhere else.
+      if (ambiguousBuffer.size == 1) {
+        if (ambiguousBuffer.uCheck(A_SQUARE_BRACKET_CLOSE)) {
+          if (confirmedBuffer.isNotEmpty)
+            tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1)))
+          return
+        } else if (ambiguousBuffer.uCheck(A_CURLY_BRACKET_CLOSE)) {
+          if (confirmedBuffer.isNotEmpty)
+            tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1)))
+          return
+        }
+      }
+
       trailingWS.clear()
-
-      if (ambiguousBuffer.isNotEmpty)
-        collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
-
+      collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
       trailingNL.claimNewLine(reader.utf8Buffer, position)
       continue
     }
@@ -53,7 +107,7 @@ internal fun YAMLScanner.fetchPlainScalar() {
     if (haveColon()) {
       reader.cache(2)
 
-      if (haveBlankAnyBreakOrEOF(1)) {
+      if (inFlowMapping || haveBlankAnyBreakOrEOF(1)) {
         if (confirmedBuffer.isNotEmpty)
           tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
@@ -70,6 +124,24 @@ internal fun YAMLScanner.fetchPlainScalar() {
         tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
         return
       }
+    }
+
+    if (inFlow && haveComma()) {
+      collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
+      tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+      return
+    }
+
+    if (inFlowMapping && haveCurlyClose()) {
+      collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
+      tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+      return
+    }
+
+    if (inFlowSequence && haveSquareClose()) {
+      collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
+      tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
+      return
     }
 
     if (atStartOfLine) {

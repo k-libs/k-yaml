@@ -7,13 +7,7 @@ import io.foxcapades.lib.k.yaml.scan.YAMLScanner
 import kotlin.math.min
 
 val input1 = """
-%YAML 1.2
----
-- - asdds: butt
-    butts: ass
-  - ass: butts
-- what even is happening
-...
+{hello for this:butt context}
 """
 
 class ByteArrayReader(val input: ByteArray) : ByteReader {
