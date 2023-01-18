@@ -7,7 +7,8 @@ import io.foxcapades.lib.k.yaml.scan.YAMLScanner
 import kotlin.math.min
 
 val input1 = """
-{hello for this:butt context}
+{hello for
+this:butt context}
 """
 
 class ByteArrayReader(val input: ByteArray) : ByteReader {

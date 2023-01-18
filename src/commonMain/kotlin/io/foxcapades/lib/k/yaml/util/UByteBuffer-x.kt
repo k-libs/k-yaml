@@ -47,6 +47,48 @@ internal inline fun UByteBuffer.check(octet: UByte, offset: Int = 0) = size > of
  */
 internal inline fun UByteBuffer.uCheck(octet: UByte, offset: Int = 0) = get(offset) == octet
 
+// region Single Byte Checks
+
+// region Safe Single Byte Checks
+
+// endregion Safe Single Byte Checks
+
+// region Unsafe Single Byte Checks
+
+internal inline fun UByteBuffer.uIsTab(offset: Int = 0) = uCheck(A_TAB, offset)
+internal inline fun UByteBuffer.uIsLineFeed(offset: Int = 0) = uCheck(A_LINE_FEED, offset)
+internal inline fun UByteBuffer.uIsCarriageReturn(offset: Int = 0) = uCheck(A_CARRIAGE_RETURN, offset)
+internal inline fun UByteBuffer.uIsSpace(offset: Int = 0) = uCheck(A_SPACE, offset)
+internal inline fun UByteBuffer.uIsExclaim(offset: Int = 0) = uCheck(A_EXCLAIM, offset)
+internal inline fun UByteBuffer.uIsDoubleQuote(offset: Int = 0) = uCheck(A_DOUBLE_QUOTE, offset)
+internal inline fun UByteBuffer.uIsPound(offset: Int = 0) = uCheck(A_POUND, offset)
+internal inline fun UByteBuffer.uIsPercent(offset: Int = 0) = uCheck(A_PERCENT, offset)
+internal inline fun UByteBuffer.uIsAmpersand(offset: Int = 0) = uCheck(A_AMPERSAND, offset)
+internal inline fun UByteBuffer.uIsApostrophe(offset: Int = 0) = uCheck(A_APOSTROPHE, offset)
+internal inline fun UByteBuffer.uIsAsterisk(offset: Int = 0) = uCheck(A_ASTERISK, offset)
+internal inline fun UByteBuffer.uIsPlus(offset: Int = 0) = uCheck(A_PLUS, offset)
+internal inline fun UByteBuffer.uIsComma(offset: Int = 0) = uCheck(A_COMMA, offset)
+internal inline fun UByteBuffer.uIsDash(offset: Int = 0) = uCheck(A_DASH, offset)
+internal inline fun UByteBuffer.uIsPeriod(offset: Int = 0) = uCheck(A_PERIOD, offset)
+internal inline fun UByteBuffer.uIsColon(offset: Int = 0) = uCheck(A_COLON, offset)
+internal inline fun UByteBuffer.uIsGreaterThan(offset: Int = 0) = uCheck(A_GREATER_THAN, offset)
+internal inline fun UByteBuffer.uIsQuestion(offset: Int = 0) = uCheck(A_QUESTION, offset)
+internal inline fun UByteBuffer.uIsAt(offset: Int = 0) = uCheck(A_AT, offset)
+internal inline fun UByteBuffer.uIsSquareBracketOpen(offset: Int = 0) = uCheck(A_SQUARE_BRACKET_OPEN, offset)
+internal inline fun UByteBuffer.uIsBackslash(offset: Int = 0) = uCheck(A_BACKSLASH, offset)
+internal inline fun UByteBuffer.uIsSquareBracketClose(offset: Int = 0) = uCheck(A_SQUARE_BRACKET_CLOSE, offset)
+internal inline fun UByteBuffer.uIsUnderscore(offset: Int = 0) = uCheck(A_UNDERSCORE, offset)
+internal inline fun UByteBuffer.uIsGrave(offset: Int = 0) = uCheck(A_GRAVE, offset)
+internal inline fun UByteBuffer.uIsCurlyBracketOpen(offset: Int = 0) = uCheck(A_CURLY_BRACKET_OPEN, offset)
+internal inline fun UByteBuffer.uIsPipe(offset: Int = 0) = uCheck(A_PIPE, offset)
+internal inline fun UByteBuffer.uIsCurlyBracketClose(offset: Int = 0) = uCheck(A_CURLY_BRACKET_CLOSE, offset)
+internal inline fun UByteBuffer.uIsTilde(offset: Int = 0) = uCheck(A_TILDE, offset)
+
+// endregion Unsafe Single Byte Checks
+
+// endregion Single Byte Checks
+
+
 /**
  * Is CRLF
  *

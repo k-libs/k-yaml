@@ -1,8 +1,17 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.util.SourcePosition
+
 internal fun YAMLScanner.fetchFlowSequenceStartToken() {
   val start = this.position.mark()
+
   this.reader.skip(1)
   this.position.incPosition()
-  this.tokens.push(this.newFlowSequenceStartToken(start, this.position.mark()))
+
+  this.emitFlowSequenceStartToken(start, this.position.mark())
+}
+
+internal fun YAMLScanner.emitFlowSequenceStartToken(start: SourcePosition, end: SourcePosition) {
+  this.flows.push(FlowTypeSequence)
+  this.tokens.push(this.newFlowSequenceStartToken(start, end))
 }

@@ -99,9 +99,9 @@ internal inline fun YAMLReader.isAlphanumeric(offset: Int = 0) =
     && when (get(offset)) {
       in A_LO_A .. A_LO_Z    -> true
       in A_UPPER_A .. A_UP_Z -> true
-      in A_0    .. A_9       -> true
-      A_DASH, A_UNDER     -> true
-      else                -> false
+      in A_0    .. A_9     -> true
+      A_DASH, A_UNDERSCORE -> true
+      else                 -> false
     }
 
 
