@@ -233,7 +233,7 @@ private fun YAMLScanner.collapseNewlinesAndMergeBuffers(
 
     if (newLines.size == 1) {
       to.push(A_SPACE)
-      endPosition.incPosition()
+      endPosition.incLine()
     } else {
       newLines.skip(newLines.utf8Width())
       to.claimNewLine(newLines, endPosition)

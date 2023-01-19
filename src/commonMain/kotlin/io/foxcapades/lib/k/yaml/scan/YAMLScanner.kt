@@ -346,11 +346,6 @@ class YAMLScanner {
     position.incPosition()
   }
 
-  internal fun UByteBuffer.claimNewLine() {
-    reader.cache(4)
-    claimNewLine(reader.utf8Buffer, position)
-  }
-
   internal fun UByteBuffer.claimNewLine(from: UByteBuffer, position: SourcePositionTracker) {
     if (from.isCRLF()) {
       appendNewLine(NL.CRLF)
