@@ -13,13 +13,6 @@ value class YAMLTokenDataAlias(val value: UByteArray) : YAMLTokenData
 @OptIn(ExperimentalUnsignedTypes::class)
 value class YAMLTokenDataAnchor(val value: UByteArray) : YAMLTokenData
 
-@OptIn(ExperimentalUnsignedTypes::class)
-data class YAMLTokenDataScalar(val value: UByteArray, val style: YAMLScalarStyle) : YAMLTokenData {
-
-  override fun toString() =
-    "ScalarData(value=\"${value.asByteArray().decodeToString()}\", style=$style)"
-}
-
 @JvmInline
 value class YAMLTokenDataStreamStart(val encoding: YAMLEncoding) : YAMLTokenData
 
