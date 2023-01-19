@@ -1,35 +1,14 @@
 package io.foxcapades.lib.k.yaml
 
-import io.foxcapades.lib.k.yaml.io.ByteReader
+import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.YAMLReader
 import io.foxcapades.lib.k.yaml.scan.LineBreakType
 import io.foxcapades.lib.k.yaml.scan.YAMLScanner
-import kotlin.math.min
 
 val input1 = """
 {hello for
 this:butt context}
 """
-
-class ByteArrayReader(val input: ByteArray) : ByteReader {
-  private var position = 0
-
-  override fun read(buffer: ByteArray, offset: Int, maxLen: Int): Int {
-    if (position >= input.size)
-      return -1
-
-    val availableLength = input.size - position
-    val fillableLength = buffer.size - offset
-
-    val targetLength = min(min(availableLength, fillableLength), maxLen)
-
-    input.copyInto(buffer, offset, position, position + targetLength)
-    position += targetLength
-
-    return targetLength
-  }
-
-}
 
 
 fun main() {

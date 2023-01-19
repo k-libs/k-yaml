@@ -98,21 +98,39 @@ internal fun YAMLScanner.fetchPlainScalar() {
     if (haveColon()) {
       reader.cache(2)
 
-      // TODO:
-      //   | In a flow mapping, we may not want to break the line to make a new
-      //   | scalar...
-      //   |
-      //   | For example:
-      //   | ```
-      //   | {hello to
-      //   | you:goodbye}
-      //   | ```
-
-      if (inFlowMapping || haveBlankAnyBreakOrEOF(1)) {
+      // If we are not in a flow mapping, and the colon is followed by a
+      // whitespace, then split this plain scalar on the last newline to make
+      // the previous plain scalar value, and the new mapping key value.
+      //
+      // For example, the following:
+      // ```
+      // hello
+      // goodbye: taco
+      // ```
+      //
+      // would become:
+      // 1. Plain scalar: "hello"
+      // 2. Plain scalar: "goodbye"
+      // 3. Mapping value indicator
+      // 4. Plain scalar: "taco"
+      if (!inFlowMapping && haveBlankAnyBreakOrEOF(1)) {
         if (confirmedBuffer.isNotEmpty)
           tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
         tokens.push(newPlainScalarToken(ambiguousBuffer.popToArray(), startOfLinePosition.mark(), position.mark()))
+
+        return
+      }
+
+      // If we are in a flow mapping, then unlike the block mapping, we A) don't
+      // care if there is a space following the colon character, and B) don't
+      // want to split the plain scalar on newlines.
+      else if (inFlowMapping) {
+        trailingWS.clear()
+
+        collapseNewlinesAndMergeBuffers(endPosition, confirmedBuffer, ambiguousBuffer, trailingWS, trailingNL)
+
+        tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
         return
       }
