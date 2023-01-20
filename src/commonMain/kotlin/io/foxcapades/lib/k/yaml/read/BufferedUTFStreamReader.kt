@@ -15,7 +15,7 @@ import io.foxcapades.lib.k.yaml.util.popUTF16LE
 import io.foxcapades.lib.k.yaml.util.utf16Width
 import io.foxcapades.lib.k.yaml.util.utf8Width
 
-class YAMLReaderBuffer : UByteSource {
+internal class BufferedUTFStreamReader : UByteSource {
   private val rawBuffer: UByteBuffer
 
   private val reader: ByteReader

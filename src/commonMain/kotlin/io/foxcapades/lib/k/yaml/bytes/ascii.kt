@@ -1,9 +1,14 @@
 package io.foxcapades.lib.k.yaml.bytes
 
 internal const val A_NIL: UByte = 0x00u
+internal const val A_BELL: UByte = 0x07u
+internal const val A_BACKSPACE: UByte = 0x08u
 internal const val A_TAB: UByte = 0x09u
 internal const val A_LINE_FEED: UByte = 0x0Au
+internal const val A_VERTICAL_TAB: UByte = 0x0Bu
+internal const val A_FORM_FEED: UByte = 0x0Cu
 internal const val A_CARRIAGE_RETURN: UByte = 0x0Du
+internal const val A_ESCAPE: UByte = 0x1Bu
 internal const val A_SPACE: UByte = 0x20u
 internal const val A_EXCLAIM: UByte = 0x21u
 internal const val A_DOUBLE_QUOTE: UByte = 0x22u
@@ -31,8 +36,10 @@ internal const val A_UP_F: UByte = 0x46u
 internal const val A_UPPER_G: UByte = 0x47u
 internal const val A_UPPER_L: UByte = 0x4Cu
 internal const val A_UPPER_M: UByte = 0x4Du
+internal const val A_UPPER_N: UByte = 0x4Eu
+internal const val A_UPPER_P: UByte = 0x50u
 internal const val A_UPPER_T: UByte = 0x54u
-internal const val A_UP_U: UByte = 0x55u
+internal const val A_UPPER_U: UByte = 0x55u
 internal const val A_UPPER_Y: UByte = 0x59u
 internal const val A_UPPER_Z: UByte = 0x5Au
 internal const val A_SQUARE_BRACKET_OPEN: UByte = 0x5Bu
@@ -40,12 +47,20 @@ internal const val A_BACKSLASH: UByte = 0x5Cu
 internal const val A_SQUARE_BRACKET_CLOSE: UByte = 0x5Du
 internal const val A_UNDERSCORE: UByte = 0x5Fu
 internal const val A_GRAVE: UByte = 0x60u
+
 internal const val A_LOWER_A: UByte = 0x61u
-internal const val A_LO_F: UByte = 0x66u
+internal const val A_LOWER_B: UByte = 0x62u
+internal const val A_LOWER_E: UByte = 0x65u
+internal const val A_LOWER_F: UByte = 0x66u
 internal const val A_LOWER_G: UByte = 0x67u
-internal const val A_LO_U: UByte = 0x75u
-internal const val A_LO_X: UByte = 0x78u
+internal const val A_LOWER_N: UByte = 0x6Eu
+internal const val A_LOWER_R: UByte = 0x72u
+internal const val A_LOWER_T: UByte = 0x74u
+internal const val A_LOWER_U: UByte = 0x75u
+internal const val A_LOWER_V: UByte = 0x76u
+internal const val A_LOWER_X: UByte = 0x78u
 internal const val A_LOWER_Z: UByte = 0x7Au
+
 internal const val A_CURLY_BRACKET_OPEN: UByte = 0x7Bu
 internal const val A_PIPE: UByte = 0x7Cu
 internal const val A_CURLY_BRACKET_CLOSE: UByte = 0x7Du

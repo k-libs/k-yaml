@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.YAMLReaderBuffer
+import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import kotlin.test.*
 
 class TestPlainScalarsInFlowMapping {
@@ -10,7 +10,7 @@ class TestPlainScalarsInFlowMapping {
   @Test
   fun simpleFlowMapping() {
     val input = "{this is a key:this is a value}"
-    val reader = YAMLReaderBuffer(1024, ByteArrayReader(input.encodeToByteArray()))
+    val reader = BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray()))
     val scanner = YAMLScannerImpl(reader, LineBreakType.LF)
 
     var token: YAMLToken
@@ -119,7 +119,7 @@ class TestPlainScalarsInFlowMapping {
   @Test
   fun simpleFlowMappingWithMultilineKey() {
     val input = "{this\nis\n\na\n\n\nkey:this is a value}"
-    val reader = YAMLReaderBuffer(1024, ByteArrayReader(input.encodeToByteArray()))
+    val reader = BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray()))
     val scanner = YAMLScannerImpl(reader, LineBreakType.LF)
 
     var token: YAMLToken

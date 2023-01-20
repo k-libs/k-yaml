@@ -120,7 +120,7 @@ internal inline fun UByteSource.uIsUnderscore(offset: Int = 0) = uTest(A_UNDERSC
 
 // region Safe UTF-8 Character Tests
 
-internal inline fun UByteSource.isNewLine(offset: Int = 0) =
+internal inline fun UByteSource.isNextLine(offset: Int = 0) =
   size > offset + 1 && uTest(UbC2, offset) && uTest(Ub85, offset + 1)
 
 internal inline fun UByteSource.isLineSeparator(offset: Int = 0) =

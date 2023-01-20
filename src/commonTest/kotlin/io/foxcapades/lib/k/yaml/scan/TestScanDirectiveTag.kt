@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.YAMLReaderBuffer
+import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.util.decodeToString
 import kotlin.test.*
 
@@ -10,7 +10,7 @@ import kotlin.test.*
 class TestScanDirectiveTag {
 
   private fun makeScanner(input: String) =
-    YAMLScannerImpl(YAMLReaderBuffer(1024, ByteArrayReader(input.encodeToByteArray())), LineBreakType.LF)
+    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())), LineBreakType.LF)
 
   @Test
   fun testInvalidBecausePrefixDoesNotStartWithExclaim() {
@@ -140,7 +140,6 @@ class TestScanDirectiveTag {
   }
 
   @Test
-  @OptIn(ExperimentalUnsignedTypes::class)
   fun testValidEndingWithEOF() {
     val scanner = makeScanner("%TAG !foo! tag:foo.com,2023/")
 
@@ -153,8 +152,8 @@ class TestScanDirectiveTag {
 
     assertEquals(YAMLTokenType.TagDirective, token.type)
     assertIs<YAMLTokenDataTagDirective>(token.data).also {
-      assertEquals("!foo!", it.handle.decodeToString())
-      assertEquals("tag:foo.com,2023/", it.prefix.decodeToString())
+      assertEquals("!foo!", it.handleString)
+      assertEquals("tag:foo.com,2023/", it.handleString)
     }
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
