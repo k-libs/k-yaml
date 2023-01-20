@@ -6,8 +6,9 @@ import io.foxcapades.lib.k.yaml.scan.LineBreakType
 import io.foxcapades.lib.k.yaml.scan.YAMLScanner
 
 val input1 = """
-{hello for
-this:butt context}
+foo:
+  bar fizz
+  buzz
 """
 
 

@@ -25,7 +25,7 @@ private inline fun YAMLReader.has(offset: Int) = buffered >= offset
  * @return `true` if the buffer contains more than [offset] bytes and the
  * specific byte at [offset] is equal to [octet], otherwise `false`.
  */
-internal inline fun YAMLReader.testReaderOctet(octet: UByte, offset: Int = 0) = has(offset) && get(offset) == octet
+internal inline fun YAMLReader.check(octet: UByte, offset: Int = 0) = has(offset) && get(offset) == octet
 
 
 /**
@@ -34,7 +34,7 @@ internal inline fun YAMLReader.testReaderOctet(octet: UByte, offset: Int = 0) = 
  * Tests whether the byte at the given offset in the buffer is equal to the
  * given test octet.
  *
- * Unlike [testReaderOctet], this method does not verify that the buffer is long enough to
+ * Unlike [check], this method does not verify that the buffer is long enough to
  * contain a value at [offset], and instead relies on the calling function to
  * perform that check.
  *
@@ -97,9 +97,9 @@ internal inline fun YAMLReader.isASCII(offset: Int = 0) = has(offset) && get(off
 internal inline fun YAMLReader.isAlphanumeric(offset: Int = 0) =
   buffered > offset
     && when (get(offset)) {
-      in A_LO_A .. A_LO_Z    -> true
-      in A_UPPER_A .. A_UP_Z -> true
-      in A_0    .. A_9     -> true
+      in A_LOWER_A .. A_LOWER_Z -> true
+      in A_UPPER_A .. A_UPPER_Z -> true
+      in A_0    .. A_9          -> true
       A_DASH, A_UNDERSCORE -> true
       else                 -> false
     }
@@ -154,8 +154,8 @@ internal inline fun YAMLReader.bufferHasHexDigit(offset: Int = 0) =
   buffered > offset && when (get(offset)) {
     in A_0    .. A_9       -> true
     in A_UPPER_A .. A_UP_F -> true
-    in A_LO_A .. A_LO_F    -> true
-    else                -> false
+    in A_LOWER_A .. A_LO_F -> true
+    else                   -> false
   }
 
 
@@ -182,19 +182,20 @@ internal inline fun YAMLReader.asHexDigit(offset: Int = 0) =
   when (val x = get(offset)) {
     in A_0    .. A_9       -> x - A_0
     in A_UPPER_A .. A_UP_F -> x - A_UPPER_A + 10u
-    in A_LO_A .. A_LO_F    -> x - A_LO_A + 10u
-    else                -> throw IllegalStateException("attempted to parse a non-hex digit as a base-16 int")
+    in A_LOWER_A .. A_LO_F -> x - A_LOWER_A + 10u
+    else                   -> throw IllegalStateException("attempted to parse a non-hex digit as a base-16 int")
   }
 
 // endregion Numeric Values
 
-// region Newline Checks
+// region Single Byte Checks
 
-/** `\r` */
-internal inline fun YAMLReader.isCR(offset: Int = 0) = testReaderOctet(A_CARRIAGE_RETURN, offset)
+internal inline fun YAMLReader.isCR(offset: Int = 0) = check(A_CARRIAGE_RETURN, offset)
+internal inline fun YAMLReader.isLF(offset: Int = 0) = check(A_LINE_FEED, offset)
+internal inline fun YAMLReader.isSpace(offset: Int = 0) = check(A_SPACE, offset)
 
-/** `\n` */
-internal inline fun YAMLReader.isLF(offset: Int = 0) = testReaderOctet(A_LINE_FEED, offset)
+
+// endregion Single Byte Checks
 
 /** `<NEL>` */
 internal inline fun YAMLReader.isNEL(offset: Int = 0) =
@@ -211,5 +212,3 @@ internal inline fun YAMLReader.isPS(offset: Int = 0) =
 /** `\r\n` */
 internal inline fun YAMLReader.isCRLF(offset: Int = 0) =
   has(offset + 1) && uCheck(A_CARRIAGE_RETURN, offset) && uCheck(A_LINE_FEED, offset + 1)
-
-// endregion Newline Checks

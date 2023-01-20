@@ -19,7 +19,7 @@ class YAMLScanner {
    * Whether the STREAM-END token has been returned to the consumer of the
    * YAMLScanner via the [nextToken] method.
    */
-  private var streamEndProduced = false
+  internal var streamEndProduced = false
 
   /**
    * Tracker for our current position in the YAML stream.
@@ -335,16 +335,22 @@ class YAMLScanner {
   //   | This whole region is suspect, these things should not be here, or at
   //   | least should be reworked.
 
-  internal fun UByteBuffer.claimASCII() {
-    push(reader.pop())
-    position.incPosition()
-  }
-
   internal fun UByteBuffer.claimUTF8() {
     if (!takeCodepointFrom(reader.utf8Buffer))
       throw IllegalStateException("invalid utf-8 codepoint in the reader buffer or buffer is offset")
     position.incPosition()
   }
+
+  internal fun UByteBuffer.detectNewLineType() =
+    when {
+      isLF()   -> NL.LF
+      isCRLF() -> NL.CRLF
+      isCR()   -> NL.CR
+      isNEL()  -> NL.NEL
+      isLS()   -> NL.LS
+      isPS()   -> NL.PS
+      else     -> throw IllegalStateException("called #detectNewLineType when the reader was not on a new line character")
+    }
 
   internal fun UByteBuffer.claimNewLine(from: UByteBuffer, position: SourcePositionTracker) {
     if (from.isCRLF()) {
@@ -376,7 +382,32 @@ class YAMLScanner {
     }
   }
 
-  private fun UByteBuffer.appendNewLine(nl: NL) {
+  internal fun UByteBuffer.claimNewLine(type: NL, from: UByteBuffer, position: SourcePositionTracker) {
+    appendNewLine(type)
+    from.skipLine(type)
+
+    if (type == NL.CRLF) {
+      position.incLine(2u)
+    } else {
+      position.incLine(1u)
+    }
+  }
+
+  internal fun UByteBuffer.skipNewLine(position: SourcePositionTracker) {
+    skipNewLine(detectNewLineType(), position)
+  }
+
+  internal fun UByteBuffer.skipNewLine(type: NL, position: SourcePositionTracker) {
+    skipLine(type)
+
+    if (type == NL.CRLF) {
+      position.incLine(2u)
+    } else {
+      position.incLine(1u)
+    }
+  }
+
+  internal fun UByteBuffer.appendNewLine(nl: NL) {
     when (lineBreakType) {
       LineBreakType.CRLF        -> NL.CRLF.writeUTF8(this)
       LineBreakType.CR          -> NL.CR.writeUTF8(this)
@@ -385,7 +416,7 @@ class YAMLScanner {
     }
   }
 
-  private fun UByteBuffer.skipLine(nl: NL) {
+  internal fun UByteBuffer.skipLine(nl: NL) {
     if (inDocument) {
       when (nl) {
         NL.NEL,

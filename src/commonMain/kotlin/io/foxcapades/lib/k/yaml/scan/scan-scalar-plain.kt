@@ -1,12 +1,7 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.bytes.A_CURLY_BRACKET_CLOSE
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
-import io.foxcapades.lib.k.yaml.bytes.A_SQUARE_BRACKET_CLOSE
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.UByteBuffer
-import io.foxcapades.lib.k.yaml.util.uCheck
-import io.foxcapades.lib.k.yaml.util.utf8Width
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -212,8 +207,9 @@ internal fun YAMLScanner.fetchPlainScalar() {
 
     // If we have any trailing whitespaces, then append them to the ambiguous
     // buffer because we just hit a non-blank character
-    while (trailingWS.isNotEmpty)
-      ambiguousBuffer.push(trailingWS.pop())
+    if (trailingNL.isEmpty)
+      while (trailingWS.isNotEmpty)
+        ambiguousBuffer.push(trailingWS.pop())
 
     ambiguousBuffer.claimUTF8()
   }
@@ -233,10 +229,11 @@ private fun YAMLScanner.collapseNewlinesAndMergeBuffers(
 
     if (newLines.size == 1) {
       to.push(A_SPACE)
-      endPosition.incLine()
+      newLines.skipNewLine(endPosition)
     } else {
-      newLines.skip(newLines.utf8Width())
-      to.claimNewLine(newLines, endPosition)
+      newLines.skipNewLine(endPosition)
+      while (newLines.isNotEmpty)
+        to.claimNewLine(newLines, endPosition)
     }
 
   } else {
@@ -245,9 +242,6 @@ private fun YAMLScanner.collapseNewlinesAndMergeBuffers(
       endPosition.incPosition()
     }
   }
-
-  spaces.clear()
-  newLines.clear()
 
   while (from.isNotEmpty) {
     to.push(from.pop())

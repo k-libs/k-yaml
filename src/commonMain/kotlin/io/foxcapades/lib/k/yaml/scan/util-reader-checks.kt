@@ -104,6 +104,7 @@ internal inline fun YAMLScanner.haveCR         (offset: Int = 0) = testReaderOct
 internal inline fun YAMLScanner.haveCurlyClose (offset: Int = 0) = testReaderOctet(A_CURLY_BRACKET_CLOSE, offset)
 internal inline fun YAMLScanner.haveCurlyOpen  (offset: Int = 0) = testReaderOctet(A_CURLY_BRACKET_OPEN, offset)
 internal inline fun YAMLScanner.haveDash       (offset: Int = 0) = testReaderOctet(A_DASH, offset)
+internal inline fun YAMLScanner.haveExclaim    (offset: Int = 0) = testReaderOctet(A_EXCLAIM, offset)
 internal inline fun YAMLScanner.haveLF         (offset: Int = 0) = testReaderOctet(A_LINE_FEED, offset)
 internal inline fun YAMLScanner.haveLS         (offset: Int = 0) = testReaderOctets(UbE2, Ub80, UbA8, offset)
 internal inline fun YAMLScanner.haveNEL        (offset: Int = 0) = testReaderOctets(UbC2, Ub85, offset)
@@ -387,7 +388,7 @@ internal inline fun YAMLScanner.unsafeHaveDecimalDigit(offset: Int = 0) =
 internal inline fun YAMLScanner.unsafeHaveHexDigit(offset: Int = 0) =
   unsafeHaveDecimalDigit(offset)
     || (reader[offset] >= A_UPPER_A && reader[offset] <= A_UP_F)
-    || (reader[offset] >= A_LO_A && reader[offset] <= A_LO_F)
+    || (reader[offset] >= A_LOWER_A && reader[offset] <= A_LO_F)
 
 // =============================================================================
 // endregion Numeric Character Range Tests

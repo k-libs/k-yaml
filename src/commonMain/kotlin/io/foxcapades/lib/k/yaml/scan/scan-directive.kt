@@ -12,17 +12,13 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
  * tag directive, or just junk.
  */
 internal fun YAMLScanner.fetchDirectiveToken() {
-  if (!atStartOfLine) {
-    // Now we have to:
-    //
-    // - skip characters until we encounter `<WS>#`, a new line, or the EOF
-    // - generate a warning for the invalid token
-    // - queue up an invalid token
-    TODO("invalid token, % can only start a directive, but a directive must start at the beginning of the line")
-  }
-
   // Record the start position
   val startMark = position.mark()
+
+  if (!atStartOfLine) {
+    tokens.push(newInvalidToken(startMark, skipUntilCommentBreakOrEOF()))
+    return
+  }
 
   // Skip the `%` character.
   skipASCII()
@@ -49,9 +45,5 @@ internal fun YAMLScanner.fetchDirectiveToken() {
   }
 
   // If it's not YAML or TAG then it's invalid
-  return fetchInvalidDirectiveToken(startMark)
-}
-
-private fun YAMLScanner.fetchInvalidDirectiveToken(start: SourcePosition) {
-  TODO("emit an INVALID token for the borked directive")
+  tokens.push(newInvalidToken(startMark, skipUntilCommentBreakOrEOF()))
 }
