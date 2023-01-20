@@ -2,18 +2,19 @@
 
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.read.YAMLReaderBuffer
 import io.foxcapades.lib.k.yaml.util.isAnyBreak
 import io.foxcapades.lib.k.yaml.util.isBlankOrAnyBreak
 
 // region Safe Tests
 
-internal inline fun YAMLScannerImpl.haveEOF(offset: Int = 0) =
-  reader.size <= offset && reader.atEOF
+internal inline fun YAMLReaderBuffer.isEOF(offset: Int = 0) =
+  size <= offset && atEOF
 
-internal inline fun YAMLScannerImpl.haveAnyBreakOrEOF(offset: Int = 0) =
-  reader.isAnyBreak(offset) || haveEOF(offset)
+internal inline fun YAMLReaderBuffer.isAnyBreakOrEOF(offset: Int = 0) =
+  isAnyBreak(offset) || isEOF(offset)
 
-internal inline fun YAMLScannerImpl.haveBlankAnyBreakOrEOF(offset: Int = 0) =
-  reader.isBlankOrAnyBreak(offset) || haveEOF(offset)
+internal inline fun YAMLReaderBuffer.isBlankAnyBreakOrEOF(offset: Int = 0) =
+  isBlankOrAnyBreak(offset) || isEOF(offset)
 
 // endregion Safe Tests

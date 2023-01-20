@@ -3,7 +3,7 @@ package io.foxcapades.lib.k.yaml.util
 import io.foxcapades.lib.k.yaml.io.ByteReader
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal class UByteBuffer : UByteContainer {
+internal class UByteBuffer : UByteSource {
   private var raw: UByteArray
 
   private var head: Int = 0
@@ -49,7 +49,7 @@ internal class UByteBuffer : UByteContainer {
     raw = UByteArray(initialCapacity)
   }
 
-  fun pop(): UByte {
+  override fun pop(): UByte {
     if (isEmpty)
       throw IllegalStateException("attempted to pop a value from an empty UByteBuffer")
 
@@ -61,14 +61,14 @@ internal class UByteBuffer : UByteContainer {
     return out
   }
 
-  fun peek(): UByte {
+  override fun peek(): UByte {
     if (isEmpty)
       throw IllegalStateException("attempted to peek a value from an empty UByteBuffer")
 
     return raw[head]
   }
 
-  fun skip(count: Int) {
+  override fun skip(count: Int) {
     if (count >= size)
       clear()
     else {
@@ -177,7 +177,7 @@ internal class UByteBuffer : UByteContainer {
 
   override fun get(offset: Int): UByte = raw[vidx(offset)]
 
-  fun takeFrom(other: UByteBuffer, count: Int = other.size) {
+  fun takeFrom(other: UByteSource, count: Int = other.size) {
     if (other.size < count)
       throw IllegalArgumentException("cannot take $count bytes from a UByteBuffer of size ${other.size}")
 

@@ -75,7 +75,7 @@ internal fun YAMLScannerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
       //
       // If we've encountered a line break or the EOF, then we can end because
       // it's the end of the junk token.
-      reader.isPound() && trailingWhitespaceCount > 0 || haveAnyBreakOrEOF() -> {
+      reader.isPound() && trailingWhitespaceCount > 0 || isAnyBreakOrEOF() -> {
         endMark = position.mark(modIndex = -trailingWhitespaceCount, modColumn = -trailingWhitespaceCount)
         break
       }

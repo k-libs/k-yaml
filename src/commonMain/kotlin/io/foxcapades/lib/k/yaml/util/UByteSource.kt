@@ -10,19 +10,25 @@ import io.foxcapades.lib.k.yaml.bytes.A_BACKSLASH
 import io.foxcapades.lib.k.yaml.bytes.A_CURLY_BRACKET_CLOSE
 import io.foxcapades.lib.k.yaml.scan.*
 
-internal interface UByteContainer {
+internal interface UByteSource {
 
   val size: Int
 
   operator fun get(offset: Int): UByte
+
+  fun pop(): UByte
+
+  fun peek(): UByte
+
+  fun skip(count: Int)
 }
 
 // region Content Tests
 
-internal inline fun UByteContainer.test(octet: UByte, offset: Int = 0) =
+internal inline fun UByteSource.test(octet: UByte, offset: Int = 0) =
   size > offset && get(offset) == octet
 
-internal inline fun UByteContainer.uTest(octet: UByte, offset: Int = 0) =
+internal inline fun UByteSource.uTest(octet: UByte, offset: Int = 0) =
   get(offset) == octet
 
 
@@ -33,38 +39,38 @@ internal inline fun UByteContainer.uTest(octet: UByte, offset: Int = 0) =
 // These tests are ones that verify the length of the container before
 // attempting to compare the contents against the target value.
 
-internal inline fun UByteContainer.isAmpersand(offset: Int = 0) = test(A_AMPERSAND, offset)
-internal inline fun UByteContainer.isApostrophe(offset: Int = 0) = test(A_APOSTROPHE, offset)
-internal inline fun UByteContainer.isAsterisk(offset: Int = 0) = test(A_ASTERISK, offset)
-internal inline fun UByteContainer.isAt(offset: Int = 0) = test(A_AMPERSAND, offset)
-internal inline fun UByteContainer.isBackslash(offset: Int = 0) = test(A_BACKSLASH, offset)
-internal inline fun UByteContainer.isCarriageReturn(offset: Int = 0) = test(A_CARRIAGE_RETURN, offset)
-internal inline fun UByteContainer.isColon(offset: Int = 0) = test(A_COLON, offset)
-internal inline fun UByteContainer.isComma(offset: Int = 0) = test(A_COMMA, offset)
-internal inline fun UByteContainer.isCurlyClose(offset: Int = 0) = test(A_CURLY_BRACKET_CLOSE, offset)
-internal inline fun UByteContainer.isCurlyOpen(offset: Int = 0) = test(A_CURLY_BRACKET_OPEN, offset)
-internal inline fun UByteContainer.isDash(offset: Int = 0) = test(A_DASH, offset)
-internal inline fun UByteContainer.isDollar(offset: Int = 0) = test(A_DOLLAR, offset)
-internal inline fun UByteContainer.isDoubleQuote(offset: Int = 0) = test(A_DOUBLE_QUOTE, offset)
-internal inline fun UByteContainer.isEquals(offset: Int = 0) = test(A_EQUALS, offset)
-internal inline fun UByteContainer.isExclamation(offset: Int = 0) = test(A_EXCLAIM, offset)
-internal inline fun UByteContainer.isGrave(offset: Int = 0) = test(A_GRAVE, offset)
-internal inline fun UByteContainer.isGreaterThan(offset: Int = 0) = test(A_GREATER_THAN, offset)
-internal inline fun UByteContainer.isLessThan(offset: Int = 0) = test(A_LESS_THAN, offset)
-internal inline fun UByteContainer.isLineFeed(offset: Int = 0) = test(A_LINE_FEED, offset)
-internal inline fun UByteContainer.isPeriod(offset: Int = 0) = test(A_PERIOD, offset)
-internal inline fun UByteContainer.isPercent(offset: Int = 0) = test(A_PERCENT, offset)
-internal inline fun UByteContainer.isPipe(offset: Int = 0) = test(A_PIPE, offset)
-internal inline fun UByteContainer.isPlus(offset: Int = 0) = test(A_PLUS, offset)
-internal inline fun UByteContainer.isPound(offset: Int = 0) = test(A_POUND, offset)
-internal inline fun UByteContainer.isQuestion(offset: Int = 0) = test(A_QUESTION, offset)
-internal inline fun UByteContainer.isSlash(offset: Int = 0) = test(A_SLASH, offset)
-internal inline fun UByteContainer.isSpace(offset: Int = 0) = test(A_SPACE, offset)
-internal inline fun UByteContainer.isSquareClose(offset: Int = 0) = test(A_SQUARE_BRACKET_CLOSE, offset)
-internal inline fun UByteContainer.isSquareOpen(offset: Int = 0) = test(A_SQUARE_BRACKET_OPEN, offset)
-internal inline fun UByteContainer.isTab(offset: Int = 0) = test(A_TAB, offset)
-internal inline fun UByteContainer.isTilde(offset: Int = 0) = test(A_TILDE, offset)
-internal inline fun UByteContainer.isUnderscore(offset: Int = 0) = test(A_UNDERSCORE, offset)
+internal inline fun UByteSource.isAmpersand(offset: Int = 0) = test(A_AMPERSAND, offset)
+internal inline fun UByteSource.isApostrophe(offset: Int = 0) = test(A_APOSTROPHE, offset)
+internal inline fun UByteSource.isAsterisk(offset: Int = 0) = test(A_ASTERISK, offset)
+internal inline fun UByteSource.isAt(offset: Int = 0) = test(A_AMPERSAND, offset)
+internal inline fun UByteSource.isBackslash(offset: Int = 0) = test(A_BACKSLASH, offset)
+internal inline fun UByteSource.isCarriageReturn(offset: Int = 0) = test(A_CARRIAGE_RETURN, offset)
+internal inline fun UByteSource.isColon(offset: Int = 0) = test(A_COLON, offset)
+internal inline fun UByteSource.isComma(offset: Int = 0) = test(A_COMMA, offset)
+internal inline fun UByteSource.isCurlyClose(offset: Int = 0) = test(A_CURLY_BRACKET_CLOSE, offset)
+internal inline fun UByteSource.isCurlyOpen(offset: Int = 0) = test(A_CURLY_BRACKET_OPEN, offset)
+internal inline fun UByteSource.isDash(offset: Int = 0) = test(A_DASH, offset)
+internal inline fun UByteSource.isDollar(offset: Int = 0) = test(A_DOLLAR, offset)
+internal inline fun UByteSource.isDoubleQuote(offset: Int = 0) = test(A_DOUBLE_QUOTE, offset)
+internal inline fun UByteSource.isEquals(offset: Int = 0) = test(A_EQUALS, offset)
+internal inline fun UByteSource.isExclamation(offset: Int = 0) = test(A_EXCLAIM, offset)
+internal inline fun UByteSource.isGrave(offset: Int = 0) = test(A_GRAVE, offset)
+internal inline fun UByteSource.isGreaterThan(offset: Int = 0) = test(A_GREATER_THAN, offset)
+internal inline fun UByteSource.isLessThan(offset: Int = 0) = test(A_LESS_THAN, offset)
+internal inline fun UByteSource.isLineFeed(offset: Int = 0) = test(A_LINE_FEED, offset)
+internal inline fun UByteSource.isPeriod(offset: Int = 0) = test(A_PERIOD, offset)
+internal inline fun UByteSource.isPercent(offset: Int = 0) = test(A_PERCENT, offset)
+internal inline fun UByteSource.isPipe(offset: Int = 0) = test(A_PIPE, offset)
+internal inline fun UByteSource.isPlus(offset: Int = 0) = test(A_PLUS, offset)
+internal inline fun UByteSource.isPound(offset: Int = 0) = test(A_POUND, offset)
+internal inline fun UByteSource.isQuestion(offset: Int = 0) = test(A_QUESTION, offset)
+internal inline fun UByteSource.isSlash(offset: Int = 0) = test(A_SLASH, offset)
+internal inline fun UByteSource.isSpace(offset: Int = 0) = test(A_SPACE, offset)
+internal inline fun UByteSource.isSquareClose(offset: Int = 0) = test(A_SQUARE_BRACKET_CLOSE, offset)
+internal inline fun UByteSource.isSquareOpen(offset: Int = 0) = test(A_SQUARE_BRACKET_OPEN, offset)
+internal inline fun UByteSource.isTab(offset: Int = 0) = test(A_TAB, offset)
+internal inline fun UByteSource.isTilde(offset: Int = 0) = test(A_TILDE, offset)
+internal inline fun UByteSource.isUnderscore(offset: Int = 0) = test(A_UNDERSCORE, offset)
 
 // endregion Safe Single Byte Tests
 
@@ -73,38 +79,38 @@ internal inline fun UByteContainer.isUnderscore(offset: Int = 0) = test(A_UNDERS
 // These tests are ones that do not verify the length of the buffer before
 // attempting to test for the target value.
 
-internal inline fun UByteContainer.uIsAmpersand(offset: Int = 0) = uTest(A_AMPERSAND, offset)
-internal inline fun UByteContainer.uIsApostrophe(offset: Int = 0) = uTest(A_APOSTROPHE, offset)
-internal inline fun UByteContainer.uIsAsterisk(offset: Int = 0) = uTest(A_ASTERISK, offset)
-internal inline fun UByteContainer.uIsAt(offset: Int = 0) = uTest(A_AMPERSAND, offset)
-internal inline fun UByteContainer.uIsBackslash(offset: Int = 0) = uTest(A_BACKSLASH, offset)
-internal inline fun UByteContainer.uIsCarriageReturn(offset: Int = 0) = uTest(A_CARRIAGE_RETURN, offset)
-internal inline fun UByteContainer.uIsColon(offset: Int = 0) = uTest(A_COLON, offset)
-internal inline fun UByteContainer.uIsComma(offset: Int = 0) = uTest(A_COMMA, offset)
-internal inline fun UByteContainer.uIsCurlyClose(offset: Int = 0) = uTest(A_CURLY_BRACKET_CLOSE, offset)
-internal inline fun UByteContainer.uIsCurlyOpen(offset: Int = 0) = uTest(A_CURLY_BRACKET_OPEN, offset)
-internal inline fun UByteContainer.uIsDash(offset: Int = 0) = uTest(A_DASH, offset)
-internal inline fun UByteContainer.uIsDollar(offset: Int = 0) = uTest(A_DOLLAR, offset)
-internal inline fun UByteContainer.uIsDoubleQuote(offset: Int = 0) = uTest(A_DOUBLE_QUOTE, offset)
-internal inline fun UByteContainer.uIsEquals(offset: Int = 0) = uTest(A_EQUALS, offset)
-internal inline fun UByteContainer.uIsExclamation(offset: Int = 0) = uTest(A_EXCLAIM, offset)
-internal inline fun UByteContainer.uIsGrave(offset: Int = 0) = uTest(A_GRAVE, offset)
-internal inline fun UByteContainer.uIsGreaterThan(offset: Int = 0) = uTest(A_GREATER_THAN, offset)
-internal inline fun UByteContainer.uIsLessThan(offset: Int = 0) = uTest(A_LESS_THAN, offset)
-internal inline fun UByteContainer.uIsLineFeed(offset: Int = 0) = uTest(A_LINE_FEED, offset)
-internal inline fun UByteContainer.uIsPeriod(offset: Int = 0) = uTest(A_PERIOD, offset)
-internal inline fun UByteContainer.uIsPercent(offset: Int = 0) = uTest(A_PERCENT, offset)
-internal inline fun UByteContainer.uIsPipe(offset: Int = 0) = uTest(A_PIPE, offset)
-internal inline fun UByteContainer.uIsPlus(offset: Int = 0) = uTest(A_PLUS, offset)
-internal inline fun UByteContainer.uIsPound(offset: Int = 0) = uTest(A_POUND, offset)
-internal inline fun UByteContainer.uIsQuestion(offset: Int = 0) = uTest(A_QUESTION, offset)
-internal inline fun UByteContainer.uIsSlash(offset: Int = 0) = uTest(A_SLASH, offset)
-internal inline fun UByteContainer.uIsSpace(offset: Int = 0) = uTest(A_SPACE, offset)
-internal inline fun UByteContainer.uIsSquareClose(offset: Int = 0) = uTest(A_SQUARE_BRACKET_CLOSE, offset)
-internal inline fun UByteContainer.uIsSquareOpen(offset: Int = 0) = uTest(A_SQUARE_BRACKET_OPEN, offset)
-internal inline fun UByteContainer.uIsTab(offset: Int = 0) = uTest(A_TAB, offset)
-internal inline fun UByteContainer.uIsTilde(offset: Int = 0) = uTest(A_TILDE, offset)
-internal inline fun UByteContainer.uIsUnderscore(offset: Int = 0) = uTest(A_UNDERSCORE, offset)
+internal inline fun UByteSource.uIsAmpersand(offset: Int = 0) = uTest(A_AMPERSAND, offset)
+internal inline fun UByteSource.uIsApostrophe(offset: Int = 0) = uTest(A_APOSTROPHE, offset)
+internal inline fun UByteSource.uIsAsterisk(offset: Int = 0) = uTest(A_ASTERISK, offset)
+internal inline fun UByteSource.uIsAt(offset: Int = 0) = uTest(A_AMPERSAND, offset)
+internal inline fun UByteSource.uIsBackslash(offset: Int = 0) = uTest(A_BACKSLASH, offset)
+internal inline fun UByteSource.uIsCarriageReturn(offset: Int = 0) = uTest(A_CARRIAGE_RETURN, offset)
+internal inline fun UByteSource.uIsColon(offset: Int = 0) = uTest(A_COLON, offset)
+internal inline fun UByteSource.uIsComma(offset: Int = 0) = uTest(A_COMMA, offset)
+internal inline fun UByteSource.uIsCurlyClose(offset: Int = 0) = uTest(A_CURLY_BRACKET_CLOSE, offset)
+internal inline fun UByteSource.uIsCurlyOpen(offset: Int = 0) = uTest(A_CURLY_BRACKET_OPEN, offset)
+internal inline fun UByteSource.uIsDash(offset: Int = 0) = uTest(A_DASH, offset)
+internal inline fun UByteSource.uIsDollar(offset: Int = 0) = uTest(A_DOLLAR, offset)
+internal inline fun UByteSource.uIsDoubleQuote(offset: Int = 0) = uTest(A_DOUBLE_QUOTE, offset)
+internal inline fun UByteSource.uIsEquals(offset: Int = 0) = uTest(A_EQUALS, offset)
+internal inline fun UByteSource.uIsExclamation(offset: Int = 0) = uTest(A_EXCLAIM, offset)
+internal inline fun UByteSource.uIsGrave(offset: Int = 0) = uTest(A_GRAVE, offset)
+internal inline fun UByteSource.uIsGreaterThan(offset: Int = 0) = uTest(A_GREATER_THAN, offset)
+internal inline fun UByteSource.uIsLessThan(offset: Int = 0) = uTest(A_LESS_THAN, offset)
+internal inline fun UByteSource.uIsLineFeed(offset: Int = 0) = uTest(A_LINE_FEED, offset)
+internal inline fun UByteSource.uIsPeriod(offset: Int = 0) = uTest(A_PERIOD, offset)
+internal inline fun UByteSource.uIsPercent(offset: Int = 0) = uTest(A_PERCENT, offset)
+internal inline fun UByteSource.uIsPipe(offset: Int = 0) = uTest(A_PIPE, offset)
+internal inline fun UByteSource.uIsPlus(offset: Int = 0) = uTest(A_PLUS, offset)
+internal inline fun UByteSource.uIsPound(offset: Int = 0) = uTest(A_POUND, offset)
+internal inline fun UByteSource.uIsQuestion(offset: Int = 0) = uTest(A_QUESTION, offset)
+internal inline fun UByteSource.uIsSlash(offset: Int = 0) = uTest(A_SLASH, offset)
+internal inline fun UByteSource.uIsSpace(offset: Int = 0) = uTest(A_SPACE, offset)
+internal inline fun UByteSource.uIsSquareClose(offset: Int = 0) = uTest(A_SQUARE_BRACKET_CLOSE, offset)
+internal inline fun UByteSource.uIsSquareOpen(offset: Int = 0) = uTest(A_SQUARE_BRACKET_OPEN, offset)
+internal inline fun UByteSource.uIsTab(offset: Int = 0) = uTest(A_TAB, offset)
+internal inline fun UByteSource.uIsTilde(offset: Int = 0) = uTest(A_TILDE, offset)
+internal inline fun UByteSource.uIsUnderscore(offset: Int = 0) = uTest(A_UNDERSCORE, offset)
 
 // endregion Unsafe Single Byte Tests
 
@@ -114,26 +120,26 @@ internal inline fun UByteContainer.uIsUnderscore(offset: Int = 0) = uTest(A_UNDE
 
 // region Safe UTF-8 Character Tests
 
-internal inline fun UByteContainer.isNewLine(offset: Int = 0) =
+internal inline fun UByteSource.isNewLine(offset: Int = 0) =
   size > offset + 1 && uTest(UbC2, offset) && uTest(Ub85, offset + 1)
 
-internal inline fun UByteContainer.isLineSeparator(offset: Int = 0) =
+internal inline fun UByteSource.isLineSeparator(offset: Int = 0) =
   size > offset + 2 && uTest(UbE2, offset) && uTest(Ub80, offset + 1) && uTest(UbA8, offset + 2)
 
-internal inline fun UByteContainer.isParagraphSeparator(offset: Int = 0) =
+internal inline fun UByteSource.isParagraphSeparator(offset: Int = 0) =
   size > offset + 2 && uTest(UbE2, offset) && uTest(Ub80, offset + 1) && uTest(UbA9, offset + 2)
 
 // endregion Safe UTF-8 Character Tests
 
 // region Unsafe UTF-8 Character Tests
 
-internal inline fun UByteContainer.uIsNextLine(offset: Int = 0) =
+internal inline fun UByteSource.uIsNextLine(offset: Int = 0) =
   uTest(UbC2, offset) && uTest(Ub85, offset + 1)
 
-internal inline fun UByteContainer.uIsLineSeparator(offset: Int = 0) =
+internal inline fun UByteSource.uIsLineSeparator(offset: Int = 0) =
   uTest(UbE2, offset) && uTest(Ub80, offset + 1) && uTest(UbA8, offset + 2)
 
-internal inline fun UByteContainer.uIsParagraphSeparator(offset: Int = 0) =
+internal inline fun UByteSource.uIsParagraphSeparator(offset: Int = 0) =
   uTest(UbE2, offset) && uTest(Ub80, offset + 1) && uTest(UbA9, offset + 2)
 
 // endregion Unsafe UTF-8 Character Tests
@@ -144,10 +150,10 @@ internal inline fun UByteContainer.uIsParagraphSeparator(offset: Int = 0) =
 
 // region Safe Byte Class Tests
 
-internal inline fun UByteContainer.isBlank(offset: Int = 0) =
+internal inline fun UByteSource.isBlank(offset: Int = 0) =
   size > offset && (uIsSpace(offset) || uIsTab(offset))
 
-internal inline fun UByteContainer.isDecimalDigit(offset: Int = 0): Boolean {
+internal inline fun UByteSource.isDecimalDigit(offset: Int = 0): Boolean {
   if (size > offset) {
     val v = get(offset)
 
@@ -158,7 +164,7 @@ internal inline fun UByteContainer.isDecimalDigit(offset: Int = 0): Boolean {
   return false
 }
 
-internal inline fun UByteContainer.isHexDigit(offset: Int = 0): Boolean {
+internal inline fun UByteSource.isHexDigit(offset: Int = 0): Boolean {
   if (size > offset) {
     val v = get(offset)
 
@@ -177,8 +183,14 @@ internal inline fun UByteContainer.isHexDigit(offset: Int = 0): Boolean {
 
 // region Unsafe Byte Class Tests
 
-internal inline fun UByteContainer.uIsBlank(offset: Int = 0) =
+internal inline fun UByteSource.uIsBlank(offset: Int = 0) =
   uTest(A_SPACE, offset) || uTest(A_TAB, offset)
+
+internal inline fun UByteSource.uIsFlowIndicator(offset: Int) =
+  uTest(A_SQUARE_BRACKET_OPEN, offset)
+  || uTest(A_SQUARE_BRACKET_CLOSE, offset)
+  || uTest(A_CURLY_BRACKET_OPEN, offset)
+  || uTest(A_CURLY_BRACKET_CLOSE, offset)
 
 // endregion Unsafe Byte Class Tests
 
@@ -188,7 +200,7 @@ internal inline fun UByteContainer.uIsBlank(offset: Int = 0) =
 
 // region Safe Character Class Tests
 
-internal inline fun UByteContainer.isAnyBreak(offset: Int = 0) =
+internal inline fun UByteSource.isAnyBreak(offset: Int = 0) =
   if (size > offset + 2)
     uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset) || uIsLineSeparator(offset) || uIsParagraphSeparator(offset)
   else if (size > offset + 1)
@@ -198,14 +210,20 @@ internal inline fun UByteContainer.isAnyBreak(offset: Int = 0) =
   else
     false
 
-internal inline fun UByteContainer.isBlankOrAnyBreak(offset: Int = 0) =
+internal inline fun UByteSource.isBlankOrAnyBreak(offset: Int = 0) =
   (size > offset + 2 && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset) || uIsLineSeparator(offset) || uIsParagraphSeparator(offset)))
     || (size > offset + 1 && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset)))
     || (size > offset && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset)))
 
+internal inline fun UByteSource.isBOM(offset: Int = 0) =
+  size > offset + 1 && uTest(UbFE, offset) && uTest(UbFF, offset + 1)
+
 // endregion Safe Character Class Tests
 
 // region Unsafe Character Class Tests
+
+internal inline fun UByteSource.uIsBOM(offset: Int = 0) =
+  uTest(UbFE, offset) && uTest(UbFF, offset + 1)
 
 // endregion Unsafe Character Class Tests
 
@@ -213,7 +231,7 @@ internal inline fun UByteContainer.isBlankOrAnyBreak(offset: Int = 0) =
 
 // region Multi-Character Tests
 
-internal inline fun UByteContainer.isCRLF(offset: Int = 0) =
+internal inline fun UByteSource.isCRLF(offset: Int = 0) =
   size > offset + 1 && uIsCarriageReturn(offset) && uIsLineFeed(offset + 1)
 
 // endregion Multi-Character Tests
@@ -238,7 +256,7 @@ internal inline fun UByteContainer.isCRLF(offset: Int = 0) =
  *   | [x010000-x10FFFF]
  * ```
  */
-internal inline fun UByteContainer.haveCPrintable(offset: Int = 0) =
+internal inline fun UByteSource.isCPrintable(offset: Int = 0) =
   when {
     size > offset + 3 -> uIsPrintSafeASCII(offset) || uIsNextLine(offset) || uIsPrintSafe2ByteUTF8(offset) || uIsPrintSafe3ByteUTF8(offset) || uIsPrintSafe4ByteUTF8(offset)
     size > offset + 2 -> uIsPrintSafeASCII(offset) || uIsNextLine(offset) || uIsPrintSafe2ByteUTF8(offset) || uIsPrintSafe3ByteUTF8(offset)
@@ -247,9 +265,20 @@ internal inline fun UByteContainer.haveCPrintable(offset: Int = 0) =
     else              -> false
   }
 
-internal inline fun UByteContainer.isNsTagChar(offset: Int = 0) = size > offset && uIsNsTagChar(offset)
+internal inline fun UByteSource.isNbChar(offset: Int = 0) =
+  isCPrintable(offset) && !isAnyBreak(offset)
 
-internal inline fun UByteContainer.isNsURIChar(offset: Int = 0) = size > offset && uIsNsURIChar(offset)
+internal inline fun UByteSource.isNsChar(offset: Int = 0) =
+  isNbChar(offset) && !isBlank(offset)
+
+internal inline fun UByteSource.isNsTagChar(offset: Int = 0) =
+  size > offset && uIsNsTagChar(offset)
+
+internal inline fun UByteSource.isNsURIChar(offset: Int = 0) =
+  size > offset && uIsNsURIChar(offset)
+
+internal inline fun UByteSource.isNsAnchorChar(offset: Int = 0) =
+  isNsChar(offset) && !uIsFlowIndicator(offset)
 
 // endregion Safe YAML Character Class Tests
 
@@ -266,7 +295,7 @@ internal inline fun UByteContainer.isNsURIChar(offset: Int = 0) = size > offset 
  *   | [x61-x7A]           # a-z
  * ```
  */
-internal inline fun UByteContainer.uIsNsAsciiLetter(offset: Int = 0): Boolean {
+internal inline fun UByteSource.uIsNsAsciiLetter(offset: Int = 0): Boolean {
   val v = get(offset)
 
   // `a`..`z` || `A`..`Z`
@@ -293,7 +322,7 @@ internal inline fun UByteContainer.uIsNsAsciiLetter(offset: Int = 0): Boolean {
  *   - c-flow-indicator
  * ```
  */
-internal inline fun UByteContainer.uIsNsTagChar(offset: Int = 0): Boolean {
+internal inline fun UByteSource.uIsNsTagChar(offset: Int = 0): Boolean {
   val v = get(offset)
 
   // `a`..`z`
@@ -360,7 +389,7 @@ internal inline fun UByteContainer.uIsNsTagChar(offset: Int = 0): Boolean {
  *   | ']'
  * ```
  */
-internal inline fun UByteContainer.uIsNsURIChar(offset: Int = 0): Boolean {
+internal inline fun UByteSource.uIsNsURIChar(offset: Int = 0): Boolean {
   val v = get(offset)
 
   // `a`..`z`
@@ -394,7 +423,7 @@ internal inline fun UByteContainer.uIsNsURIChar(offset: Int = 0): Boolean {
  *   | '-'                 # '-'
  * ```
  */
-internal inline fun UByteContainer.uIsNsWordChar(offset: Int = 0): Boolean {
+internal inline fun UByteSource.uIsNsWordChar(offset: Int = 0): Boolean {
   val v = get(offset)
 
   // `a`..`z`
@@ -411,7 +440,7 @@ internal inline fun UByteContainer.uIsNsWordChar(offset: Int = 0): Boolean {
 
 // region YAML Character Class Test Support
 
-internal inline fun UByteContainer.uIsPrintSafeASCII(offset: Int = 0) =
+internal inline fun UByteSource.uIsPrintSafeASCII(offset: Int = 0) =
   // In the non-control range (letters, numbers, visible symbols, and space)
   (get(offset) > Ub19 && get(offset) < Ub7F)
     // safe control characters
@@ -422,7 +451,7 @@ internal inline fun UByteContainer.uIsPrintSafeASCII(offset: Int = 0) =
 // Characters in the unicode range `\u00A0 .. \u07FF`
 //
 // This encompasses all 2 byte combinations in the range `0xC2A0 .. 0xDFBF`
-internal inline fun UByteContainer.uIsPrintSafe2ByteUTF8(offset: Int = 0) =
+internal inline fun UByteSource.uIsPrintSafe2ByteUTF8(offset: Int = 0) =
   // 0xC2 + 0xA0 -> 0xDF + 0xBF
   (get(offset) == UbC2 && get(offset + 1) >= UbA0)
     || (get(offset) > UbC2 && get(offset) < UbDF)
@@ -444,7 +473,7 @@ internal inline fun UByteContainer.uIsPrintSafe2ByteUTF8(offset: Int = 0) =
  * - `0xE0A080 .. 0xED9FBF`
  * - `0xEE8080 .. 0xEFBFBD`
  */
-internal inline fun UByteContainer.uIsPrintSafe3ByteUTF8(offset: Int = 0) =
+internal inline fun UByteSource.uIsPrintSafe3ByteUTF8(offset: Int = 0) =
   when (val first = get(offset)) {
     // 0xE0_A0_80 -> 0xE0_FF_FF
     UbE0 -> get(offset + 1) > UbA0 || (get(offset + 1) == UbA0 && get(offset + 2) >= Ub80)
@@ -459,7 +488,7 @@ internal inline fun UByteContainer.uIsPrintSafe3ByteUTF8(offset: Int = 0) =
 
 // `U+10000 .. U+10FFFF`
 // `0xF0908080 .. 0xF48FBFBF`
-internal inline fun UByteContainer.uIsPrintSafe4ByteUTF8(offset: Int = 0) =
+internal inline fun UByteSource.uIsPrintSafe4ByteUTF8(offset: Int = 0) =
   when (val first = get(offset)) {
     // The first byte is 0xF0
     UbF0 ->
@@ -518,9 +547,9 @@ internal inline fun UByteContainer.uIsPrintSafe4ByteUTF8(offset: Int = 0) =
 
 // region Content Parsing
 
-internal inline fun UByteContainer.asDecimalDigit(offset: Int = 0) = get(offset) - A_DIGIT_0
+internal inline fun UByteSource.asDecimalDigit(offset: Int = 0) = get(offset) - A_DIGIT_0
 
-internal inline fun UByteContainer.asHexDigit(offset: Int = 0): UInt {
+internal inline fun UByteSource.asHexDigit(offset: Int = 0): UInt {
   val v = get(offset)
 
   return when {

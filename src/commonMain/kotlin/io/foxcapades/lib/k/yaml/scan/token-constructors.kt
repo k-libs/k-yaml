@@ -103,5 +103,9 @@ internal inline fun YAMLScannerImpl.newFlowSequenceStartToken(start: SourcePosit
 internal inline fun YAMLScannerImpl.newFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.FlowSequenceEnd, null, start, end, getWarnings())
 
+@OptIn(ExperimentalUnsignedTypes::class)
+internal inline fun YAMLScannerImpl.newCommentToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.Comment, YAMLTokenDataComment(value), start, end, getWarnings())
+
 internal inline fun YAMLScannerImpl.newInvalidToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.Invalid, null, start, end, getWarnings())

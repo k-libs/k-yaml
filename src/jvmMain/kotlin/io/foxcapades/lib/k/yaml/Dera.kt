@@ -2,7 +2,6 @@ package io.foxcapades.lib.k.yaml
 
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.YAMLReaderBuffer
-import io.foxcapades.lib.k.yaml.scan.LineBreakType
 import io.foxcapades.lib.k.yaml.scan.YAMLScannerImpl
 
 val input1 = """

@@ -1,6 +1,8 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.DefaultYAMLVersion
+import io.foxcapades.lib.k.yaml.LineBreakType
+import io.foxcapades.lib.k.yaml.YAMLScanner
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.bytes.*
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
@@ -9,6 +11,7 @@ import io.foxcapades.lib.k.yaml.read.*
 import io.foxcapades.lib.k.yaml.util.*
 
 @Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalUnsignedTypes::class)
 internal class YAMLScannerImpl : YAMLScanner {
 
   /**
@@ -90,6 +93,16 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   internal val lineBreakType: LineBreakType
 
+  // region Reusable Buffers
+
+  private val contentBuffer1   = UByteBuffer(1024)
+  private val contentBuffer2   = UByteBuffer(1024)
+  private val trailingWSBuffer = UByteBuffer(16)
+  private val trailingNLBuffer = UByteBuffer(4)
+
+  // endregion Reusable Buffers
+
+
   constructor(reader: YAMLReaderBuffer, lineBreak: LineBreakType) {
     this.reader = reader
     this.lineBreakType = lineBreak
@@ -120,17 +133,16 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Reader Wrapping
 
-  /**
-   * Attempts to ensure that the given number of UTF-8 codepoints are cached in
-   * the reader buffer.
-   *
-   * @param codepoints The number of codepoints that the reader should attempt
-   * to cache.
-   *
-   * @return `true` if the requested number of codepoints could be cached.
-   * `false` if fewer than the requested number of codepoints could be cached.
-   */
-  internal inline fun cache(codepoints: Int) = reader.cache(codepoints)
+  private fun skipUntilBlankBreakOrEOF() {
+    while (true) {
+      reader.cache(1)
+
+      if (reader.isBlankAnyBreakOrEOF())
+        return
+      else
+        skipUTF8()
+    }
+  }
 
   /**
    * Skips over the given number of ASCII characters in the reader buffer and
@@ -209,23 +221,23 @@ internal class YAMLScannerImpl : YAMLScanner {
       return fetchStreamEndToken()
 
     when {
-      // Good boy characters: % - . # & * [ ] { } | : ' " > , ?
-      reader.uIsPercent()     -> fetchDirectiveToken()
       reader.uIsDash()        -> fetchAmbiguousDashToken()
-      reader.uIsPeriod()      -> fetchAmbiguousPeriodToken()
-      reader.uIsPound()       -> fetchCommentToken()
-      reader.uIsAmpersand()   -> fetchAnchorToken()
-      reader.uIsAsterisk()    -> fetchAliasToken()
-      reader.uIsSquareOpen()  -> fetchFlowSequenceStartToken()
-      reader.uIsSquareClose() -> fetchFlowSequenceEndToken()
-      reader.uIsCurlyOpen()   -> fetchFlowMappingStartToken()
-      reader.uIsCurlyClose()  -> fetchFlowMappingEndToken()
-      reader.uIsPipe()        -> fetchLiteralStringToken()
       reader.uIsColon()       -> fetchAmbiguousColonToken()
+      reader.uIsComma()       -> fetchFlowItemSeparatorToken()
+      reader.uIsPound()       -> fetchCommentToken()
       reader.uIsApostrophe()  -> fetchSingleQuotedStringToken()
       reader.uIsDoubleQuote() -> fetchDoubleQuotedStringToken()
+      reader.uIsSquareOpen()  -> fetchFlowSequenceStartToken()
+      reader.uIsCurlyOpen()   -> fetchFlowMappingStartToken()
+      reader.uIsPipe()        -> fetchLiteralStringToken()
       reader.uIsGreaterThan() -> fetchFoldedStringToken()
-      reader.uIsComma()       -> fetchFlowItemSeparatorToken()
+      reader.uIsSquareClose() -> fetchFlowSequenceEndToken()
+      reader.uIsCurlyClose()  -> fetchFlowMappingEndToken()
+      reader.uIsExclamation() -> fetchTagToken()
+      reader.uIsPercent()     -> fetchDirectiveToken()
+      reader.uIsPeriod()      -> fetchAmbiguousPeriodToken()
+      reader.uIsAmpersand()   -> fetchAnchorToken()
+      reader.uIsAsterisk()    -> fetchAliasToken()
       reader.uIsQuestion()    -> fetchAmbiguousQuestionToken()
 
       // BAD NONO CHARACTERS: @ `
@@ -255,7 +267,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
       when {
         // We found the end of the stream.
-        haveEOF()           -> break
+        reader.isEOF()      -> break
         reader.isSpace()    -> skipASCII()
         reader.isTab()      -> TODO("What manner of tomfuckery is this")
         reader.isAnyBreak() -> skipLine()
@@ -333,12 +345,17 @@ internal class YAMLScannerImpl : YAMLScanner {
   //   | least should be reworked.
 
   internal fun UByteBuffer.claimUTF8() {
-    if (!takeCodepointFrom(reader.utf8Buffer))
+    if (!takeCodepointFrom(reader))
       throw IllegalStateException("invalid utf-8 codepoint in the reader buffer or buffer is offset")
     position.incPosition()
   }
 
-  internal fun UByteContainer.detectNewLineType() =
+  private fun UByteBuffer.claimASCII() {
+    push(reader.pop())
+    position.incPosition()
+  }
+
+  internal fun UByteSource.detectNewLineType() =
     when {
       isLineFeed()           -> NL.LF
       isCRLF()               -> NL.CRLF
@@ -351,7 +368,35 @@ internal class YAMLScannerImpl : YAMLScanner {
       )
     }
 
-  internal fun UByteBuffer.claimNewLine(from: UByteBuffer, position: SourcePositionTracker) {
+  internal inline fun UByteBuffer.claimNewLine() = claimNewLine(reader, position)
+
+  internal fun UByteBuffer.claimNewLine(from: UByteSource) {
+    if (from.isCRLF()) {
+      appendNewLine(NL.CRLF)
+      from.skipLine(NL.CRLF)
+    } else if (from.isCarriageReturn()) {
+      appendNewLine(NL.CR)
+      from.skipLine(NL.CR)
+    } else if (from.isLineFeed()) {
+      appendNewLine(NL.LF)
+      from.skipLine(NL.LF)
+    } else if (from.isNewLine()) {
+      appendNewLine(NL.NEL)
+      from.skipLine(NL.NEL)
+    } else if (from.isLineSeparator()) {
+      appendNewLine(NL.LS)
+      from.skipLine(NL.LS)
+    } else if (from.isParagraphSeparator()) {
+      appendNewLine(NL.PS)
+      from.skipLine(NL.PS)
+    } else {
+      throw IllegalStateException(
+        "called #claimNewLine(UByteSource) when the given buffer was not on a new line character"
+      )
+    }
+  }
+
+  internal fun UByteBuffer.claimNewLine(from: UByteSource, position: SourcePositionTracker) {
     if (from.isCRLF()) {
       appendNewLine(NL.CRLF)
       from.skipLine(NL.CRLF)
@@ -377,7 +422,9 @@ internal class YAMLScannerImpl : YAMLScanner {
       from.skipLine(NL.PS)
       position.incLine(NL.PS.characters.toUInt())
     } else {
-      throw IllegalStateException("called #claimNewLine() when the reader was not on a new line character")
+      throw IllegalStateException(
+        "called #claimNewLine(UByteSource, SourcePositionTracker) when the given buffer was not on a new line character"
+      )
     }
   }
 
@@ -415,7 +462,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     }
   }
 
-  internal fun UByteBuffer.skipLine(nl: NL) {
+  internal fun UByteSource.skipLine(nl: NL) {
     if (inDocument) {
       when (nl) {
         NL.NEL,
@@ -526,7 +573,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     // the EOF, a line break, or a `#` character (the start of a comment), then
     // we have an incomplete token because there can be no version number
     // following on this line.
-    if (reader.isPound() || haveAnyBreakOrEOF())
+    if (reader.isPound() || reader.isAnyBreakOrEOF())
       return fetchIncompleteYAMLDirectiveToken(
         startMark,
         position.mark(modIndex = -trailingSpaceCount, modColumn = -trailingSpaceCount)
@@ -552,7 +599,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     // value is a period character.
 
     reader.cache(1)
-    if (haveAnyBreakOrEOF())
+    if (reader.isAnyBreakOrEOF())
       return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
     if (!reader.isPeriod())
       return fetchMalformedYAMLDirectiveToken(startMark)
@@ -561,7 +608,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     skipASCII()
 
     reader.cache(1)
-    if (haveAnyBreakOrEOF())
+    if (reader.isAnyBreakOrEOF())
       return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
     if (!reader.isDecimalDigit())
       return fetchMalformedYAMLDirectiveToken(startMark)
@@ -595,14 +642,14 @@ internal class YAMLScannerImpl : YAMLScanner {
       // If the next character after the whitespace(s) is NOT a `#`, is NOT a
       // line break, and is NOT the EOF, then we have some extra junk at the
       // end of our token line and the token is considered malformed.
-      if (!(reader.isPound() || haveAnyBreakOrEOF()))
+      if (!(reader.isPound() || reader.isAnyBreakOrEOF()))
         return fetchMalformedYAMLDirectiveToken(startMark)
     }
 
     // Else (meaning we're not at a whitespace), if the next thing in the reader
     // buffer is NOT a line break and is NOT the EOF, then we have extra junk
     // right after our minor version number, meaning the token is malformed.
-    else if (!haveAnyBreakOrEOF()) {
+    else if (!reader.isAnyBreakOrEOF()) {
       return fetchMalformedYAMLDirectiveToken(startMark)
     }
 
@@ -750,7 +797,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Tag Directive
 
-  @OptIn(ExperimentalUnsignedTypes::class)
   internal fun fetchTagDirectiveToken(startMark: SourcePosition) {
     // At this point we've already skipped over `%TAG<WS>`.
     //
@@ -763,7 +809,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // If, after skipping over the empty spaces, we hit a `#`, line break, or the
     // EOF, then we have an incomplete token.
-    if (reader.isPound() || haveAnyBreakOrEOF())
+    if (reader.isPound() || reader.isAnyBreakOrEOF())
       return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex = -infixSpace, modColumn = -infixSpace))
 
     // If the next character is not an exclamation mark, then we have a malformed
@@ -808,7 +854,7 @@ internal class YAMLScannerImpl : YAMLScanner {
         )
       }
 
-      if (haveBlankAnyBreakOrEOF())
+      if (reader.isBlankAnyBreakOrEOF())
         return fetchIncompleteTagDirectiveToken(startMark, position.mark())
 
       // TODO: should we recover by converting the invalid character into a hex
@@ -834,7 +880,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // If the next thing after the blanks was a linebreak or EOF then we have an
     // incomplete directive.
-    if (haveAnyBreakOrEOF() || reader.isPound())
+    if (reader.isAnyBreakOrEOF() || reader.isPound())
       return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex =  -infixSpace, modColumn = -infixSpace))
 
     // Okay so we have another character in the buffer.  It _should_ be either an
@@ -857,7 +903,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     while (true) {
       reader.cache(1)
 
-      if (haveBlankAnyBreakOrEOF())
+      if (reader.isBlankAnyBreakOrEOF())
         break
 
       // If we encounter a non-URI character than we have an invalid tag
@@ -885,7 +931,7 @@ internal class YAMLScannerImpl : YAMLScanner {
       // comment or a newline, then we have an invalid tag directive.
       infixSpace = eatBlanks()
 
-      if (!(haveAnyBreakOrEOF() || reader.isPound()))
+      if (!(reader.isAnyBreakOrEOF() || reader.isPound()))
         return fetchInvalidTagDirectiveToken("unexpected character after prefix value", startMark)
     }
 
@@ -946,7 +992,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     //
     // If we are not in a flow, then the colon is only a value separator if it is
     // followed by a blank, a line break, or the EOF
-    if (!(inFlow || haveBlankAnyBreakOrEOF(1)))
+    if (!(inFlow || reader.isBlankAnyBreakOrEOF(1)))
       return fetchPlainScalar()
 
     // Record the start position for our token (the position of the colon
@@ -981,11 +1027,11 @@ internal class YAMLScannerImpl : YAMLScanner {
     reader.cache(4)
 
     // If we have `-(?:\s|$)`
-    if (haveBlankAnyBreakOrEOF(1))
+    if (reader.isBlankAnyBreakOrEOF(1))
       return fetchBlockEntryIndicatorToken()
 
     // See if we are at the start of the line and next up is `--(?:\s|$)`
-    if (atStartOfLine && reader.isDash(1) && reader.isDash(2) && haveBlankAnyBreakOrEOF(3)) {
+    if (atStartOfLine && reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3)) {
       return fetchDocumentStartToken()
     }
 
@@ -1011,7 +1057,7 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun fetchAmbiguousPeriodToken() {
     reader.cache(4)
 
-    if (atStartOfLine && reader.isPeriod(1) && reader.isPeriod(2) && haveBlankAnyBreakOrEOF(3))
+    if (atStartOfLine && reader.isPeriod(1) && reader.isPeriod(2) && reader.isBlankAnyBreakOrEOF(3))
       fetchDocumentEndToken()
     else
       fetchPlainScalar()
@@ -1044,7 +1090,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     reader.cache(2)
 
-    return if (haveBlankAnyBreakOrEOF(1))
+    return if (reader.isBlankAnyBreakOrEOF(1))
       fetchMappingKeyIndicatorToken()
     else
       fetchPlainScalar()
@@ -1128,13 +1174,12 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Plain Scalars
 
-  private val psConfirmedBuffer  = UByteBuffer(1024)
-  private val psAmbiguousBuffer  = UByteBuffer(1024)
-  private val psTrailingWSBuffer = UByteBuffer(16)
-  private val psTrailingNLBuffer = UByteBuffer(4)
-
-  @OptIn(ExperimentalUnsignedTypes::class)
   internal fun fetchPlainScalar() {
+    contentBuffer1.clear()
+    contentBuffer2.clear()
+    trailingWSBuffer.clear()
+    trailingNLBuffer.clear()
+
     val startMark = position.mark()
 
     // Rolling end position of this scalar value (don't create a mark every time
@@ -1146,30 +1191,30 @@ internal class YAMLScannerImpl : YAMLScanner {
     while (true) {
       reader.cache(1)
 
-      if (haveEOF()) {
-        if (psAmbiguousBuffer.size == 1) {
-          if (psAmbiguousBuffer.uIsSquareClose()) {
-            if (psConfirmedBuffer.isNotEmpty)
-              tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+      if (reader.isEOF()) {
+        if (contentBuffer2.size == 1) {
+          if (contentBuffer2.uIsSquareClose()) {
+            if (contentBuffer1.isNotEmpty)
+              tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
 
-            this.emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
+            emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
             return
-          } else if (psAmbiguousBuffer.uIsCurlyClose()) {
-            if (psConfirmedBuffer.isNotEmpty)
-              tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          } else if (contentBuffer2.uIsCurlyClose()) {
+            if (contentBuffer1.isNotEmpty)
+              tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
 
-            this.emitFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
+            emitFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
             return
           }
         }
 
-        collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
-        tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
         return
       }
 
       if (reader.isBlank()) {
-        psTrailingWSBuffer.push(reader.pop())
+        trailingWSBuffer.push(reader.pop())
         position.incPosition()
         continue
       }
@@ -1188,25 +1233,25 @@ internal class YAMLScannerImpl : YAMLScanner {
         // token.
         //
         // This logic and comment appear twice in this file and nowhere else.
-        if (psAmbiguousBuffer.size == 1) {
-          if (psAmbiguousBuffer.uIsSquareClose()) {
-            if (psConfirmedBuffer.isNotEmpty)
-              tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        if (contentBuffer2.size == 1) {
+          if (contentBuffer2.uIsSquareClose()) {
+            if (contentBuffer1.isNotEmpty)
+              tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
 
-            this.emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
+            emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
             return
-          } else if (psAmbiguousBuffer.uIsCurlyClose()) {
-            if (psConfirmedBuffer.isNotEmpty)
-              tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          } else if (contentBuffer2.uIsCurlyClose()) {
+            if (contentBuffer1.isNotEmpty)
+              tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
 
-            this.emitFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
+            emitFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
             return
           }
         }
 
-        psTrailingWSBuffer.clear()
-        collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
-        psTrailingNLBuffer.claimNewLine(reader.utf8Buffer, position)
+        trailingWSBuffer.clear()
+        collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
+        trailingNLBuffer.claimNewLine(reader, position)
         continue
       }
 
@@ -1228,11 +1273,11 @@ internal class YAMLScannerImpl : YAMLScanner {
         // 2. Plain scalar: "goodbye"
         // 3. Mapping value indicator
         // 4. Plain scalar: "taco"
-        if (!inFlowMapping && haveBlankAnyBreakOrEOF(1)) {
-          if (psConfirmedBuffer.isNotEmpty)
-            tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        if (!inFlowMapping && reader.isBlankAnyBreakOrEOF(1)) {
+          if (contentBuffer1.isNotEmpty)
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
 
-          tokens.push(newPlainScalarToken(psAmbiguousBuffer.popToArray(), startOfLinePosition.mark(), position.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer2.popToArray(), startOfLinePosition.mark(), position.mark()))
 
           return
         }
@@ -1241,40 +1286,40 @@ internal class YAMLScannerImpl : YAMLScanner {
         // care if there is a space following the colon character, and B) don't
         // want to split the plain scalar on newlines.
         else if (inFlowMapping) {
-          psTrailingWSBuffer.clear()
+          trailingWSBuffer.clear()
 
-          collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
+          collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
 
-          tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
 
           return
         }
       }
 
-      if (reader.isDash() && psTrailingNLBuffer.isNotEmpty) {
+      if (reader.isDash() && trailingNLBuffer.isNotEmpty) {
         reader.cache(4)
 
-        if (haveBlankAnyBreakOrEOF(1)) {
-          tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        if (reader.isBlankAnyBreakOrEOF(1)) {
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
           return
         }
       }
 
       if (inFlow && reader.isComma()) {
-        collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
-        tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
         return
       }
 
       if (inFlowMapping && reader.isCurlyClose()) {
-        collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
-        tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
         return
       }
 
       if (inFlowSequence && reader.isSquareClose()) {
-        collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
-        tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+        collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
         return
       }
 
@@ -1289,8 +1334,8 @@ internal class YAMLScannerImpl : YAMLScanner {
         if (reader.isDash()) {
           reader.cache(4)
 
-          if (reader.isDash(1) && reader.isDash(2) && haveBlankAnyBreakOrEOF(3)) {
-            tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          if (reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3)) {
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
             return
           }
         }
@@ -1298,8 +1343,8 @@ internal class YAMLScannerImpl : YAMLScanner {
         if (reader.isPeriod()) {
           reader.cache (4)
 
-          if (reader.isPeriod(1) && reader.isPeriod(2) && haveBlankAnyBreakOrEOF(3)) {
-            tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          if (reader.isPeriod(1) && reader.isPeriod(2) && reader.isBlankAnyBreakOrEOF(3)) {
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
             return
           }
         }
@@ -1307,8 +1352,8 @@ internal class YAMLScannerImpl : YAMLScanner {
         if (reader.isQuestion()) {
           reader.cache(2)
 
-          if (haveBlankAnyBreakOrEOF(1)) {
-            tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          if (reader.isBlankAnyBreakOrEOF(1)) {
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
             return
           }
         }
@@ -1318,7 +1363,7 @@ internal class YAMLScannerImpl : YAMLScanner {
           || reader.isSquareOpen()
           || reader.isCurlyOpen()
         ) {
-          tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
           return
         }
       } // end if (atStartOfLine)
@@ -1327,11 +1372,11 @@ internal class YAMLScannerImpl : YAMLScanner {
 
       // If we have any trailing whitespaces, then append them to the ambiguous
       // buffer because we just hit a non-blank character
-      if (psTrailingNLBuffer.isEmpty)
-        while (psTrailingWSBuffer.isNotEmpty)
-          psAmbiguousBuffer.push(psTrailingWSBuffer.pop())
+      if (trailingNLBuffer.isEmpty)
+        while (trailingWSBuffer.isNotEmpty)
+          contentBuffer2.push(trailingWSBuffer.pop())
 
-      psAmbiguousBuffer.claimUTF8()
+      contentBuffer2.claimUTF8()
     }
   }
 
@@ -1371,6 +1416,408 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // endregion Plain Scalars
 
+  // region Comments
+
+  internal fun fetchCommentToken() {
+    contentBuffer1.clear()
+    trailingWSBuffer.clear()
+
+    val startMark = position.mark()
+
+    skipASCII()
+    eatBlanks()
+
+    // The comment line may be empty
+    if (reader.isAnyBreakOrEOF()) {
+      tokens.push(newCommentToken(UByteArray(0), startMark, startMark.copy(1, 0, 1)))
+      return
+    }
+
+    while (true) {
+      reader.cache(1)
+
+      if (reader.isBlank()) {
+        trailingWSBuffer.takeFrom(reader, 1)
+        position.incPosition()
+      } else if (reader.isAnyBreakOrEOF()) {
+        break
+      } else {
+        while (trailingWSBuffer.isNotEmpty)
+          contentBuffer1.push(trailingWSBuffer.pop())
+
+        contentBuffer1.takeCodepointFrom(reader)
+        position.incPosition()
+      }
+    }
+
+    tokens.push(newCommentToken(
+      contentBuffer1.popToArray(),
+      startMark,
+      position.mark(modIndex = -trailingWSBuffer.size, modColumn = -trailingWSBuffer.size)
+    ))
+  }
+
+  // endregion Comments
+
+  // region Alias
+
+  internal fun fetchAliasToken() {
+    contentBuffer1.clear()
+
+    val start = position.mark()
+
+    skipASCII()
+    reader.cache(1)
+
+    if (reader.isBlankAnyBreakOrEOF()) {
+      val end = position.mark()
+      warn("incomplete alias token", start, end)
+      tokens.push(newInvalidToken(start, end))
+      return
+    }
+
+    while (true) {
+      if (reader.isBlankAnyBreakOrEOF()) {
+        break
+      } else if (reader.isNsAnchorChar()) {
+        contentBuffer1.takeCodepointFrom(reader)
+        position.incPosition()
+      } else {
+        val end = position.mark()
+        warn("invalid or unexpected character while parsing an alias token", start, end)
+        tokens.push(newInvalidToken(start, end))
+        return
+      }
+
+      reader.cache(1)
+    }
+
+    tokens.push(newAliasToken(contentBuffer1.popToArray(), start, position.mark()))
+  }
+
+  private fun newAliasToken(alias: UByteArray, start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.Alias, YAMLTokenDataAlias(alias), start, end, getWarnings())
+
+  // endregion Alias
+
+  // region Anchor
+
+  internal fun fetchAnchorToken() {
+    contentBuffer1.clear()
+
+    val start = position.mark()
+
+    skipASCII()
+    reader.cache(1)
+
+    if (reader.isBlankAnyBreakOrEOF()) {
+      val end = position.mark()
+      warn("incomplete anchor token", start, end)
+      tokens.push(newInvalidToken(start, end))
+      return
+    }
+
+    while (true) {
+      if (reader.isBlankAnyBreakOrEOF()) {
+        break
+      } else if (reader.isNsAnchorChar()) {
+        contentBuffer1.takeCodepointFrom(reader)
+        position.incPosition()
+      } else {
+        val end = position.mark()
+        warn("invalid or unexpected character while parsing an anchor token", start, end)
+        tokens.push(newInvalidToken(start, end))
+        return
+      }
+
+      reader.cache(1)
+    }
+
+    tokens.push(newAnchorToken(contentBuffer1.popToArray(), start, position.mark()))
+  }
+
+  private fun newAnchorToken(anchor: UByteArray, start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.Anchor, YAMLTokenDataAnchor(anchor), start, end, getWarnings())
+
+  // endregion Anchor
+
+  // region Tag
+
+  private fun fetchTagToken() {
+    val startMark = position.mark()
+
+    // Skip the first `!`
+    skipASCII()
+
+    // Queue up the next character to read
+    reader.cache(1)
+
+    if (reader.isBlankAnyBreakOrEOF())
+      return fetchNonSpecificTagToken(startMark)
+
+    if (reader.isLessThan())
+      return fetchVerbatimTagToken(startMark)
+
+    if (reader.isExclamation())
+      return fetchSecondaryTagToken(startMark)
+
+    if (reader.isNsTagChar())
+      return fetchHandleOrPrimaryTagToken(startMark)
+
+    warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
+    skipUntilBlankBreakOrEOF()
+    tokens.push(newInvalidToken(startMark, position.mark()))
+    return
+  }
+
+  @OptIn(ExperimentalUnsignedTypes::class)
+  private fun fetchNonSpecificTagToken(startMark: SourcePosition) {
+    tokens.push(newTagToken(StrPrimaryTagPrefix, StrEmpty, startMark, position.mark()))
+  }
+
+  private fun fetchHandleOrPrimaryTagToken(startMark: SourcePosition) {
+    // Clear our reusable buffer just in case some goober left something in it.
+    contentBuffer1.clear()
+
+    // Push our prefix `!` character.
+    contentBuffer1.push(A_EXCLAIM)
+
+    // Claim the URI character the cursor is currently on.
+    contentBuffer1.claimUTF8()
+
+    while (true) {
+      reader.cache(1)
+
+      // If we hit a blank, new line, or the EOF
+      if (reader.isBlankAnyBreakOrEOF()) {
+        // Pop the exclamation mark off because what we have is a suffix on the
+        // primary tag handle and a suffix should not have a leading exclamation
+        // mark.
+        contentBuffer1.pop()
+
+        // Generate the primary tag token.
+        return fetchPrimaryTagToken(startMark, contentBuffer1.popToArray())
+      }
+
+      // If we hit an exclamation mark
+      else if (reader.isExclamation()) {
+        // Then what we have is the handle for a local tag.
+
+        // Eat the exclamation mark to finish off our handle
+        contentBuffer1.claimASCII()
+
+        // Generate a local tag token
+        return fetchLocalTagToken(startMark, contentBuffer1.popToArray())
+      }
+
+      // If we hit a URI character
+      else if (reader.isNsURIChar()) {
+        // append it to the buffer
+        contentBuffer1.claimUTF8()
+      }
+
+      // If we hit any other character
+      else {
+        warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
+        skipUntilBlankBreakOrEOF()
+        tokens.push(newInvalidToken(startMark, position.mark()))
+        return
+      }
+    }
+  }
+
+  private fun fetchPrimaryTagToken(startMark: SourcePosition, suffix: UByteArray) {
+    tokens.push(newTagToken(StrPrimaryTagPrefix, suffix, startMark, position.mark()))
+  }
+
+  private fun fetchLocalTagToken(startMark: SourcePosition, handle: UByteArray) {
+    // !foo!bar
+    // we've seen `!foo!`
+
+    contentBuffer1.clear()
+
+    reader.cache(1)
+
+    if (reader.isBlankAnyBreakOrEOF()) {
+      val end = position.mark()
+      warn("incomplete tag; tag had no suffix", startMark, end)
+      tokens.push(newInvalidToken(startMark, end))
+      return
+    }
+
+    while (true) {
+      if (reader.isNsURIChar()) {
+        contentBuffer1.claimUTF8()
+      }
+
+      else if (reader.isBlankAnyBreakOrEOF()) {
+        break
+      }
+
+      else {
+        warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
+        skipUntilBlankBreakOrEOF()
+        tokens.push(newInvalidToken(startMark, position.mark()))
+        return
+      }
+
+      reader.cache(1)
+    }
+
+    tokens.push(newTagToken(handle, contentBuffer1.popToArray(), startMark, position.mark()))
+  }
+
+  private fun fetchSecondaryTagToken(startMark: SourcePosition) {
+    contentBuffer1.clear()
+
+    skipASCII()
+    reader.cache(1)
+
+    if (reader.isBlankAnyBreakOrEOF())
+      TODO("secondary token with no suffix")
+
+    while (true) {
+      if (reader.isNsTagChar()) {
+        contentBuffer1.claimUTF8()
+      } else if (reader.isBlankAnyBreakOrEOF()) {
+        break
+      } else {
+        warn("invalid character in secondary tag token", position.mark(), position.mark(1, 0, 1))
+        skipUntilBlankBreakOrEOF()
+        tokens.push(newInvalidToken(startMark, position.mark()))
+        return
+      }
+
+      reader.cache(1)
+    }
+
+    tokens.push(newTagToken(StrSecondaryTagPrefix, contentBuffer1.popToArray(), startMark, position.mark()))
+  }
+
+  private fun fetchVerbatimTagToken(startMark: SourcePosition) {
+    contentBuffer1.clear()
+
+    contentBuffer1.push(A_EXCLAIM)
+    contentBuffer1.claimASCII()
+
+    while (true) {
+      reader.cache(1)
+
+      if (reader.isGreaterThan()) {
+        contentBuffer1.claimASCII()
+        break
+      } else if (reader.isNsURIChar()) {
+        contentBuffer1.claimASCII()
+      } else if (reader.isBlankAnyBreakOrEOF()) {
+        TODO("incomplete verbatim tag")
+      } else {
+        TODO("unexpected character in verbatim tag")
+      }
+    }
+
+    tokens.push(newTagToken(contentBuffer1.popToArray(), StrEmpty, startMark, position.mark()))
+  }
+
+  @Suppress("NOTHING_TO_INLINE")
+  @OptIn(ExperimentalUnsignedTypes::class)
+  private inline fun newTagToken(handle: UByteArray, suffix: UByteArray, start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.Tag, YAMLTokenDataTag(handle, suffix), start, end, getWarnings())
+
+  // endregion Tag
+
+  // region Flow Item Separator
+
+  private fun fetchFlowItemSeparatorToken() {
+    val start = position.mark()
+    skipASCII()
+    tokens.push(newFlowItemSeparatorToken(start, position.mark()))
+  }
+
+  private fun newFlowItemSeparatorToken(start: SourcePosition, end: SourcePosition) =
+    YAMLToken(YAMLTokenType.FlowEntry, null, start, end, getWarnings())
+
+  // endregion Flow Item Separator
+
+  // region Single Quoted String
+  private fun fetchSingleQuotedStringToken() {
+    contentBuffer1.clear()
+    trailingWSBuffer.clear()
+    trailingNLBuffer.clear()
+
+    val start = position.mark()
+
+    // Skip the leading `'` character.
+    skipASCII()
+
+    while (true) {
+      reader.cache(1)
+
+      when {
+        reader.isApostrophe() -> {
+          collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
+
+          reader.cache(2)
+
+          // If we have 2 apostrophe characters in a row, then we have an escape
+          // sequence, and we should not stop reading the string here.
+          //
+          // Instead, append a single apostrophe to the content buffer and move
+          // on.
+          if (reader.isApostrophe(1)) {
+            contentBuffer1.claimASCII()
+            skipASCII()
+            continue
+          }
+
+          tokens.push(newSingleQuotedStringToken(contentBuffer1.popToArray(), start))
+          return
+        }
+        reader.isBlank()      -> trailingWSBuffer.claimASCII()
+        reader.isAnyBreak()   -> {
+          trailingWSBuffer.clear()
+          trailingNLBuffer.claimNewLine()
+        }
+        reader.isEOF()        -> {
+          val end = position.mark()
+          warn("incomplete string token; unexpected stream end", start, end)
+          tokens.push(newInvalidToken(start, end))
+          return
+        }
+        else                  -> {
+          collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
+          contentBuffer1.claimUTF8()
+        }
+      }
+    }
+  }
+
+  private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
+    target:   UByteBuffer,
+    newlines: UByteBuffer,
+    blanks:   UByteBuffer,
+  ) {
+    if (newlines.isNotEmpty) {
+      if (newlines.size == 1) {
+        target.push(A_SPACE)
+      } else {
+        newlines.pop()
+        while (newlines.isNotEmpty)
+          target.claimNewLine(newlines)
+      }
+    } else if (blanks.isNotEmpty) {
+      while (blanks.isNotEmpty)
+        target.push(blanks.pop())
+    }
+  }
+
+  private fun newSingleQuotedStringToken(
+    value: UByteArray,
+    start: SourcePosition,
+    end:   SourcePosition = position.mark()
+  ) =
+    YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.SingleQuoted), start, end, getWarnings())
+
+  // endregion Single Quoted String
+
   // endregion Token Fetching
 }
-

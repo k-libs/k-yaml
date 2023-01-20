@@ -23,3 +23,7 @@ class YAMLTokenDataTag(val handle: UByteArray, val suffix: UByteArray) : YAMLTok
 class YAMLTokenDataTagDirective(val handle: UByteArray, val prefix: UByteArray) : YAMLTokenData
 
 data class YAMLTokenDataVersionDirective(val major: UInt, val minor: UInt) : YAMLTokenData
+
+@JvmInline
+@OptIn(ExperimentalUnsignedTypes::class)
+value class YAMLTokenDataComment(val value: UByteArray) : YAMLTokenData

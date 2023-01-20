@@ -15,14 +15,14 @@ import io.foxcapades.lib.k.yaml.util.popUTF16LE
 import io.foxcapades.lib.k.yaml.util.utf16Width
 import io.foxcapades.lib.k.yaml.util.utf8Width
 
-class YAMLReaderBuffer : UByteContainer {
+class YAMLReaderBuffer : UByteSource {
   private val rawBuffer: UByteBuffer
-  private val readerFn: ByteReader
-  // TODO: MAKE SURE THIS THING IS UPDATED IN ALL THE PLACES THAT READ FROM THE RAW BUFFER INTO THE UTF-8 BUFFER
+
+  private val reader: ByteReader
+
   private var index: ULong = 0UL
 
-  @Deprecated("don't use this, use the reader extension functions")
-  internal val utf8Buffer: UByteBuffer
+  private val utf8Buffer: UByteBuffer
 
   var atEOF: Boolean = false
     private set
@@ -39,10 +39,10 @@ class YAMLReaderBuffer : UByteContainer {
   inline val isNotEmpty
     get() = size > 0
 
-  constructor(capacity: Int, readerFn: ByteReader) {
+  constructor(capacity: Int, reader: ByteReader) {
     this.rawBuffer  = UByteBuffer(capacity)
-    this.utf8Buffer = UByteBuffer(capacity * 4)
-    this.readerFn   = readerFn
+    this.utf8Buffer = UByteBuffer(capacity * 2)
+    this.reader     = reader
   }
 
   fun cache(count: Int): Boolean {
@@ -59,11 +59,11 @@ class YAMLReaderBuffer : UByteContainer {
     return false
   }
 
-  fun pop() = utf8Buffer.pop()
+  override fun pop() = utf8Buffer.pop()
 
-  fun peek() = utf8Buffer.peek()
+  override fun peek() = utf8Buffer.peek()
 
-  fun skip(bytes: Int) = utf8Buffer.skip(bytes)
+  override fun skip(count: Int) = utf8Buffer.skip(count)
 
   fun skipCodepoint() {
     if (utf8Buffer.isEmpty)
@@ -101,7 +101,7 @@ class YAMLReaderBuffer : UByteContainer {
   }
 
   private fun fillRawBuffer() {
-    if (rawBuffer.fill(readerFn) == -1)
+    if (rawBuffer.fill(reader) == -1)
       atEOF = true
   }
 

@@ -1,5 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.YAMLReaderBuffer
 import kotlin.test.*

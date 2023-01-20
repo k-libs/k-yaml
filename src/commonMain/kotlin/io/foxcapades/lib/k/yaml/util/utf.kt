@@ -104,7 +104,7 @@ internal fun UInt.toUTF8(into: UByteBuffer) {
  * offset.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.utf8Width(offset: Int = 0) = get(offset).utf8Width()
+internal inline fun UByteSource.utf8Width(offset: Int = 0) = get(offset).utf8Width()
 
 /**
  * Calls [UByte.utf16Width] on the byte at the given offset in the buffer.
@@ -115,7 +115,7 @@ internal inline fun UByteBuffer.utf8Width(offset: Int = 0) = get(offset).utf8Wid
  * offset.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.utf16Width(offset: Int = 0) = get(offset).utf16Width()
+internal inline fun UByteSource.utf16Width(offset: Int = 0) = get(offset).utf16Width()
 
 /**
  * Pops the first 4 bytes from the buffer and translates them into a UTF
@@ -124,7 +124,7 @@ internal inline fun UByteBuffer.utf16Width(offset: Int = 0) = get(offset).utf16W
  * @return The first 4 bytes in the buffer as a UTF codepoint.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.popUTF32BE() =
+internal inline fun UByteSource.popUTF32BE() =
   (pop().toUInt() shl 24) or (pop().toUInt() shl 16) or (pop().toUInt() shl 8) or pop().toUInt()
 
 /**
@@ -134,7 +134,7 @@ internal inline fun UByteBuffer.popUTF32BE() =
  * @return The first 4 bytes in the buffer as a UTF codepoint.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.popUTF32LE() =
+internal inline fun UByteSource.popUTF32LE() =
   pop().toUInt() or (pop().toUInt() shl 8) or (pop().toUInt() shl 16) or (pop().toUInt() shl 24)
 
 /**
@@ -142,7 +142,7 @@ internal inline fun UByteBuffer.popUTF32LE() =
  * codepoint from the UTF-16 BE source encoding.
  */
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.popUTF16BE() =
+internal inline fun UByteSource.popUTF16BE() =
   when (utf16Width()) {
     // Standard UTF-16 character.
     2    -> (pop().toUInt() shl 8) or pop().toUInt()
@@ -152,7 +152,7 @@ internal inline fun UByteBuffer.popUTF16BE() =
     else -> throw IllegalStateException("Invalid UTF-16 BE surrogate pair")
   }
 
-internal inline fun UByteBuffer.popUTF16LE() =
+internal inline fun UByteSource.popUTF16LE() =
   when (utf16Width(1)) {
     // Standard UTF-16 character.
     2    -> pop().toUInt() or (pop().toUInt() shl 8)
@@ -163,7 +163,7 @@ internal inline fun UByteBuffer.popUTF16LE() =
   }
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun UByteBuffer.takeCodepointFrom(other: UByteBuffer) =
+internal inline fun UByteBuffer.takeCodepointFrom(other: UByteSource) =
   when (val c = other[0].utf8Width()) {
     0    -> false
     else -> {
