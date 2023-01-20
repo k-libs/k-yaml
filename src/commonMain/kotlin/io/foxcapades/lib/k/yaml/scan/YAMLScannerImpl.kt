@@ -229,8 +229,8 @@ internal class YAMLScannerImpl : YAMLScanner {
       reader.uIsQuestion()    -> fetchAmbiguousQuestionToken()
 
       // BAD NONO CHARACTERS: @ `
-      unsafeHaveAt()          -> fetchAmbiguousAtToken()
-      unsafeHaveGrave()       -> fetchAmbiguousGraveToken()
+      reader.isAt()          -> fetchAmbiguousAtToken()
+      reader.isGrave()       -> fetchAmbiguousGraveToken()
 
       // Meh characters: ~ $ ^ ( ) _ + = \ ; < /
       // And everything else...
@@ -255,11 +255,11 @@ internal class YAMLScannerImpl : YAMLScanner {
 
       when {
         // We found the end of the stream.
-        haveEOF()       -> break
-        haveSpace()     -> skipASCII()
-        haveTab()       -> TODO("What manner of tomfuckery is this")
-        haveAnyBreak() -> skipLine()
-        else           -> break
+        haveEOF()           -> break
+        reader.isSpace()    -> skipASCII()
+        reader.isTab()      -> TODO("What manner of tomfuckery is this")
+        reader.isAnyBreak() -> skipLine()
+        else                -> break
       }
     }
   }
@@ -487,13 +487,13 @@ internal class YAMLScannerImpl : YAMLScanner {
       throw YAMLScannerException("stream ended on an incomplete or invalid directive", startMark)
 
     // See if the next 5 characters are "YAML<WS>"
-    if (testReaderOctets(A_UPPER_Y, A_UPPER_A, A_UPPER_M, A_UPPER_L) && haveBlank(4)) {
+    if (reader.test(A_UPPER_Y) && reader.test(A_UPPER_A, 1) && reader.test(A_UPPER_M, 2) && reader.test(A_UPPER_L, 3) && reader.isBlank(4)) {
       skipASCII(5)
       return fetchYAMLDirectiveToken(startMark)
     }
 
     // See if the next 4 characters are "TAG<WS>"
-    if (testReaderOctets(A_UPPER_T, A_UPPER_A, A_UPPER_G) && haveBlank(3)) {
+    if (reader.test(A_UPPER_T) && reader.test(A_UPPER_A, 1) && reader.test(A_UPPER_G, 2) && reader.isBlank(3)) {
       skipASCII(4)
       return fetchTagDirectiveToken(startMark)
     }
@@ -792,7 +792,7 @@ internal class YAMLScannerImpl : YAMLScanner {
         break
       }
 
-      if (havePercent()) {
+      if (reader.isPercent()) {
         reader.cache(3)
 
         if (reader.isHexDigit(1) && reader.isHexDigit(2)) {
@@ -1168,13 +1168,13 @@ internal class YAMLScannerImpl : YAMLScanner {
         return
       }
 
-      if (haveBlank()) {
+      if (reader.isBlank()) {
         psTrailingWSBuffer.push(reader.pop())
         position.incPosition()
         continue
       }
 
-      if (haveAnyBreak()) {
+      if (reader.isAnyBreak()) {
         // Here we examine if the entire line last line we just ate (not counting
         // whitespaces) was a closing square or curly bracket character.
         //
@@ -1210,7 +1210,7 @@ internal class YAMLScannerImpl : YAMLScanner {
         continue
       }
 
-      if (haveColon()) {
+      if (reader.isColon()) {
         reader.cache(2)
 
         // If we are not in a flow mapping, and the colon is followed by a
@@ -1260,19 +1260,19 @@ internal class YAMLScannerImpl : YAMLScanner {
         }
       }
 
-      if (inFlow && haveComma()) {
+      if (inFlow && reader.isComma()) {
         collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
         tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
         return
       }
 
-      if (inFlowMapping && haveCurlyClose()) {
+      if (inFlowMapping && reader.isCurlyClose()) {
         collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
         tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
         return
       }
 
-      if (inFlowSequence && haveSquareClose()) {
+      if (inFlowSequence && reader.isSquareClose()) {
         collapseNewlinesAndMergeBuffers(endPosition, psConfirmedBuffer, psAmbiguousBuffer, psTrailingWSBuffer, psTrailingNLBuffer)
         tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
         return
@@ -1314,9 +1314,9 @@ internal class YAMLScannerImpl : YAMLScanner {
         }
 
         if (
-          havePercent()
-          || haveSquareOpen()
-          || haveCurlyOpen()
+          reader.isPercent()
+          || reader.isSquareOpen()
+          || reader.isCurlyOpen()
         ) {
           tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
           return

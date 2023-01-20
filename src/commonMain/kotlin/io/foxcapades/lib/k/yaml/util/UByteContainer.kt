@@ -8,6 +8,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_APOSTROPHE
 import io.foxcapades.lib.k.yaml.bytes.A_ASTERISK
 import io.foxcapades.lib.k.yaml.bytes.A_BACKSLASH
 import io.foxcapades.lib.k.yaml.bytes.A_CURLY_BRACKET_CLOSE
+import io.foxcapades.lib.k.yaml.scan.*
 
 internal interface UByteContainer {
 
@@ -126,7 +127,7 @@ internal inline fun UByteContainer.isParagraphSeparator(offset: Int = 0) =
 
 // region Unsafe UTF-8 Character Tests
 
-internal inline fun UByteContainer.uIsNewLine(offset: Int = 0) =
+internal inline fun UByteContainer.uIsNextLine(offset: Int = 0) =
   uTest(UbC2, offset) && uTest(Ub85, offset + 1)
 
 internal inline fun UByteContainer.uIsLineSeparator(offset: Int = 0) =
@@ -172,13 +173,87 @@ internal inline fun UByteContainer.isHexDigit(offset: Int = 0): Boolean {
   return false
 }
 
+// endregion Safe Byte Class Tests
+
+// region Unsafe Byte Class Tests
+
+internal inline fun UByteContainer.uIsBlank(offset: Int = 0) =
+  uTest(A_SPACE, offset) || uTest(A_TAB, offset)
+
+// endregion Unsafe Byte Class Tests
+
+// endregion Byte Class Tests
+
+// region Character Class Tests
+
+// region Safe Character Class Tests
+
+internal inline fun UByteContainer.isAnyBreak(offset: Int = 0) =
+  if (size > offset + 2)
+    uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset) || uIsLineSeparator(offset) || uIsParagraphSeparator(offset)
+  else if (size > offset + 1)
+    uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset)
+  else if (size > offset)
+    uIsLineFeed(offset) || uIsCarriageReturn(offset)
+  else
+    false
+
+internal inline fun UByteContainer.isBlankOrAnyBreak(offset: Int = 0) =
+  (size > offset + 2 && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset) || uIsLineSeparator(offset) || uIsParagraphSeparator(offset)))
+    || (size > offset + 1 && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset)))
+    || (size > offset && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset)))
+
+// endregion Safe Character Class Tests
+
+// region Unsafe Character Class Tests
+
+// endregion Unsafe Character Class Tests
+
+// endregion Character Class Tests
+
+// region Multi-Character Tests
+
+internal inline fun UByteContainer.isCRLF(offset: Int = 0) =
+  size > offset + 1 && uIsCarriageReturn(offset) && uIsLineFeed(offset + 1)
+
+// endregion Multi-Character Tests
+
+// region YAML Character Class Tests
+
+// region Safe YAML Character Class Tests
+
+/**
+ * ```
+ * [1] c-printable ::=
+ *                          # 8 bit
+ *     x09                  # Tab (\t)
+ *   | x0A                  # Line feed (LF \n)
+ *   | x0D                  # Carriage Return (CR \r)
+ *   | [x20-x7E]            # Printable ASCII
+ *                          # 16 bit
+ *   | x85                  # Next Line (NEL)
+ *   | [xA0-xD7FF]          # Basic Multilingual Plane (BMP)
+ *   | [xE000-xFFFD]        # Additional Unicode Areas
+ *                          # 32 bit
+ *   | [x010000-x10FFFF]
+ * ```
+ */
+internal inline fun UByteContainer.haveCPrintable(offset: Int = 0) =
+  when {
+    size > offset + 3 -> uIsPrintSafeASCII(offset) || uIsNextLine(offset) || uIsPrintSafe2ByteUTF8(offset) || uIsPrintSafe3ByteUTF8(offset) || uIsPrintSafe4ByteUTF8(offset)
+    size > offset + 2 -> uIsPrintSafeASCII(offset) || uIsNextLine(offset) || uIsPrintSafe2ByteUTF8(offset) || uIsPrintSafe3ByteUTF8(offset)
+    size > offset + 1 -> uIsPrintSafeASCII(offset) || uIsNextLine(offset) || uIsPrintSafe2ByteUTF8(offset)
+    size > offset     -> uIsPrintSafeASCII(offset)
+    else              -> false
+  }
+
 internal inline fun UByteContainer.isNsTagChar(offset: Int = 0) = size > offset && uIsNsTagChar(offset)
 
 internal inline fun UByteContainer.isNsURIChar(offset: Int = 0) = size > offset && uIsNsURIChar(offset)
 
-// endregion Safe Byte Class Tests
+// endregion Safe YAML Character Class Tests
 
-// region Unsafe Byte Class Tests
+// region Unsafe YAML Character Class Tests
 
 /**
  * YAML 1.2.2 Spec: `ns-ascii-letter`
@@ -332,16 +407,112 @@ internal inline fun UByteContainer.uIsNsWordChar(offset: Int = 0): Boolean {
     || v == A_DASH
 }
 
-// endregion Unsafe Byte Class Tests
+// endregion Unsafe YAML Character Class Tests
 
-// endregion Byte Class Tests
+// region YAML Character Class Test Support
 
-// region Multi-Character Tests
+internal inline fun UByteContainer.uIsPrintSafeASCII(offset: Int = 0) =
+  // In the non-control range (letters, numbers, visible symbols, and space)
+  (get(offset) > Ub19 && get(offset) < Ub7F)
+    // safe control characters
+    || get(offset) == A_LINE_FEED
+    || get(offset) == A_TAB
+    || get(offset) == A_CARRIAGE_RETURN
 
-internal inline fun UByteContainer.isCRLF(offset: Int = 0) =
-  size > offset + 1 && uIsCarriageReturn(offset) && uIsLineFeed(offset + 1)
+// Characters in the unicode range `\u00A0 .. \u07FF`
+//
+// This encompasses all 2 byte combinations in the range `0xC2A0 .. 0xDFBF`
+internal inline fun UByteContainer.uIsPrintSafe2ByteUTF8(offset: Int = 0) =
+  // 0xC2 + 0xA0 -> 0xDF + 0xBF
+  (get(offset) == UbC2 && get(offset + 1) >= UbA0)
+    || (get(offset) > UbC2 && get(offset) < UbDF)
+    || (get(offset) == UbDF && get(offset + 1) <= UbBF)
 
-// endregion Multi-Character Tests
+/**
+ * # (Unsafe) Have Print-safe 3 Byte UTF-8?
+ *
+ * Tests whether the next 3 bytes in the reader are in the range of printable
+ * UTF-8 characters that are stored as 3 bytes.
+ *
+ * The ranges of codepoints this includes are:
+ *
+ * - `U+0800 .. U+D7FF
+ * - `U+E000 .. U+FFFD
+ *
+ * In byte speak, this encompasses all 3 byte combinations in the ranges:
+ *
+ * - `0xE0A080 .. 0xED9FBF`
+ * - `0xEE8080 .. 0xEFBFBD`
+ */
+internal inline fun UByteContainer.uIsPrintSafe3ByteUTF8(offset: Int = 0) =
+  when (val first = get(offset)) {
+    // 0xE0_A0_80 -> 0xE0_FF_FF
+    UbE0 -> get(offset + 1) > UbA0 || (get(offset + 1) == UbA0 && get(offset + 2) >= Ub80)
+    // 0xED_00_00 -> 0xED_9F_BF
+    UbED -> get(offset + 1) < Ub9F || (get(offset + 1) == Ub9F && get(offset + 2) <= UbBF)
+    // 0xEF_00_00 -> 0xEF_BF_BD
+    UbEF -> get(offset + 1) < UbBF || (get(offset + 1) == UbBF && get(offset + 2) <= UbBD)
+    // 0xE1_00_00 -> 0xEC_FF_FF
+    // 0xEE_00_00 -> 0xEE_FF_FF
+    else -> (first > UbE0 && first < UbED) || first == UbEE
+  }
+
+// `U+10000 .. U+10FFFF`
+// `0xF0908080 .. 0xF48FBFBF`
+internal inline fun UByteContainer.uIsPrintSafe4ByteUTF8(offset: Int = 0) =
+  when (val first = get(offset)) {
+    // The first byte is 0xF0
+    UbF0 ->
+      // If the second byte is greater than 0x90, then it has to be a valid
+      // codepoint.
+      get(offset + 1) > Ub90
+        || (
+        // If the second byte is equal to 0x90, then it will only be valid if
+        // followed by a value that is greater than or equal to 0x8080.
+        get(offset + 1) == Ub90
+          && (
+          // If the third byte is greater than 0x80, then it must be a valid
+          // codepoint.
+          get(offset + 2) > Ub80
+            || (
+            // If the third byte is greater equal to 0x80, then it will only be
+            // valid if followed by a value that is greater than or equal to
+            // 0x80
+            get(offset + 2) == Ub80
+              && get(offset + 3) >= Ub80
+            )
+          )
+        )
+
+    // The first byte is 0xF4
+    UbF4 ->
+      // If the second byte is less than 0x8F, then it has to be a valid
+      // codepoint.
+      get(offset + 1) < Ub8F
+        || (
+        // If the second byte is equal to 0x8F, then it will only be valid if
+        // followed by a value that is less than or equal to 0xBFBF.
+        get(offset + 1) == Ub8F
+          && (
+          // If the third byte is less than 0xBF, then it has to be a valid
+          // codepoint.
+          get(offset + 2) < UbBF
+            || (
+            // If the third byte is equal to 0xBF, then it will only be valid if
+            // followed by a value that is less than or equal to 0xBF
+            get(offset + 2) == UbBF
+              && get(offset + 3) <= UbBF
+            )
+          )
+        )
+
+    else ->
+      first > UbF0 && first < UbF4
+  }
+
+// endregion YAML Character Class Test Support
+
+// endregion YAML Character Class Tests
 
 // endregion Content Tests
 
