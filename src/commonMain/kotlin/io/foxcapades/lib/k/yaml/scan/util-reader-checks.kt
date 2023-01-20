@@ -46,15 +46,6 @@ private inline fun YAMLScannerImpl.testReaderOctet(octet: UByte, offset: Int = 0
   bufferHasOffset(offset) && unsafeTestReaderOctet(octet, offset)
 
 /**
- * Tests the `UByte` values at offsets `0` and `1` in the reader buffer
- * against the given octet values to see if they are equal.
- */
-private inline fun YAMLScannerImpl.testReaderOctets(octet1: UByte, octet2: UByte, offset: Int = 0) =
-  bufferHasOffset(offset + 1)
-    && unsafeTestReaderOctet(octet1, offset)
-    && unsafeTestReaderOctet(octet2, offset + 1)
-
-/**
  * Tests the `UByte` values at offsets `0`, `1`, and `2` in the reader buffer
  * against the given octet values to see if they are equal.
  */
@@ -95,49 +86,19 @@ internal inline fun YAMLScannerImpl.unsafeTestReaderOctets(octet1: UByte, octet2
 
 // region Safe Tests
 
-internal inline fun YAMLScannerImpl.haveAmp        (offset: Int = 0) = testReaderOctet(A_AMPERSAND, offset)
-internal inline fun YAMLScannerImpl.haveAsterisk   (offset: Int = 0) = testReaderOctet(A_ASTERISK, offset)
-internal inline fun YAMLScannerImpl.haveBackslash  (offset: Int = 0) = testReaderOctet(A_BACKSLASH, offset)
 internal inline fun YAMLScannerImpl.haveColon      (offset: Int = 0) = testReaderOctet(A_COLON, offset)
 internal inline fun YAMLScannerImpl.haveComma      (offset: Int = 0) = testReaderOctet(A_COMMA, offset)
-internal inline fun YAMLScannerImpl.haveCR         (offset: Int = 0) = testReaderOctet(A_CARRIAGE_RETURN, offset)
 internal inline fun YAMLScannerImpl.haveCurlyClose (offset: Int = 0) = testReaderOctet(A_CURLY_BRACKET_CLOSE, offset)
 internal inline fun YAMLScannerImpl.haveCurlyOpen  (offset: Int = 0) = testReaderOctet(A_CURLY_BRACKET_OPEN, offset)
-internal inline fun YAMLScannerImpl.haveDash       (offset: Int = 0) = testReaderOctet(A_DASH, offset)
-internal inline fun YAMLScannerImpl.haveExclaim    (offset: Int = 0) = testReaderOctet(A_EXCLAIM, offset)
-internal inline fun YAMLScannerImpl.haveLF         (offset: Int = 0) = testReaderOctet(A_LINE_FEED, offset)
-internal inline fun YAMLScannerImpl.haveLS         (offset: Int = 0) = testReaderOctets(UbE2, Ub80, UbA8, offset)
-internal inline fun YAMLScannerImpl.haveNEL        (offset: Int = 0) = testReaderOctets(UbC2, Ub85, offset)
 internal inline fun YAMLScannerImpl.havePercent    (offset: Int = 0) = testReaderOctet(A_PERCENT, offset)
-internal inline fun YAMLScannerImpl.havePeriod     (offset: Int = 0) = testReaderOctet(A_PERIOD, offset)
-internal inline fun YAMLScannerImpl.havePound      (offset: Int = 0) = testReaderOctet(A_POUND, offset)
-internal inline fun YAMLScannerImpl.havePS         (offset: Int = 0) = testReaderOctets(UbE2, Ub80, UbA9, offset)
-internal inline fun YAMLScannerImpl.haveQuestion   (offset: Int = 0) = testReaderOctet(A_QUESTION, offset)
 internal inline fun YAMLScannerImpl.haveSpace      (offset: Int = 0) = testReaderOctet(A_SPACE, offset)
 internal inline fun YAMLScannerImpl.haveSquareClose(offset: Int = 0) = testReaderOctet(A_SQUARE_BRACKET_CLOSE, offset)
 internal inline fun YAMLScannerImpl.haveSquareOpen (offset: Int = 0) = testReaderOctet(A_SQUARE_BRACKET_OPEN, offset)
 internal inline fun YAMLScannerImpl.haveTab        (offset: Int = 0) = testReaderOctet(A_TAB, offset)
 
-internal inline fun YAMLScannerImpl.haveDecimalDigit(offset: Int = 0) =
-  bufferHasOffset(offset)
-    && unsafeHaveDecimalDigit(offset)
-
-internal inline fun YAMLScannerImpl.haveHexDigit(offset: Int = 0) =
-  bufferHasOffset(offset)
-    && unsafeHaveHexDigit(offset)
-
 internal inline fun YAMLScannerImpl.haveBlank(offset: Int = 0) =
   bufferHasOffset(offset)
     && unsafeHaveBlank(offset)
-
-internal inline fun YAMLScannerImpl.haveCROrLF(offset: Int = 0) =
-  bufferHasOffset(offset)
-    && unsafeHaveCROrLF(offset)
-
-internal inline fun YAMLScannerImpl.haveCRLF(offset: Int) =
-  bufferHasOffset(offset + 1)
-    && unsafeHaveCR(offset)
-    && unsafeHaveLineFeed(offset + 1)
 
 internal inline fun YAMLScannerImpl.haveAnyBreak(offset: Int = 0) =
   when {
@@ -247,130 +208,13 @@ internal inline fun YAMLScannerImpl.haveCPrintable(offset: Int = 0) =
 // The following collection of unsafe buffer content tests are to test for the
 // existence of a single UTF-8 character in the buffer.
 
-/**
- * Tests if the character at the given offset in the reader buffer is an ASCII
- * Ampersand character (`&`).
- *
- * @param offset Offset in the reader buffer to test.
- *
- * Default = `0`
- *
- * @return `true` if the character at the given `offset` in the reader buffer
- * is an ASCII Ampersand character.  `false` if the character at the given
- * `offset` in the reader buffer is _not_ an ASCII Ampersand character.
- *
- * @throws IndexOutOfBoundsException If the reader buffer size is less than or
- * equal to the given [offset] value.
- */
-internal inline fun YAMLScannerImpl.unsafeHaveAmp(offset: Int = 0) = unsafeTestReaderOctet(A_AMPERSAND, offset)
-
-/**
- * Tests if the character at the given offset in the reader buffer is an ASCII
- * Apostrophe character (`'`).
- *
- * @param offset Offset in the reader buffer to test.
- *
- * Default = `0`
- *
- * @return `true` if the character at the given `offset` in the reader buffer
- * is an ASCII Apostrophe character.  `false` if the character at the given
- * `offset` in the reader buffer is _not_ an ASCII Ampersand character.
- *
- * @throws IndexOutOfBoundsException If the reader buffer size is less than or
- * equal to the given [offset] value.
- */
-internal inline fun YAMLScannerImpl.unsafeHaveApostrophe(offset: Int = 0) = unsafeTestReaderOctet(A_APOSTROPHE, offset)
-
-/**
- * Tests if the character at the given offset in the reader buffer is an ASCII
- * Asterisk character (`*`).
- *
- * @param offset Offset in the reader buffer to test.
- *
- * Default = `0`
- *
- * @return `true` if the character at the given `offset` in the reader buffer
- * is an ASCII Asterisk character.  `false` if the character at the given
- * `offset` in the reader buffer is _not_ an ASCII Ampersand character.
- *
- * @throws IndexOutOfBoundsException If the reader buffer size is less than or
- * equal to the given [offset] value.
- */
-internal inline fun YAMLScannerImpl.unsafeHaveAsterisk(offset: Int = 0) = unsafeTestReaderOctet(A_ASTERISK, offset)
 internal inline fun YAMLScannerImpl.unsafeHaveAt(offset: Int = 0) = unsafeTestReaderOctet(A_AT, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveColon      (offset: Int = 0) = unsafeTestReaderOctet(A_COLON, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveComma      (offset: Int = 0) = unsafeTestReaderOctet(A_COMMA, offset)
 internal inline fun YAMLScannerImpl.unsafeHaveCR         (offset: Int = 0) = unsafeTestReaderOctet(A_CARRIAGE_RETURN, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveCurlyClose (offset: Int = 0) = unsafeTestReaderOctet(A_CURLY_BRACKET_CLOSE, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveCurlyOpen  (offset: Int = 0) = unsafeTestReaderOctet(A_CURLY_BRACKET_OPEN, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveDash       (offset: Int = 0) = unsafeTestReaderOctet(A_DASH, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveDoubleQuote(offset: Int = 0) = unsafeTestReaderOctet(A_DOUBLE_QUOTE, offset)
 internal inline fun YAMLScannerImpl.unsafeHaveGrave(offset: Int = 0) = unsafeTestReaderOctet(A_GRAVE, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveGreaterThan(offset: Int = 0) = unsafeTestReaderOctet(A_GREATER_THAN, offset)
 internal inline fun YAMLScannerImpl.unsafeHaveLineFeed   (offset: Int = 0) = unsafeTestReaderOctet(A_LINE_FEED, offset)
-
-/**
- * Tests if the character at the given [offset] in the reader buffer is a UTF
- * Line Separator character (`<LS>` a.k.a. `\u2028`).
- *
- * @param offset Offset in the reader buffer to test.
- *
- * Default = `0`
- *
- * @return `true` if the character at the given `offset` in the reader buffer
- * is a Line Separator character.  `false` if the character at the given
- * `offset` in the reader buffer is _not_ a Line Separator character.
- *
- * @throws IndexOutOfBoundsException If the reader buffer size is less than or
- * equal to `offset + 2`.
- */
-internal inline fun YAMLScannerImpl.unsafeHaveLineSeparator(offset: Int = 0) = unsafeTestReaderOctets(UbE2, Ub80, UbA8, offset)
-
-/**
- * Tests if the character at the given [offset] in the reader buffer is a UTF
- * Next Line indicator character (`<NEL>` a.k.a. `\u0085`).
- *
- * @param offset Offset in the reader buffer to test.
- *
- * Default = `0`
- *
- * @return `true` if the character at the given `offset` in the reader buffer
- * is a Next Line character.  `false` if the character at the given `offset`
- * in the reader buffer is _not_ a Next Line character.
- *
- * @throws IndexOutOfBoundsException If the reader buffer size is less than or
- * equal to `offset + 1`.
- */
 internal inline fun YAMLScannerImpl.unsafeHaveNextLine(offset: Int = 0) = unsafeTestReaderOctets(UbC2, Ub85, offset)
-
-/**
- * Tests if the character at the given offset in the reader buffer is an ASCII
- * percent sign character (`%`).
- *
- * @param offset Offset in the reader buffer to test.
- *
- * Default = `0`
- *
- * @return `true` if the character at the given `offset` in the reader buffer
- * is an ASCII percent sign character.  `false` if the character at the given
- * `offset` in the reader buffer is _not_ an ASCII percent sign character.
- *
- * @throws IndexOutOfBoundsException If the reader buffer size is less than or
- * equal to the given [offset] value.
- */
-internal inline fun YAMLScannerImpl.unsafeHavePercent(offset: Int = 0) = unsafeTestReaderOctet(A_PERCENT, offset)
-
-internal inline fun YAMLScannerImpl.unsafeHavePeriod     (offset: Int = 0) = unsafeTestReaderOctet(A_PERIOD, offset)
-internal inline fun YAMLScannerImpl.unsafeHavePipe       (offset: Int = 0) = unsafeTestReaderOctet(A_PIPE, offset)
-internal inline fun YAMLScannerImpl.unsafeHavePlus       (offset: Int = 0) = unsafeTestReaderOctet(A_PLUS, offset)
-internal inline fun YAMLScannerImpl.unsafeHavePound      (offset: Int = 0) = unsafeTestReaderOctet(A_POUND, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveParagraphSeparator(offset: Int = 0) = unsafeTestReaderOctets(UbE2, Ub80, UbA9, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveQuestion(offset: Int = 0) = unsafeTestReaderOctet(A_QUESTION, offset)
 internal inline fun YAMLScannerImpl.unsafeHaveSpace      (offset: Int = 0) = unsafeTestReaderOctet(A_SPACE, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveSquareClose(offset: Int = 0) = unsafeTestReaderOctet(A_SQUARE_BRACKET_CLOSE, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveSquareOpen (offset: Int = 0) = unsafeTestReaderOctet(A_SQUARE_BRACKET_OPEN, offset)
 internal inline fun YAMLScannerImpl.unsafeHaveTab        (offset: Int = 0) = unsafeTestReaderOctet(A_TAB, offset)
-internal inline fun YAMLScannerImpl.unsafeHaveTilde(offset: Int = 0) = unsafeTestReaderOctet(A_TILDE, offset)
 
 // =============================================================================
 // endregion Single Character Tests
@@ -381,14 +225,6 @@ internal inline fun YAMLScannerImpl.unsafeHaveTilde(offset: Int = 0) = unsafeTes
 // The following collection of unsafe buffer content tests are to test that
 // the character at the given offset falls inside a valid range of characters
 // to be a numeric digit representation.
-
-internal inline fun YAMLScannerImpl.unsafeHaveDecimalDigit(offset: Int = 0) =
-  reader[offset] >= A_DIGIT_0 && reader[offset] <= A_9
-
-internal inline fun YAMLScannerImpl.unsafeHaveHexDigit(offset: Int = 0) =
-  unsafeHaveDecimalDigit(offset)
-    || (reader[offset] >= A_UPPER_A && reader[offset] <= A_UP_F)
-    || (reader[offset] >= A_LOWER_A && reader[offset] <= A_LO_F)
 
 // =============================================================================
 // endregion Numeric Character Range Tests

@@ -15,13 +15,13 @@ internal class YAMLScannerImpl : YAMLScanner {
    * Whether the STREAM-START token has been returned to the consumer of the
    * YAMLScanner via the [nextToken] method.
    */
-  internal var streamStartProduced = false
+  private var streamStartProduced = false
 
   /**
    * Whether the STREAM-END token has been returned to the consumer of the
    * YAMLScanner via the [nextToken] method.
    */
-  internal var streamEndProduced = false
+  private var streamEndProduced = false
 
   /**
    * Tracker for our current position in the YAML stream.
@@ -100,9 +100,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   override val hasNextToken: Boolean
     get() = !streamEndProduced
 
-  val hasWarnings: Boolean
-    get() = warnings.isNotEmpty
-
   override fun nextToken(): YAMLToken {
     if (streamEndProduced)
       throw IllegalStateException("nextToken called on a YAML scanner that has already produced the end of the input YAML stream")
@@ -118,8 +115,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     return out
   }
-
-  fun nextWarning(): SourceWarning = warnings.pop()
 
   // endregion Public Methods
 
@@ -208,30 +203,30 @@ internal class YAMLScannerImpl : YAMLScanner {
     // TODO: SKIP TO NEXT TOKEN NEEDS TO HANDLE INDENT TAB DETECTION
     skipToNextToken()
 
-    cache(1)
+    reader.cache(1)
 
     if (!haveMoreCharactersAvailable)
       return fetchStreamEndToken()
 
     when {
       // Good boy characters: % - . # & * [ ] { } | : ' " > , ?
-      unsafeHavePercent()     -> fetchDirectiveToken()
-      unsafeHaveDash()        -> fetchAmbiguousDashToken()
-      unsafeHavePeriod()      -> fetchAmbiguousPeriodToken()
-      unsafeHavePound()       -> fetchCommentToken()
-      unsafeHaveAmp()         -> fetchAnchorToken()
-      unsafeHaveAsterisk()    -> fetchAliasToken()
-      unsafeHaveSquareOpen()  -> fetchFlowSequenceStartToken()
-      unsafeHaveSquareClose() -> fetchFlowSequenceEndToken()
-      unsafeHaveCurlyOpen()   -> fetchFlowMappingStartToken()
-      unsafeHaveCurlyClose()  -> fetchFlowMappingEndToken()
-      unsafeHavePipe()        -> fetchLiteralStringToken()
-      unsafeHaveColon()       -> fetchAmbiguousColonToken()
-      unsafeHaveApostrophe()  -> fetchSingleQuotedStringToken()
-      unsafeHaveDoubleQuote() -> fetchDoubleQuotedStringToken()
-      unsafeHaveGreaterThan() -> fetchFoldedStringToken()
-      unsafeHaveComma()       -> fetchFlowItemSeparatorToken()
-      unsafeHaveQuestion()    -> fetchAmbiguousQuestionToken()
+      reader.uIsPercent()     -> fetchDirectiveToken()
+      reader.uIsDash()        -> fetchAmbiguousDashToken()
+      reader.uIsPeriod()      -> fetchAmbiguousPeriodToken()
+      reader.uIsPound()       -> fetchCommentToken()
+      reader.uIsAmpersand()   -> fetchAnchorToken()
+      reader.uIsAsterisk()    -> fetchAliasToken()
+      reader.uIsSquareOpen()  -> fetchFlowSequenceStartToken()
+      reader.uIsSquareClose() -> fetchFlowSequenceEndToken()
+      reader.uIsCurlyOpen()   -> fetchFlowMappingStartToken()
+      reader.uIsCurlyClose()  -> fetchFlowMappingEndToken()
+      reader.uIsPipe()        -> fetchLiteralStringToken()
+      reader.uIsColon()       -> fetchAmbiguousColonToken()
+      reader.uIsApostrophe()  -> fetchSingleQuotedStringToken()
+      reader.uIsDoubleQuote() -> fetchDoubleQuotedStringToken()
+      reader.uIsGreaterThan() -> fetchFoldedStringToken()
+      reader.uIsComma()       -> fetchFlowItemSeparatorToken()
+      reader.uIsQuestion()    -> fetchAmbiguousQuestionToken()
 
       // BAD NONO CHARACTERS: @ `
       unsafeHaveAt()          -> fetchAmbiguousAtToken()
@@ -256,7 +251,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     //   | keep the column index correct...
 
     while (true) {
-      cache(1)
+      reader.cache(1)
 
       when {
         // We found the end of the stream.
@@ -275,14 +270,14 @@ internal class YAMLScannerImpl : YAMLScanner {
     var addValue: UInt
 
     while (true) {
-      cache(1)
+      reader.cache(1)
 
-      if (haveDecimalDigit()) {
+      if (reader.isDecimalDigit()) {
         if (intValue > UInt.MAX_VALUE / 10u)
           throw UIntOverflowException(intStart)
 
         intValue *= 10u
-        addValue = asDecimal()
+        addValue = reader.asDecimalDigit()
 
         if (intValue > UInt.MAX_VALUE - addValue)
           throw UIntOverflowException(intStart)
@@ -307,10 +302,10 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun eatBlanks(): Int {
     var out = 0
 
-    cache(1)
-    while (haveBlank()) {
+    reader.cache(1)
+    while (reader.isBlank()) {
       skipASCII()
-      cache(1)
+      reader.cache(1)
       out++
     }
 
@@ -448,7 +443,7 @@ internal class YAMLScannerImpl : YAMLScanner {
   // region Stream Indicators
 
   internal fun fetchStreamStartToken() {
-    cache(1)
+    reader.cache(1)
     streamStartProduced = true
     val mark = position.mark()
     tokens.push(newStreamStartToken(reader.encoding, mark, mark))
@@ -470,7 +465,7 @@ internal class YAMLScannerImpl : YAMLScanner {
    * buffer character is `%`.  This could be the start of a YAML directive, a
    * tag directive, or just junk.
    */
-  internal fun YAMLScannerImpl.fetchDirectiveToken() {
+  internal fun fetchDirectiveToken() {
     // Record the start position
     val startMark = position.mark()
 
@@ -484,7 +479,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // Attempt to load 5 codepoints into the reader buffer so we can do the
     // following tests.
-    cache(5)
+    reader.cache(5)
 
     // Nothing more in the buffer?  That means the stream ended on a `%`
     // character which means an invalid token directive.
@@ -531,7 +526,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     // the EOF, a line break, or a `#` character (the start of a comment), then
     // we have an incomplete token because there can be no version number
     // following on this line.
-    if (havePound() || haveAnyBreakOrEOF())
+    if (reader.isPound() || haveAnyBreakOrEOF())
       return fetchIncompleteYAMLDirectiveToken(
         startMark,
         position.mark(modIndex = -trailingSpaceCount, modColumn = -trailingSpaceCount)
@@ -539,7 +534,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // If the next character we see is not a decimal digit, then we've got some
     // junk characters instead of a version number.
-    if (!haveDecimalDigit())
+    if (!reader.isDecimalDigit())
       return fetchMalformedYAMLDirectiveToken(startMark)
 
     // Okay, so we are on a decimal digit, that is _hopefully_ the start of our
@@ -556,19 +551,19 @@ internal class YAMLScannerImpl : YAMLScanner {
     // Now we have to ensure that the value right after the major version int
     // value is a period character.
 
-    cache(1)
+    reader.cache(1)
     if (haveAnyBreakOrEOF())
       return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
-    if (!havePeriod())
+    if (!reader.isPeriod())
       return fetchMalformedYAMLDirectiveToken(startMark)
 
     // Skip the `.` character.
     skipASCII()
 
-    cache(1)
+    reader.cache(1)
     if (haveAnyBreakOrEOF())
       return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
-    if (!haveDecimalDigit())
+    if (!reader.isDecimalDigit())
       return fetchMalformedYAMLDirectiveToken(startMark)
 
     val minor = try {
@@ -585,22 +580,22 @@ internal class YAMLScannerImpl : YAMLScanner {
     // Now we need to make sure that there is nothing else on this line except
     // for maybe trailing whitespace characters and possibly a comment.
 
-    cache(1)
+    reader.cache(1)
     trailingSpaceCount = 0
 
     // If the next character after the minor version int is a whitespace
     // character:
-    if (haveBlank()) {
+    if (reader.isBlank()) {
       // Eat the whitespace(s) until we hit something else.
       trailingSpaceCount = eatBlanks()
 
       // Attempt to cache a character in our reader buffer
-      cache(1)
+      reader.cache(1)
 
       // If the next character after the whitespace(s) is NOT a `#`, is NOT a
       // line break, and is NOT the EOF, then we have some extra junk at the
       // end of our token line and the token is considered malformed.
-      if (!(havePound() || haveAnyBreakOrEOF()))
+      if (!(reader.isPound() || haveAnyBreakOrEOF()))
         return fetchMalformedYAMLDirectiveToken(startMark)
     }
 
@@ -687,17 +682,17 @@ internal class YAMLScannerImpl : YAMLScanner {
     isMajor:        Boolean,
   ) {
     // Ensure that we have a character in the buffer to test against.
-    cache(1)
+    reader.cache(1)
 
     // Skip over all the decimal digit characters until we hit the end of this
     // absurdly long int value.
-    while (haveDecimalDigit()) {
+    while (reader.isDecimalDigit()) {
       // Skip it as ASCII because if it's a decimal digit then we know it's an
       // ASCII character
       skipASCII()
 
       // Cache another character to test on the next pass of the loop
-      cache(1)
+      reader.cache(1)
     }
 
     // Emit a warning about the overflow, passing in:
@@ -768,12 +763,12 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // If, after skipping over the empty spaces, we hit a `#`, line break, or the
     // EOF, then we have an incomplete token.
-    if (havePound() || haveAnyBreakOrEOF())
+    if (reader.isPound() || haveAnyBreakOrEOF())
       return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex = -infixSpace, modColumn = -infixSpace))
 
     // If the next character is not an exclamation mark, then we have a malformed
     // Tag Directive.
-    if (!haveExclaim())
+    if (!reader.isExclamation())
       return fetchInvalidTagDirectiveToken("unexpected character that cannot start a tag handle", startMark)
 
     // So at this point, we have seen `%TAG !`.  Now we have to determine whether
@@ -787,10 +782,10 @@ internal class YAMLScannerImpl : YAMLScanner {
     handleBuffer.takeASCIIFrom(1, reader, position)
 
     while (true) {
-      cache(1)
+      reader.cache(1)
 
       // If we have our ending exclamation mark:
-      if (haveExclaim()) {
+      if (reader.isExclamation()) {
         // eat it
         handleBuffer.takeASCIIFrom(1, reader, position)
         // break out of the loop because we are done with the handle
@@ -798,7 +793,7 @@ internal class YAMLScannerImpl : YAMLScanner {
       }
 
       if (havePercent()) {
-        cache(3)
+        reader.cache(3)
 
         if (reader.isHexDigit(1) && reader.isHexDigit(2)) {
           handleBuffer.takeASCIIFrom(3, reader, position)
@@ -839,7 +834,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // If the next thing after the blanks was a linebreak or EOF then we have an
     // incomplete directive.
-    if (haveAnyBreakOrEOF() || havePound())
+    if (haveAnyBreakOrEOF() || reader.isPound())
       return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex =  -infixSpace, modColumn = -infixSpace))
 
     // Okay so we have another character in the buffer.  It _should_ be either an
@@ -860,7 +855,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     prefixBuffer.takeASCIIFrom(1, reader, position)
 
     while (true) {
-      cache(1)
+      reader.cache(1)
 
       if (haveBlankAnyBreakOrEOF())
         break
@@ -890,7 +885,7 @@ internal class YAMLScannerImpl : YAMLScanner {
       // comment or a newline, then we have an invalid tag directive.
       infixSpace = eatBlanks()
 
-      if (!(haveAnyBreakOrEOF() || havePound()))
+      if (!(haveAnyBreakOrEOF() || reader.isPound()))
         return fetchInvalidTagDirectiveToken("unexpected character after prefix value", startMark)
     }
 
@@ -945,7 +940,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     // anything else then it is the start of a plain scalar token.
 
     // Cache the character after the colon in the buffer.
-    cache(2)
+    reader.cache(2)
 
     // If we are in a flow, then a colon automatically means value separator.
     //
@@ -983,14 +978,14 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     // Cache the next 3 characters in the buffer to accommodate the size of the
     // document start token `^---(?:\s|$)`
-    cache(4)
+    reader.cache(4)
 
     // If we have `-(?:\s|$)`
     if (haveBlankAnyBreakOrEOF(1))
       return fetchBlockEntryIndicatorToken()
 
     // See if we are at the start of the line and next up is `--(?:\s|$)`
-    if (atStartOfLine && haveDash(1) && haveDash(2) && haveBlankAnyBreakOrEOF(3)) {
+    if (atStartOfLine && reader.isDash(1) && reader.isDash(2) && haveBlankAnyBreakOrEOF(3)) {
       return fetchDocumentStartToken()
     }
 
@@ -1013,16 +1008,16 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Ambiguous Period
 
-  internal fun YAMLScannerImpl.fetchAmbiguousPeriodToken() {
-    cache(4)
+  internal fun fetchAmbiguousPeriodToken() {
+    reader.cache(4)
 
-    if (atStartOfLine && havePeriod(1) && havePeriod(2) && haveBlankAnyBreakOrEOF(3))
+    if (atStartOfLine && reader.isPeriod(1) && reader.isPeriod(2) && haveBlankAnyBreakOrEOF(3))
       fetchDocumentEndToken()
     else
       fetchPlainScalar()
   }
 
-  private fun YAMLScannerImpl.fetchDocumentEndToken() {
+  private fun fetchDocumentEndToken() {
     val start = position.mark()
     skipASCII(3)
     tokens.push(newDocumentEndToken(start, position.mark()))
@@ -1047,7 +1042,7 @@ internal class YAMLScannerImpl : YAMLScanner {
     //   | handling needs to be different for flow contexts and update if
     //   | necessary
 
-    cache(2)
+    reader.cache(2)
 
     return if (haveBlankAnyBreakOrEOF(1))
       fetchMappingKeyIndicatorToken()
@@ -1256,7 +1251,7 @@ internal class YAMLScannerImpl : YAMLScanner {
         }
       }
 
-      if (haveDash() && psTrailingNLBuffer.isNotEmpty) {
+      if (reader.isDash() && psTrailingNLBuffer.isNotEmpty) {
         reader.cache(4)
 
         if (haveBlankAnyBreakOrEOF(1)) {
@@ -1291,26 +1286,26 @@ internal class YAMLScannerImpl : YAMLScanner {
         // of the ambiguous buffer inside this if block as that buffer will always
         // be empty.
 
-        if (haveDash()) {
+        if (reader.isDash()) {
           reader.cache(4)
 
-          if (haveDash(1) && haveDash(2) && haveBlankAnyBreakOrEOF(3)) {
+          if (reader.isDash(1) && reader.isDash(2) && haveBlankAnyBreakOrEOF(3)) {
             tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
             return
           }
         }
 
-        if (havePeriod()) {
-          cache (4)
+        if (reader.isPeriod()) {
+          reader.cache (4)
 
-          if (havePeriod(1) && havePeriod(2) && haveBlankAnyBreakOrEOF(3)) {
+          if (reader.isPeriod(1) && reader.isPeriod(2) && haveBlankAnyBreakOrEOF(3)) {
             tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))
             return
           }
         }
 
-        if (haveQuestion()) {
-          cache(2)
+        if (reader.isQuestion()) {
+          reader.cache(2)
 
           if (haveBlankAnyBreakOrEOF(1)) {
             tokens.push(newPlainScalarToken(psConfirmedBuffer.popToArray(), startMark, endPosition.mark()))

@@ -1,6 +1,8 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.util.isBlank
+import io.foxcapades.lib.k.yaml.util.isPound
 
 //
 /**
@@ -65,7 +67,7 @@ internal fun YAMLScannerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
   val endMark: SourcePosition
 
   while (true) {
-    cache(1)
+    reader.cache(1)
 
     when {
       // If we've encountered `<WS>#` then we can end because we've found the
@@ -73,14 +75,14 @@ internal fun YAMLScannerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
       //
       // If we've encountered a line break or the EOF, then we can end because
       // it's the end of the junk token.
-      havePound() && trailingWhitespaceCount > 0 || haveAnyBreakOrEOF() -> {
+      reader.isPound() && trailingWhitespaceCount > 0 || haveAnyBreakOrEOF() -> {
         endMark = position.mark(modIndex = -trailingWhitespaceCount, modColumn = -trailingWhitespaceCount)
         break
       }
 
       // If we've encountered a whitespace character, just keep a counter of it
       // because it may be trailing whitespace (which we want to "ignore").
-      haveBlank() -> {
+      reader.isBlank() -> {
         trailingWhitespaceCount++
         skipASCII()
       }
