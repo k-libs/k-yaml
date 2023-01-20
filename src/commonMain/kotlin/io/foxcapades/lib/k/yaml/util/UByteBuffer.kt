@@ -3,7 +3,7 @@ package io.foxcapades.lib.k.yaml.util
 import io.foxcapades.lib.k.yaml.io.ByteReader
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal class UByteBuffer {
+internal class UByteBuffer : UByteContainer {
   private var raw: UByteArray
 
   private var head: Int = 0
@@ -11,7 +11,7 @@ internal class UByteBuffer {
   /**
    * The current number of bytes held in the buffer.
    */
-  var size: Int = 0
+  override var size: Int = 0
     private set
 
   /**
@@ -175,7 +175,7 @@ internal class UByteBuffer {
     return out
   }
 
-  operator fun get(index: Int): UByte = raw[vidx(index)]
+  override fun get(offset: Int): UByte = raw[vidx(offset)]
 
   fun takeFrom(other: UByteBuffer, count: Int = other.size) {
     if (other.size < count)

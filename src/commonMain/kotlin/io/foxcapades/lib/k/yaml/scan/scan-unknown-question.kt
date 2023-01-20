@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchAmbiguousQuestionToken() {
+internal fun YAMLScannerImpl.fetchAmbiguousQuestionToken() {
   // If:      we are in a block context
   //   If:      the question mark is followed by a space, newline, or EOF, it is
   //            a mapping key indicator
@@ -23,7 +23,7 @@ internal fun YAMLScanner.fetchAmbiguousQuestionToken() {
     fetchPlainScalar()
 }
 
-private fun YAMLScanner.fetchMappingKeyIndicatorToken() {
+private fun YAMLScannerImpl.fetchMappingKeyIndicatorToken() {
   val start = position.mark()
   skipASCII()
   tokens.push(newMappingKeyIndicatorToken(start, position.mark()))

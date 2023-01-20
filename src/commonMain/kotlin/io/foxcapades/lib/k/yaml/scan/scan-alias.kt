@@ -6,7 +6,7 @@ package io.foxcapades.lib.k.yaml.scan
  * Right now the reader is on an ASCII Asterisk character (`*`) in a token start
  * position.
  */
-internal fun YAMLScanner.fetchAliasToken() {
+internal fun YAMLScannerImpl.fetchAliasToken() {
   // Record the start position of our token.
   val tokenStart = position.mark()
 

@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchStreamStartToken() {
+internal fun YAMLScannerImpl.fetchStreamStartToken() {
   cache(1)
   streamStartProduced = true
   val mark = position.mark()

@@ -2,7 +2,6 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.bytes.*
 import io.foxcapades.lib.k.yaml.err.YAMLScannerException
-import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 /**
  * Attempts to parse the rest of the current line as a directive.
@@ -11,7 +10,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
  * buffer character is `%`.  This could be the start of a YAML directive, a
  * tag directive, or just junk.
  */
-internal fun YAMLScanner.fetchDirectiveToken() {
+internal fun YAMLScannerImpl.fetchDirectiveToken() {
   // Record the start position
   val startMark = position.mark()
 

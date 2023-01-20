@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchAmbiguousColonToken() {
+internal fun YAMLScannerImpl.fetchAmbiguousColonToken() {
   // So we've hit a colon character.  If it is followed by a space, linebreak
   // or EOF then it is a mapping value indicator token.  If it is followed by
   // anything else then it is the start of a plain scalar token.

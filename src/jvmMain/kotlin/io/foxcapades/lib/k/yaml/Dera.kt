@@ -1,9 +1,9 @@
 package io.foxcapades.lib.k.yaml
 
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.YAMLReader
+import io.foxcapades.lib.k.yaml.read.YAMLReaderBuffer
 import io.foxcapades.lib.k.yaml.scan.LineBreakType
-import io.foxcapades.lib.k.yaml.scan.YAMLScanner
+import io.foxcapades.lib.k.yaml.scan.YAMLScannerImpl
 
 val input1 = """
 foo:
@@ -13,9 +13,9 @@ foo:
 
 
 fun main() {
-  val scanner = YAMLScanner(YAMLReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))), LineBreakType.LF)
+  val scanner = YAMLScannerImpl(YAMLReaderBuffer(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))), LineBreakType.LF)
 
-  while (scanner.hasMoreTokens)
+  while (scanner.hasNextToken)
     println(scanner.nextToken())
 }
 

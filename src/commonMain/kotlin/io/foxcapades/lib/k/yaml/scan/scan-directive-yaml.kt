@@ -17,7 +17,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
  *
  * @param startMark Mark of the start position of the token.
  */
-internal fun YAMLScanner.fetchYAMLDirectiveToken(startMark: SourcePosition) {
+internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) {
   // We have already skipped over `%YAML<WS>`.  Eat any extra whitespaces
   // until we encounter something else, which will hopefully be a decimal
   // digit.
@@ -177,7 +177,7 @@ internal fun YAMLScanner.fetchYAMLDirectiveToken(startMark: SourcePosition) {
  * not.  `true` if it was the major version, `false` if it was the minor
  * version.
  */
-private fun YAMLScanner.fetchOverflowYAMLDirectiveToken(
+private fun YAMLScannerImpl.fetchOverflowYAMLDirectiveToken(
   tokenStartMark: SourcePosition,
   intStartMark: SourcePosition,
   isMajor:        Boolean,
@@ -222,7 +222,7 @@ private fun YAMLScanner.fetchOverflowYAMLDirectiveToken(
  * create a warning highlighting that junk before queueing up an `INVALID`
  * token and returning.
  */
-private fun YAMLScanner.fetchMalformedYAMLDirectiveToken(tokenStartMark: SourcePosition) {
+private fun YAMLScannerImpl.fetchMalformedYAMLDirectiveToken(tokenStartMark: SourcePosition) {
   val junkStart = position.mark()
   val junkEnd   = skipUntilCommentBreakOrEOF()
 
@@ -230,13 +230,13 @@ private fun YAMLScanner.fetchMalformedYAMLDirectiveToken(tokenStartMark: SourceP
   tokens.push(newInvalidToken(tokenStartMark, junkEnd))
 }
 
-private fun YAMLScanner.fetchIncompleteYAMLDirectiveToken(start: SourcePosition, end: SourcePosition) {
+private fun YAMLScannerImpl.fetchIncompleteYAMLDirectiveToken(start: SourcePosition, end: SourcePosition) {
   version = DefaultYAMLVersion
   warn("incomplete %YAML directive; assuming YAML version $DefaultYAMLVersion", start, end)
   tokens.push(newInvalidToken(start, end))
 }
 
-private fun YAMLScanner.fetchUnsupportedYAMLDirectiveToken(
+private fun YAMLScannerImpl.fetchUnsupportedYAMLDirectiveToken(
   major: UInt,
   minor: UInt,
   start: SourcePosition,

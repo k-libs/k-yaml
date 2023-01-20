@@ -3,6 +3,9 @@ package io.foxcapades.lib.k.yaml.util
 /**
  * # Source Position Tracker
  *
+ * This type is used to keep a moving 'cursor position' in a source YAML
+ * stream.
+ *
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  * @since 0.1.0
  */
@@ -138,9 +141,9 @@ class SourcePositionTracker {
     modLine:   Int = 0,
     modColumn: Int = 0,
   ) = SourcePosition(
-    if (modIndex < 0) index - (-modIndex).toUInt() else index + modIndex.toUInt(),
-    line,
-    column
+    if (modIndex < 0)  index  - (-modIndex).toUInt()  else index  + modIndex.toUInt(),
+    if (modLine < 0)   line   - (-modLine).toUInt()   else line   + modLine.toUInt(),
+    if (modColumn < 0) column - (-modColumn).toUInt() else column + modColumn.toUInt()
   )
 
   fun become(other: SourcePositionTracker) {

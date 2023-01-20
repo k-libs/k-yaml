@@ -1,5 +1,5 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchFlowItemSeparatorToken() {
+internal fun YAMLScannerImpl.fetchFlowItemSeparatorToken() {
   TODO("handle `,` token")
 }

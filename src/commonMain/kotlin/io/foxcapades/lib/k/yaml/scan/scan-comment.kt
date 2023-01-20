@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchCommentToken() {
+internal fun YAMLScannerImpl.fetchCommentToken() {
   TODO("Scan the rest of the line as a comment value")
   // What about multiline comments, how will those be handled?  Further up?
   //

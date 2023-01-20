@@ -1,16 +1,18 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.UByteBuffer
-import io.foxcapades.lib.k.yaml.util.uIsNsWordChar
 
 
-internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
+@OptIn(ExperimentalUnsignedTypes::class)
+internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   // At this point we've already skipped over `%TAG<WS>`.
   //
   // Skip over any additional blank spaces which will hopefully leave us at the
   // start of our tag handle.
-  var infixSpace = eatBlanks()
+  //
+  // We add 1 to the space count to account for the one space we've already seen
+  // before this function was called.
+  var infixSpace = 1 + eatBlanks()
 
   // If, after skipping over the empty spaces, we hit a `#`, line break, or the
   // EOF, then we have an incomplete token.
@@ -20,7 +22,7 @@ internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
   // If the next character is not an exclamation mark, then we have a malformed
   // Tag Directive.
   if (!haveExclaim())
-    return fetchMalformedTagDirectiveToken(startMark)
+    return fetchInvalidTagDirectiveToken("unexpected character that cannot start a tag handle", startMark)
 
   // So at this point, we have seen `%TAG !`.  Now we have to determine whether
   // this is a primary tag handle (`!`), a secondary tag handle (`!!`), or a
@@ -35,20 +37,28 @@ internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
   while (true) {
     cache(1)
 
-    if (haveExclaim())
+    // If we have our ending exclamation mark:
+    if (haveExclaim()) {
+      // eat it
+      handleBuffer.claimASCII(1, reader.utf8Buffer, position)
+      // break out of the loop because we are done with the handle
       break
+    }
 
     if (havePercent()) {
       cache(3)
 
-      if (reader.utf8Buffer.isDecimalDigit(1) && reader.utf8Buffer.isDecimalDigit(2)) {
+      if (reader.isHexDigit(1) && reader.isHexDigit(2)) {
         handleBuffer.claimASCII(3, reader.utf8Buffer, position)
         continue
       }
 
       // So it was a `%` character followed by something other than 2 decimal
       // digits.
-      return fetchInvalidTagDirectiveToken(startMark)
+      return fetchInvalidTagDirectiveToken(
+        "invalid URI escape; '%' character not followed by 2 hex digits",
+        startMark
+      )
     }
 
     if (haveBlankAnyBreakOrEOF())
@@ -57,7 +67,7 @@ internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
     // TODO: should we recover by converting the invalid character into a hex
     //       escape sequence and tossing up a warning?
     if (!reader.utf8Buffer.uIsNsWordChar())
-      return fetchInvalidTagDirectiveToken(startMark)
+      return fetchInvalidTagDirectiveToken("tag handle contained an invalid character", startMark)
 
     // If it _is_ an `ns-word-char` then it is in the ASCII range and is a
     // single byte.
@@ -69,15 +79,15 @@ internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
   // or more blank characters followed by the prefix value.
 
   // If we _don't_ have a blank character then the directive is junk.
-  if (!reader.utf8Buffer.isBlank())
-    return fetchInvalidTagDirectiveToken(startMark)
+  if (!reader.isBlank())
+    return fetchInvalidTagDirectiveToken("unexpected character after tag handle", startMark)
 
   // Skip the whitespaces until we encounter something else.
   infixSpace = eatBlanks()
 
   // If the next thing after the blanks was a linebreak or EOF then we have an
   // incomplete directive.
-  if (haveAnyBreakOrEOF())
+  if (haveAnyBreakOrEOF() || havePound())
     return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex =  -infixSpace, modColumn = -infixSpace))
 
   // Okay so we have another character in the buffer.  It _should_ be either an
@@ -87,8 +97,8 @@ internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
 
   // If we hit something else, other than an exclamation mark or an
   // `<ns-tag-char>` character, then we have an invalid tag directive.
-  if (!(reader.utf8Buffer.isExclaim() || reader.utf8Buffer.isNsTagChar()))
-    return fetchInvalidTagDirectiveToken(startMark)
+  if (!(reader.isExclamation() || reader.isNsTagChar()))
+    return fetchInvalidTagDirectiveToken("unexpected first character of tag prefix", startMark)
 
   // So we have a valid starting character for our prefix, lets create a buffer
   // and read any remaining characters in the prefix into it.
@@ -109,46 +119,49 @@ internal fun YAMLScanner.fetchTagDirectiveToken(startMark: SourcePosition) {
     // Unsafe call because we know based on the previous check that there is at
     // least one byte in the buffer.
     if (!reader.utf8Buffer.uIsNsURIChar())
-      return fetchInvalidTagDirectiveToken(startMark)
+      return fetchInvalidTagDirectiveToken("unexpected non-URI safe character in tag prefix", startMark)
+
+    prefixBuffer.claimASCII(1, reader.utf8Buffer, position)
   }
+
+  infixSpace = 0
 
   // Okay so we've successfully read our tag handle and our tag prefix.  Trouble
   // is, the line isn't over yet.  There could be a heap of junk waiting for us,
   // causing this directive line to be invalid.
-  if (reader.utf8Buffer.isBlank()) {
+  if (reader.isBlank()) {
     // We have more spaces after the prefix value.  This could be valid if the
     // spaces are followed by a line break (useless trailing spaces) or if the
     // spaces are followed by a comment line.
     //
     // Skip the spaces and see what's next.  If it is something other than a
     // comment or a newline, then we have an invalid tag directive.
-    eatBlanks()
+    infixSpace = eatBlanks()
 
     if (!(haveAnyBreakOrEOF() || havePound()))
-      return fetchInvalidTagDirectiveToken(startMark)
+      return fetchInvalidTagDirectiveToken("unexpected character after prefix value", startMark)
   }
 
   // If we've made it this far, then yay!  We did it!  We found and successfully
   // parsed a valid tag token, now we just have to assemble it and queue it up.
 
-  TODO("""
-    . figure out what the tag handle looks like
-    . skip over whitespaces
-    . figure out what the tag prefix looks like
-  """.trimIndent())
-
+  tokens.push(newTagDirectiveToken(
+    handleBuffer.popToArray(),
+    prefixBuffer.popToArray(),
+    startMark,
+    position.mark(modIndex = -infixSpace, modColumn = -infixSpace)
+  ))
 }
 
-private fun YAMLScanner.fetchInvalidTagDirectiveToken(startMark: SourcePosition) {
-  warn("malformed %TAG token", startMark)
-  TODO("finish off the token")
+private fun YAMLScannerImpl.fetchInvalidTagDirectiveToken(reason: String, start: SourcePosition) {
+  val end = skipUntilCommentBreakOrEOF()
+  warn("malformed %TAG token: $reason", start, end)
+  tokens.push(newInvalidToken(start, end))
 }
 
-private fun YAMLScanner.fetchIncompleteTagDirectiveToken(
-  start: SourcePosition,
-  end:   SourcePosition,
-) {
-
+private fun YAMLScannerImpl.fetchIncompleteTagDirectiveToken(start: SourcePosition, end: SourcePosition) {
+  warn("incomplete %TAG directive", start, end)
+  tokens.push(newInvalidToken(start, end))
 }
 
 private fun UByteBuffer.claimASCII(bytes: Int, other: UByteBuffer, position: SourcePositionTracker) {

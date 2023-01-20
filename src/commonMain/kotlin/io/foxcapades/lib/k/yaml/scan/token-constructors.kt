@@ -8,7 +8,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 /**
  * [VERSION-DIRECTIVE][YAMLTokenType.VersionDirective]
  */
-internal inline fun YAMLScanner.newYAMLDirectiveToken(
+internal inline fun YAMLScannerImpl.newYAMLDirectiveToken(
   major: UInt,
   minor: UInt,
   start: SourcePosition,
@@ -20,7 +20,7 @@ internal inline fun YAMLScanner.newYAMLDirectiveToken(
  * [TAG-DIRECTIVE][YAMLTokenType.TagDirective]
  */
 @OptIn(ExperimentalUnsignedTypes::class)
-internal inline fun YAMLScanner.newTagDirectiveToken(
+internal inline fun YAMLScannerImpl.newTagDirectiveToken(
   handle: UByteArray,
   prefix: UByteArray,
   start:  SourcePosition,
@@ -31,7 +31,7 @@ internal inline fun YAMLScanner.newTagDirectiveToken(
 /**
  * [STREAM-START][YAMLTokenType.StreamStart]
  */
-internal inline fun YAMLScanner.newStreamStartToken(
+internal inline fun YAMLScannerImpl.newStreamStartToken(
   encoding: YAMLEncoding,
   start:    SourcePosition,
   end:      SourcePosition,
@@ -42,66 +42,66 @@ internal inline fun YAMLScanner.newStreamStartToken(
 /**
  * [STREAM-END][YAMLTokenType.StreamEnd]
  */
-internal inline fun YAMLScanner.newStreamEndToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newStreamEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.StreamEnd, null, start, end, getWarnings())
 
 /**
  * [DOCUMENT-START][YAMLTokenType.DocumentStart]
  */
-internal inline fun YAMLScanner.newDocumentStartToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newDocumentStartToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.DocumentStart, null, start, end, getWarnings())
 
 /**
  * [DOCUMENT-END][YAMLTokenType.DocumentEnd]
  */
-internal inline fun YAMLScanner.newDocumentEndToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newDocumentEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.DocumentEnd, null, start, end, getWarnings())
 
 /**
  * [SCALAR][YAMLTokenType.Scalar]
  */
 @OptIn(ExperimentalUnsignedTypes::class)
-internal inline fun YAMLScanner.newPlainScalarToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newPlainScalarToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Plain), start, end, getWarnings())
 
 /**
  * [MAPPING-KEY][YAMLTokenType.MappingKey]
  */
-internal inline fun YAMLScanner.newMappingKeyIndicatorToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newMappingKeyIndicatorToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.MappingKey, null, start, end, getWarnings())
 
 /**
  * [MAPPING-VALUE][YAMLTokenType.MappingValue]
  */
-internal inline fun YAMLScanner.newMappingValueIndicatorToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newMappingValueIndicatorToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.MappingValue, null, start, end, getWarnings())
 
-internal inline fun YAMLScanner.newSequenceEntryIndicatorToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newSequenceEntryIndicatorToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.BlockEntry, null, start, end, getWarnings())
 
 /**
  * [FLOW-MAPPING-START][YAMLTokenType.FlowMappingStart]
  */
-internal inline fun YAMLScanner.newFlowMappingStartToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newFlowMappingStartToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.FlowMappingStart, null, start, end, getWarnings())
 
 /**
  * [FLOW-MAPPING-END][YAMLTokenType.FlowMappingEnd]
  */
-internal inline fun YAMLScanner.newFlowMappingEndToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newFlowMappingEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.FlowMappingEnd, null, start, end, getWarnings())
 
 /**
  * [FLOW-SEQUENCE-START][YAMLTokenType.FlowSequenceStart]
  */
-internal inline fun YAMLScanner.newFlowSequenceStartToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newFlowSequenceStartToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.FlowSequenceStart, null, start, end, getWarnings())
 
 /**
  * [FLOW-SEQUENCE-END][YAMLTokenType.FlowSequenceEnd]
  */
-internal inline fun YAMLScanner.newFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.FlowSequenceEnd, null, start, end, getWarnings())
 
-internal inline fun YAMLScanner.newInvalidToken(start: SourcePosition, end: SourcePosition) =
+internal inline fun YAMLScannerImpl.newInvalidToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenType.Invalid, null, start, end, getWarnings())

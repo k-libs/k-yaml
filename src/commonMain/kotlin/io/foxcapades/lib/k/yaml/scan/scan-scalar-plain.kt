@@ -5,7 +5,7 @@ import io.foxcapades.lib.k.yaml.util.*
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScanner.fetchPlainScalar() {
+internal fun YAMLScannerImpl.fetchPlainScalar() {
   val startMark = position.mark()
 
   // Rolling end position of this scalar value (don't create a mark every time
@@ -28,13 +28,13 @@ internal fun YAMLScanner.fetchPlainScalar() {
 
     if (haveEOF()) {
       if (ambiguousBuffer.size == 1) {
-        if (ambiguousBuffer.uIsSquareBracketClose()) {
+        if (ambiguousBuffer.uIsSquareClose()) {
           if (confirmedBuffer.isNotEmpty)
             tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
           this.emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
           return
-        } else if (ambiguousBuffer.uIsCurlyBracketClose()) {
+        } else if (ambiguousBuffer.uIsCurlyClose()) {
           if (confirmedBuffer.isNotEmpty)
             tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
@@ -69,13 +69,13 @@ internal fun YAMLScanner.fetchPlainScalar() {
       //
       // This logic and comment appear twice in this file and nowhere else.
       if (ambiguousBuffer.size == 1) {
-        if (ambiguousBuffer.uIsSquareBracketClose()) {
+        if (ambiguousBuffer.uIsSquareClose()) {
           if (confirmedBuffer.isNotEmpty)
             tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
           this.emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
           return
-        } else if (ambiguousBuffer.uIsCurlyBracketClose()) {
+        } else if (ambiguousBuffer.uIsCurlyClose()) {
           if (confirmedBuffer.isNotEmpty)
             tokens.push(newPlainScalarToken(confirmedBuffer.popToArray(), startMark, endPosition.mark()))
 
@@ -215,7 +215,7 @@ internal fun YAMLScanner.fetchPlainScalar() {
   }
 }
 
-private fun YAMLScanner.collapseNewlinesAndMergeBuffers(
+private fun YAMLScannerImpl.collapseNewlinesAndMergeBuffers(
   endPosition: SourcePositionTracker,
   to: UByteBuffer,
   from: UByteBuffer,

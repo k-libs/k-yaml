@@ -60,7 +60,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
  * @return A source position mark that is one after the last "content" character
  * in the line, excluding any trailing whitespaces.
  */
-internal fun YAMLScanner.skipUntilCommentBreakOrEOF(): SourcePosition {
+internal fun YAMLScannerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
   var trailingWhitespaceCount = 0
   val endMark: SourcePosition
 

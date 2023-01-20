@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchAmbiguousDashToken() {
+internal fun YAMLScannerImpl.fetchAmbiguousDashToken() {
   // If we've hit a `-` character then we could be at the start of a block
   // sequence entry, a document start, a plain scalar, or junk
 
@@ -24,13 +24,13 @@ internal fun YAMLScanner.fetchAmbiguousDashToken() {
   fetchPlainScalar()
 }
 
-private fun YAMLScanner.fetchBlockEntryIndicatorToken() {
+private fun YAMLScannerImpl.fetchBlockEntryIndicatorToken() {
   val start = position.mark()
   skipASCII()
   tokens.push(newSequenceEntryIndicatorToken(start, position.mark()))
 }
 
-private fun YAMLScanner.fetchDocumentStartToken() {
+private fun YAMLScannerImpl.fetchDocumentStartToken() {
   val start = position.mark()
   skipASCII(3)
   tokens.push(newDocumentStartToken(start, position.mark()))

@@ -1,5 +1,5 @@
 package io.foxcapades.lib.k.yaml.scan
 
-internal fun YAMLScanner.fetchSingleQuotedStringToken() {
+internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
   TODO("fetch '' string")
 }

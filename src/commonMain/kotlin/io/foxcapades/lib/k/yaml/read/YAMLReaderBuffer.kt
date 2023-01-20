@@ -15,12 +15,13 @@ import io.foxcapades.lib.k.yaml.util.popUTF16LE
 import io.foxcapades.lib.k.yaml.util.utf16Width
 import io.foxcapades.lib.k.yaml.util.utf8Width
 
-class YAMLReader {
+class YAMLReaderBuffer : UByteContainer {
   private val rawBuffer: UByteBuffer
   private val readerFn: ByteReader
   // TODO: MAKE SURE THIS THING IS UPDATED IN ALL THE PLACES THAT READ FROM THE RAW BUFFER INTO THE UTF-8 BUFFER
   private var index: ULong = 0UL
 
+  @Deprecated("don't use this, use the reader extension functions")
   internal val utf8Buffer: UByteBuffer
 
   var atEOF: Boolean = false
@@ -29,14 +30,14 @@ class YAMLReader {
   var encoding: YAMLEncoding = YAMLEncoding.Any
     private set
 
-  val buffered: Int
+  override val size: Int
     get() = utf8Buffer.size
 
   inline val isEmpty
-    get() = buffered == 0
+    get() = size == 0
 
   inline val isNotEmpty
-    get() = buffered > 0
+    get() = size > 0
 
   constructor(capacity: Int, readerFn: ByteReader) {
     this.rawBuffer  = UByteBuffer(capacity)
@@ -90,7 +91,7 @@ class YAMLReader {
     }
   }
 
-  operator fun get(offset: Int) = utf8Buffer[offset]
+  override fun get(offset: Int) = utf8Buffer[offset]
 
   private fun cacheRaw(count: Int): Boolean {
     while (!atEOF && rawBuffer.size < count)
