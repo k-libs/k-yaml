@@ -1,12 +1,10 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.DefaultYAMLVersion
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.YAMLScanner
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.bytes.*
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
-import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.read.*
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
@@ -16,51 +14,15 @@ import io.foxcapades.lib.k.yaml.util.*
 @OptIn(ExperimentalUnsignedTypes::class)
 internal class YAMLScannerImpl : YAMLScanner {
 
-  /**
-   * Whether the STREAM-START token has been returned to the consumer of the
-   * YAMLScanner via the [nextToken] method.
-   */
-  internal var streamStartProduced = false
-
-  /**
-   * Whether the STREAM-END token has been returned to the consumer of the
-   * YAMLScanner via the [nextToken] method.
-   */
-  internal var streamEndProduced = false
-
-  /**
-   * Tracker for our current position in the YAML stream.
-   *
-   * This is tracked as a "human-friendly" position with overall index, line
-   * number, and column number.
-   */
   internal val position = SourcePositionTracker()
+  internal var streamStartProduced = false
+  internal var streamEndProduced = false
+  internal val warnings = Queue<SourceWarning>(4)
+  internal val tokens = Queue<YAMLToken>(4)
+  internal var contentOnThisLine = false
 
-  /**
-   * Queue of warnings that have been encountered while scanning through the
-   * YAML stream for tokens.
-   */
-  internal val warnings = Queue<SourceWarning>()
-
-  /**
-   * Queue of tokens that have been generated but not yet returned to the
-   * consumer of the YAMLScanner.
-   *
-   * This is a queue as encountering a single value in the underlying YAML
-   * stream may cause the creation of multiple tokens.
-   *
-   * For example, if the YAML stream contains an implicit document with a
-   * mapping, such as:
-   *
-   * ```yaml
-   * foo: bar
-   * ```
-   *
-   * When the scanner encountered the simple key `foo:` it would not only
-   * generate a mapping key token, but would also generate an implicit document
-   * start token as well as a block mapping start token.
-   */
-  internal val tokens = Queue<YAMLToken>(8)
+  internal val indents = UIntStack()
+  internal var indent = 0u
 
   // region Context Indicators
 
@@ -136,23 +98,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Reader Wrapping
 
-  /**
-   * Skips over the given number of ASCII characters in the reader buffer and
-   * update the position tracker.
-   *
-   * @param count Number of ASCII characters (or bytes) in the reader buffer to
-   * skip.  This is also the amount that the current column index is increased
-   * by.
-   */
-  internal fun skipASCII(count: Int = 1) {
-    reader.skip(count)
-    position.incPosition(count.toUInt())
-  }
-
-  internal fun skipUTF8(count: Int = 1) {
-    reader.skipCodepoints(count)
-    position.incPosition(count.toUInt())
-  }
 
   internal fun skipLine() {
     reader.cache(4)

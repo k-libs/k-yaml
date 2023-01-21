@@ -4,6 +4,16 @@ import io.foxcapades.lib.k.yaml.util.*
 import io.foxcapades.lib.k.yaml.util.isBlank
 import io.foxcapades.lib.k.yaml.util.isPound
 
+internal fun YAMLScannerImpl.skipASCII(count: Int = 1) {
+  reader.skip(count)
+  position.incPosition(count.toUInt())
+}
+
+internal fun YAMLScannerImpl.skipUTF8(count: Int = 1) {
+  reader.skipCodepoints(count)
+  position.incPosition(count.toUInt())
+}
+
 internal fun YAMLScannerImpl.skipToNextToken() {
   // TODO:
   //   | This method needs to differentiate between tabs and spaces when
@@ -21,11 +31,23 @@ internal fun YAMLScannerImpl.skipToNextToken() {
 
     when {
       // We found the end of the stream.
-      reader.isEOF()      -> break
-      reader.isSpace()    -> skipASCII()
-      reader.isTab()      -> TODO("What manner of tomfuckery is this")
-      reader.isAnyBreak() -> skipLine()
-      else                -> break
+      reader.isSpace()    -> {
+        skipASCII()
+      }
+
+      reader.isAnyBreak() -> {
+        skipLine()
+        contentOnThisLine = false
+      }
+
+      reader.isEOF()      -> {
+        break
+      }
+
+      else                -> {
+        contentOnThisLine = true
+        break
+      }
     }
   }
 }
