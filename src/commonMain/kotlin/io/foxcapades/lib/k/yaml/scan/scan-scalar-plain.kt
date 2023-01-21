@@ -82,7 +82,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
       trailingWSBuffer.clear()
       collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
       trailingNLBuffer.claimNewLine(reader, position)
-      contentOnThisLine = false
+      haveContentOnThisLine = false
       continue
     }
 

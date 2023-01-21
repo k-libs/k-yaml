@@ -1,7 +1,10 @@
 package io.foxcapades.lib.k.yaml.scan
 
-typealias BlockScalarChompMode = Byte
+import io.foxcapades.lib.k.yaml.bytes.A_DASH
+import io.foxcapades.lib.k.yaml.bytes.A_PLUS
 
-const val BlockScalarChompModeClip:  BlockScalarChompMode = 0
-const val BlockScalarChompModeStrip: BlockScalarChompMode = 1
-const val BlockScalarChompModeKeep:  BlockScalarChompMode = 2
+typealias BlockScalarChompMode = UByte
+
+const val BlockScalarChompModeClip:  BlockScalarChompMode = 0u
+const val BlockScalarChompModeStrip: BlockScalarChompMode = A_DASH
+const val BlockScalarChompModeKeep:  BlockScalarChompMode = A_PLUS

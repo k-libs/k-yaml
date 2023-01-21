@@ -14,6 +14,53 @@ internal fun YAMLScannerImpl.skipUTF8(count: Int = 1) {
   position.incPosition(count.toUInt())
 }
 
+/**
+ * Skips over `<SPACE>` and `<TAB>` characters in the reader buffer,
+ * incrementing the position tracker as it goes.
+ *
+ * @return The number of blank characters that were skipped.
+ */
+internal fun YAMLScannerImpl.eatBlanks(): Int {
+  var out = 0
+
+  reader.cache(1)
+  while (reader.isBlank()) {
+    skipASCII()
+    reader.cache(1)
+    out++
+  }
+
+  return out
+}
+
+internal fun YAMLScannerImpl.skipBlanks() {
+  this.reader.cache(1)
+  while (this.reader.isBlank()) {
+    this.skipASCII()
+    this.reader.cache(1)
+  }
+}
+
+internal fun YAMLScannerImpl.skipLine() {
+  reader.cache(4)
+
+  if (reader.isCRLF()) {
+    skipLine(NL.CRLF)
+  } else if (reader.isCarriageReturn()) {
+    skipLine(NL.CR)
+  } else if (reader.isLineFeed()) {
+    skipLine(NL.LF)
+  } else if (reader.isNextLine()) {
+    skipLine(NL.NEL)
+  } else if (reader.isLineSeparator()) {
+    skipLine(NL.LS)
+  } else if (reader.isParagraphSeparator()) {
+    skipLine(NL.PS)
+  } else {
+    throw IllegalStateException("called #skipLine() when the reader was not on a newline character")
+  }
+}
+
 internal fun YAMLScannerImpl.skipToNextToken() {
   // TODO:
   //   | This method needs to differentiate between tabs and spaces when
@@ -37,7 +84,7 @@ internal fun YAMLScannerImpl.skipToNextToken() {
 
       reader.isAnyBreak() -> {
         skipLine()
-        contentOnThisLine = false
+        haveContentOnThisLine = false
       }
 
       reader.isEOF()      -> {
@@ -45,7 +92,7 @@ internal fun YAMLScannerImpl.skipToNextToken() {
       }
 
       else                -> {
-        contentOnThisLine = true
+        haveContentOnThisLine = true
         break
       }
     }

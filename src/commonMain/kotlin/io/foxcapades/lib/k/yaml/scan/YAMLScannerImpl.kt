@@ -4,7 +4,6 @@ import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.YAMLScanner
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.bytes.*
-import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.read.*
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
@@ -19,7 +18,7 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal var streamEndProduced = false
   internal val warnings = Queue<SourceWarning>(4)
   internal val tokens = Queue<YAMLToken>(4)
-  internal var contentOnThisLine = false
+  internal var haveContentOnThisLine = false
 
   internal val indents = UIntStack()
   internal var indent = 0u
@@ -99,25 +98,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   // region Reader Wrapping
 
 
-  internal fun skipLine() {
-    reader.cache(4)
-
-    if (reader.isCRLF()) {
-      skipLine(NL.CRLF)
-    } else if (reader.isCarriageReturn()) {
-      skipLine(NL.CR)
-    } else if (reader.isLineFeed()) {
-      skipLine(NL.LF)
-    } else if (reader.isNextLine()) {
-      skipLine(NL.NEL)
-    } else if (reader.isLineSeparator()) {
-      skipLine(NL.LS)
-    } else if (reader.isParagraphSeparator()) {
-      skipLine(NL.PS)
-    } else {
-      throw IllegalStateException("called #skipLine() when the reader was not on a newline character")
-    }
-  }
 
   internal fun skipLine(nl: NL) {
     if (inDocument) {
@@ -186,54 +166,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   }
 
 
-  internal fun parseUInt(): UInt {
-    val intStart = position.mark()
-    var intValue = 0u
-    var addValue: UInt
-
-    while (true) {
-      reader.cache(1)
-
-      if (reader.isDecimalDigit()) {
-        if (intValue > UInt.MAX_VALUE / 10u)
-          throw UIntOverflowException(intStart)
-
-        intValue *= 10u
-        addValue = reader.asDecimalDigit()
-
-        if (intValue > UInt.MAX_VALUE - addValue)
-          throw UIntOverflowException(intStart)
-
-        intValue += addValue
-
-        skipASCII()
-      } else {
-        break
-      }
-    }
-
-    return intValue
-  }
-
-  /**
-   * Skips over `<SPACE>` and `<TAB>` characters in the reader buffer,
-   * incrementing the position tracker as it goes.
-   *
-   * @return The number of blank characters that were skipped.
-   */
-  internal fun eatBlanks(): Int {
-    var out = 0
-
-    reader.cache(1)
-    while (reader.isBlank()) {
-      skipASCII()
-      reader.cache(1)
-      out++
-    }
-
-    return out
-  }
-
   // region Warning Helpers
 
   internal fun warn(
@@ -260,8 +192,14 @@ internal class YAMLScannerImpl : YAMLScanner {
     position.incPosition()
   }
 
+  @Deprecated("use the other one")
   internal fun UByteBuffer.claimASCII() {
     push(reader.pop())
+    position.incPosition()
+  }
+
+  internal fun UByteBuffer.claimASCII(from: UByteSource, position: SourcePositionTracker) {
+    this.push(from.pop())
     position.incPosition()
   }
 

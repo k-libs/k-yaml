@@ -1,245 +1,254 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
+import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.token.YAMLToken
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
 import io.foxcapades.lib.k.yaml.token.YAMLTokenType
 import io.foxcapades.lib.k.yaml.util.*
 
+/**
+ * # Fetch Folded String Token
+ */
 internal fun YAMLScannerImpl.fetchFoldedStringToken() {
-  contentBuffer1.clear()
-  contentBuffer2.clear()
-  trailingWSBuffer.clear()
-  trailingNLBuffer.clear()
+  /*
+  = Fetch Folded String Token
 
-  val leadingWSBuffer = contentBuffer2
+  Currently, we are looking at a `>` character.
 
-  val start = position.mark()
+  This character may legally only be followed by a handful of other characters
+  matching the following pattern:
 
-  skipASCII()
+  [source, regexp]
+  ----
+  >([-+][0-9]*|[0-9]+[-+]?)?([ \t]+#.*|[ \t]*)?
+  ----
 
-  var chompingMode = BlockScalarChompModeClip
-  var indentHint   = 0u
+  After that there may be an EOF, or a line break.
 
-  reader.cache(1)
+  So, first things first, lets get a start position for this token and eat our
+  leader character (`>`).
 
-  if (reader.isDecimalDigit()) {
+  [source, kotlin]
+  ----
+  */
+  val start = this.position.mark()
+
+  this.skipASCII()
+
+  // Now lets grab (and clear) some buffers for us to use in this parsing
+  // process.
+  val bContent = this.contentBuffer1;   bContent.clear()
+  val bLeadWS  = this.contentBuffer2;   bLeadWS.clear()
+  val bTailWS  = this.trailingWSBuffer; bTailWS.clear()
+  val bTailNL  = this.trailingNLBuffer; bTailNL.clear()
+
+  // Define some variables that we will be using later in this process.
+  var chompMode  = BlockScalarChompModeClip
+  var indentHint = 0u
+
+  val minIndent:       UInt
+  val keepIndentAfter: UInt
+
+  /*
+  ----
+
+  Let's get down to business.  We now need to check to see if we have an indent
+  hint and/or a chomping indicator.  These two values could appear in any order
+  which complicates this slightly, but we can just brute force it and try both
+  possible orderings directly.
+
+  [source, kotlin]
+  ----
+  */
+
+  // Cache a character in the reader buffer.
+  this.reader.cache(1)
+
+  // First we'll check for a chomping indicator (optionally followed by an
+  // indent hint)
+  if (this.reader.isPlus() || this.reader.isDash()) {
+    // Luckily for us, "chomp mode" is a UByte value based on the actual int
+    // value of the `-` or `+` characters, so we can just pop off the next UByte
+    // as the chomp mode type.
+    chompMode = this.parseUByte()
+
+    // Cache another character so we can test for digits.
+    this.reader.cache(1)
+
+    if (this.reader.isDecimalDigit()) {
+      indentHint = try {
+        this.parseUInt()
+      } catch (e: UIntOverflowException) {
+        // Throw an exception about the error, but move the position forward 2
+        // from the start of the token to skip over the `>` character and the
+        // chomping indicator.
+        throw YAMLScannerException("folded block scalar indent hint value overflows type uint32", start.copy(2, 0, 2))
+      }
+    }
+  }
+
+  // Okay, so the first character wasn't a chomping indicator, but it still may
+  // be an indent hint.
+  else if (this.reader.isDecimalDigit()) {
     indentHint = try {
-      parseUInt()
+      this.parseUInt()
     } catch (e: UIntOverflowException) {
-      TODO("uint overflow while attempting to parse the indent hint")
+      throw YAMLScannerException("folded block scalar indent hint value overflows type uint32", start.copy(1, 0, 1))
     }
 
-    reader.cache(1)
+    this.reader.cache(1)
 
-    if (reader.isPlus()) {
-      chompingMode = BlockScalarChompModeKeep
-    } else if (reader.isDash()) {
-      chompingMode = BlockScalarChompModeStrip
-    }
+    if (this.reader.isPlus() || this.reader.isDash())
+      chompMode = this.parseUByte()
   }
+  /*
+  ----
+  Now we have processed any indent hint and/or chomping indicator.  At this
+  point we should expect to see a newline, spaces optionally followed by a
+  comment, or the EOF.
 
-  else if (reader.isPlus()) {
-    chompingMode = BlockScalarChompModeKeep
-    skipASCII()
+  Attempt to eat whitespaces trailing after the scalar start indicator(s).
 
-    if (reader.isDecimalDigit()) {
-      indentHint = try {
-        parseUInt()
-      } catch (e: UIntOverflowException) {
-        TODO("uint overflow while attempting to parse the indent hint")
-      }
-    }
-  }
+  If there are spaces, then it is valid for a comment to follow on this line,
+  however, if there are not trailing spaces then it is not valid for a comment
+  to appear.
 
-  else if (reader.isDash()) {
-    chompingMode = BlockScalarChompModeStrip
-    skipASCII()
+  [source, kotlin]
+  ----
+  */
+  if (this.eatBlanks() > 0) {
 
-    if (reader.isDecimalDigit()) {
-      indentHint = try {
-        parseUInt()
-      } catch (e: UIntOverflowException) {
-        TODO("uint overflow while attempting to parse the indent hint")
-      }
-    }
-  }
-
-  // If we've made it here then we've passed by and captured any chomping
-  // indicator and/or indent hint that was provided.
-
-  // Next we should expect to see one of the following:
-  //
-  // - the EOF
-  // - a blank character
-  // - a newline character
-
-  reader.cache(1)
-  var lastWasSpace = false
-
-  while (true) {
-    when {
-      reader.isBlank() -> {
-        skipASCII()
-        lastWasSpace = true
-      }
-
-      reader.isEOF() -> TODO("wrap up empty scalar")
-
-      reader.isAnyBreak() -> break
-
-      reader.isPound() && lastWasSpace -> {
-        TODO("handle trailing comment on folding scalar start indicator line")
-      }
-
-      else -> TODO("invalid character on folding scalar start indicator line")
-    }
-
-    reader.cache(1)
-  }
-
-  // Okay, so if we're here now, then we are at a newline character that may
-  // or may not be the start of our scalar value.
-
-  val indent: UInt
-
-  // Skip over the waiting newline.
-  skipLine()
-
-  while (true) {
-    reader.cache(1)
+    this.reader.cache(1)
 
     when {
-      reader.isSpace() -> {
-        indent = eatSpaces()
-        break
+      this.reader.isPound()    -> TODO("handle comment trailing after folding scalar start indicator.  This comment should be kept and emitted _after_ the folding scalar")
+      this.reader.isAnyBreak() -> {}
+      this.reader.isEOF()      -> TODO("wrap up the scalar value (which is empty)")
+      else                     -> TODO("handle invalid/unexpected character on the same line as the folding scalar start indicator")
+    }
+  } else {
+
+    this.reader.cache(1)
+
+    when {
+      this.reader.isAnyBreak() -> {}
+      this.reader.isEOF()      -> TODO("wrap up the scalar value (which is empty)")
+      else                     -> TODO("handle invalid/unexpected character immediately following the folding scalar start indicator")
+    }
+  }
+  /*
+  ----
+  If made it to this point, then we are at the end of the line containing the
+  folding character start indicator.
+
+  Our next step is to attempt to figure out the indentation level for our
+  folding scalar content (which may be 0).  This will be determined by the
+  amount of leading whitespace on the first non-empty line we encounter.
+
+  [source, kotlin]
+  ----
+  */
+  // Skip the newline that we are currently stopped at.
+  this.skipLine()
+
+  // We are on a new line now, so we don't know if the line has any content on
+  // it yet.
+  this.haveContentOnThisLine = false
+
+  while (true) {
+    this.reader.cache(1)
+
+    when {
+      this.reader.isSpace() -> {
+        bLeadWS.claimASCII()
       }
 
-      reader.isAnyBreak() -> {
-        trailingNLBuffer.claimNewLine()
+      this.reader.isAnyBreak() -> {
+        // We hit a newline, so ignore the "leading" whitespace because it was
+        // a lie and wasn't actually leading to anything.
+        bLeadWS.clear()
+
+        // Record our newline because we keep these.
+        bTailNL.claimNewLine(this.reader, this.position)
       }
 
-      reader.isEOF() -> {
-        TODO("wrap up empty scalar")
+      this.reader.isEOF() -> {
+        TODO("we have an empty scalar that may have newlines that need to be collapsed")
       }
 
       else -> {
-        indent = 0u
+        // We found content on this line, remember that.
+        this.haveContentOnThisLine = true
+        this.indent = bLeadWS.size.toUInt()
+
+        minIndent = this.position.column
         break
       }
     }
   }
 
-  // We have now determined our indentation level for the block scalar.
+  // If we have a parent indent and the current indent is less than that, then
+  // we are actually at the start of something else entirely.
+  if (this.indents.isNotEmpty && this.indent <= this.indents.peek()) {
+    TODO("we have an empty scalar that may have newlines that need to be collapsed")
+  }
 
-  if (indentHint > indent)
-    TODO("error: the indent hint was greater than the actual indentation level")
+  // If we have a detected indent that is less than the indent required by the
+  // provided indent hint.
+  if (this.indent < indentHint) {
+    TODO("we have an invalid indent value, decide if we should fail here or produce a warning and just change our indent hint from here on out")
+  }
 
-  val keepSpacesStartingAt = indent - indentHint
-  val lastContentPosition  = position.copy()
-  var contentOnThisLine    = false
+  keepIndentAfter = this.indent - indentHint
+  /*
+  So we've figured out our indent and indent hint, now lets start actually
+  reading the content.
 
-  var i = indent - keepSpacesStartingAt
-  while (i-- > 0u)
-    leadingWSBuffer.push(A_SPACE)
-
+  In the process we are here (^):
+  [source, yaml]
+  ----
+  >
+    foo
+    ^
+  ----
+  */
   while (true) {
-    reader.cache(1)
+    this.reader.cache(1)
 
-    when {
-      reader.isSpace() -> {
-        if (contentOnThisLine) {
-          contentBuffer1.claimASCII()
-        } else if (position.column >= keepSpacesStartingAt) {
-          leadingWSBuffer.claimASCII()
-        } else {
-          skipASCII()
-        }
+    // If we hit a space
+    if (this.reader.isSpace()) {
+      // and we already have content on this line
+      if (haveContentOnThisLine) {
+        // we want to keep this whitespace as part of the content.
+        bContent.claimASCII(this.reader, this.position)
       }
 
-      reader.isAnyBreak() -> {
-        // If there is no content on this line, then we don't care about the
-        // leading spaces because they aren't actually "leading" to anything.
-        if (!contentOnThisLine) {
-          leadingWSBuffer.clear()
-        }
+      // and we don't already have content on this line
+      else {
+        // then it is "leading" space
+        this.indent++
 
-        trailingNLBuffer.claimNewLine()
-        contentOnThisLine = false
+        // To implement the indent hint indent capturing, if the current line
+        // indentation
+        if (this.indent >= keepIndentAfter)
+          bContent.claimASCII(this.reader, this.position)
       }
+    }
 
-      reader.isEOF() -> {
-        return finishFoldedScalar(chompingMode, start, lastContentPosition.mark())
-      }
+    else if (this.reader.isAnyBreak()) {
 
-      else -> {
-        contentOnThisLine = true
+    }
 
-        // If the position of this character is before the detected indent, then
-        // we are going to bail and call that a separate token.
-        if (position.column < indent)
-          return finishFoldedScalar(chompingMode, start, lastContentPosition.mark())
+    else if (this.reader.isEOF()) {
 
-        // If we have leading space characters then we are _not_ going to
-        // collapse the ws and nl buffers, we are going to add them to the
-        // content as is.
-        if (leadingWSBuffer.isNotEmpty) {
-          while (trailingNLBuffer.isNotEmpty)
-            contentBuffer1.push(trailingNLBuffer.pop())
-          while (leadingWSBuffer.isNotEmpty)
-            contentBuffer1.push(leadingWSBuffer.pop())
-        }
+    }
 
-        // Otherwise, if we do not have any leading spaces...
+    else {
+      this.haveContentOnThisLine = true
 
-        // AND we have newlines to take care of:
-        else if (trailingNLBuffer.isNotEmpty) {
-          // If there is only one newline to take care of
-          if (trailingNLBuffer.size == 1) {
-            contentBuffer1.push(A_SPACE)
-            trailingNLBuffer.clear()
-          } else {
-            // Skip the first newline character we saw
-            trailingNLBuffer.skipNewLine()
-            // Append the following newlines
-            while (trailingNLBuffer.isNotEmpty)
-              contentBuffer1.claimNewLine(trailingNLBuffer)
-          }
-        }
-
-        contentBuffer1.claimUTF8()
-        lastContentPosition.become(position)
-      }
     }
   }
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.finishFoldedScalar(
-  chomp: BlockScalarChompMode,
-  start: SourcePosition,
-  end:   SourcePosition,
-) {
-  // Handle trailing newlines based on the chomp mode.
-  when (chomp) {
-    BlockScalarChompModeClip -> {
-      if (trailingNLBuffer.isNotEmpty) {
-        contentBuffer1.claimNewLine(trailingNLBuffer)
-      }
-    }
-
-    BlockScalarChompModeStrip -> {
-      // Do nothing?
-    }
-
-    BlockScalarChompModeKeep -> {
-      while (trailingNLBuffer.isNotEmpty)
-        contentBuffer1.claimNewLine(trailingNLBuffer)
-    }
-  }
-
-  tokens.push(newFoldedScalarToken(contentBuffer1.popToArray(), start, end))
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
