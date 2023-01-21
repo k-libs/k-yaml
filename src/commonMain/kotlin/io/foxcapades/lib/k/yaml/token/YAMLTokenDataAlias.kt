@@ -1,10 +1,10 @@
-package io.foxcapades.lib.k.yaml.scan
+package io.foxcapades.lib.k.yaml.token
 
 import io.foxcapades.lib.k.yaml.util.decodeToString
 import kotlin.jvm.JvmInline
 
 @JvmInline
 @OptIn(ExperimentalUnsignedTypes::class)
-value class YAMLTokenDataAnchor(val value: UByteArray) : YAMLTokenData {
+value class YAMLTokenDataAlias(val value: UByteArray) : YAMLTokenData {
   override fun toString() = "\"${value.decodeToString()}\""
 }

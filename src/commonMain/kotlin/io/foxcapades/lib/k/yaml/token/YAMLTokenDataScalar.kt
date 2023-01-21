@@ -1,5 +1,6 @@
-package io.foxcapades.lib.k.yaml.scan
+package io.foxcapades.lib.k.yaml.token
 
+import io.foxcapades.lib.k.yaml.scan.YAMLScalarStyle
 import io.foxcapades.lib.k.yaml.util.decodeToString
 
 @OptIn(ExperimentalUnsignedTypes::class)

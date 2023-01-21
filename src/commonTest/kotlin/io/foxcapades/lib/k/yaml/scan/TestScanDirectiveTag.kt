@@ -3,7 +3,8 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.util.decodeToString
+import io.foxcapades.lib.k.yaml.token.YAMLTokenDataTagDirective
+import io.foxcapades.lib.k.yaml.token.YAMLTokenType
 import kotlin.test.*
 
 // TODO: test warnings on invalid tag outputs

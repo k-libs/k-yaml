@@ -1,4 +1,4 @@
-package io.foxcapades.lib.k.yaml.scan
+package io.foxcapades.lib.k.yaml.token
 
 import io.foxcapades.lib.k.yaml.YAMLEncoding
 import kotlin.jvm.JvmInline

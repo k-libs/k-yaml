@@ -3,6 +3,10 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.foxcapades.lib.k.yaml.token.YAMLToken
+import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
+import io.foxcapades.lib.k.yaml.token.YAMLTokenDataStreamStart
+import io.foxcapades.lib.k.yaml.token.YAMLTokenType
 import kotlin.test.*
 
 class TestPlainScalarsInFlowMapping {
