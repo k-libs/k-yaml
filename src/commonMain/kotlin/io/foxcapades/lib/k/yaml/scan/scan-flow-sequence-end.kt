@@ -12,7 +12,7 @@ internal fun YAMLScannerImpl.fetchFlowSequenceEndToken() {
   emitFlowSequenceEndToken(start, position.mark())
 }
 
-private fun YAMLScannerImpl.emitFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) {
+internal fun YAMLScannerImpl.emitFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) {
   if (inFlowSequence)
     flows.pop()
 

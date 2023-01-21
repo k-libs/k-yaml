@@ -5,30 +5,10 @@ import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.scan.YAMLScannerImpl
 
 val input1 = """
-%TAG !foo! bar/
-foo: !foo!string bar
-fizz: buzz
-cats: dogs
-this: &id
-that: *id
-cars:
-- trucks
-- vans
-- motorcycles
-ding: [
-  bats,
-  dong
-]
-dang: {
-  kids: are,
-  going: nuts
-}
-look: 'a single quoted string
+>
+ foo
 
-that
-
-spans multiple lines for some
-stupid reason      '
+  bar
 """
 
 

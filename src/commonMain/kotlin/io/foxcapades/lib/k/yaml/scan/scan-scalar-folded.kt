@@ -1,5 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.token.YAMLToken
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
@@ -8,14 +9,17 @@ import io.foxcapades.lib.k.yaml.util.*
 
 internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   contentBuffer1.clear()
+  contentBuffer2.clear()
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()
+
+  val leadingWSBuffer = contentBuffer2
 
   val start = position.mark()
 
   skipASCII()
 
-  var chompingMode = ChompingModeClip
+  var chompingMode = BlockScalarChompModeClip
   var indentHint   = 0u
 
   reader.cache(1)
@@ -30,14 +34,14 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
     reader.cache(1)
 
     if (reader.isPlus()) {
-      chompingMode = ChompingModeKeep
+      chompingMode = BlockScalarChompModeKeep
     } else if (reader.isDash()) {
-      chompingMode = ChompingModeStrip
+      chompingMode = BlockScalarChompModeStrip
     }
   }
 
   else if (reader.isPlus()) {
-    chompingMode = ChompingModeKeep
+    chompingMode = BlockScalarChompModeKeep
     skipASCII()
 
     if (reader.isDecimalDigit()) {
@@ -50,7 +54,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   }
 
   else if (reader.isDash()) {
-    chompingMode = ChompingModeStrip
+    chompingMode = BlockScalarChompModeStrip
     skipASCII()
 
     if (reader.isDecimalDigit()) {
@@ -76,13 +80,20 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
   while (true) {
     when {
-      reader.isBlank()                 -> { skipASCII(); lastWasSpace = true }
-      reader.isEOF()                   -> TODO("wrap up empty scalar")
-      reader.isAnyBreak()              -> break
+      reader.isBlank() -> {
+        skipASCII()
+        lastWasSpace = true
+      }
+
+      reader.isEOF() -> TODO("wrap up empty scalar")
+
+      reader.isAnyBreak() -> break
+
       reader.isPound() && lastWasSpace -> {
         TODO("handle trailing comment on folding scalar start indicator line")
       }
-      else                -> TODO("invalid character on folding scalar start indicator line")
+
+      else -> TODO("invalid character on folding scalar start indicator line")
     }
 
     reader.cache(1)
@@ -93,10 +104,10 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
   val indent: UInt
 
-  while (true) {
-    // Skip over the waiting newline.
-    skipLine()
+  // Skip over the waiting newline.
+  skipLine()
 
+  while (true) {
     reader.cache(1)
 
     when {
@@ -112,6 +123,11 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
       reader.isEOF() -> {
         TODO("wrap up empty scalar")
       }
+
+      else -> {
+        indent = 0u
+        break
+      }
     }
   }
 
@@ -121,22 +137,41 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
     TODO("error: the indent hint was greater than the actual indentation level")
 
   val keepSpacesStartingAt = indent - indentHint
-  val lastContentPosition = position.copy()
+  val lastContentPosition  = position.copy()
+  val contentOnThisLine    = false
+
+  println(keepSpacesStartingAt)
 
   while (true) {
     reader.cache(1)
 
     when {
       reader.isSpace() -> {
-        if (trailingNLBuffer.isNotEmpty && position.column > keepSpacesStartingAt) {
-          contentBuffer1.claimASCII()
-        } else {
+        if (contentOnThisLine) {
           trailingWSBuffer.claimASCII()
+        } else {
+          leadingWSBuffer.claimASCII()
         }
+
+        // We could be:
+        // - between non-space characters on a line
+        // - after the last non-space character on a line
+        // - before the first non-space character on a line
+        // - on an empty line
+
+        // We have 3 pieces of state:
+        //   whether the trailingNLBuffer is empty
+        //   whether the trailingWSBuffer is empty
+        //   whether the leadingWSBuffer is empty
       }
 
       reader.isAnyBreak() -> {
-        trailingWSBuffer.clear()
+        // If there is no content on this line, then we don't care about the
+        // leading spaces because they aren't actually "leading" to anything.
+        if (!contentOnThisLine) {
+          leadingWSBuffer.clear()
+        }
+
         trailingNLBuffer.claimNewLine()
       }
 
@@ -145,17 +180,50 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
       }
 
       else -> {
-        if (position.column < indent) {
+        // If the position of this character is before the detected indent, then
+        // we are going to bail and call that a separate token.
+        if (position.column < indent)
           return finishFoldedScalar(chompingMode, start, lastContentPosition.mark())
-        } else {
-          if (trailingWSBuffer.isNotEmpty && trailingNLBuffer.isEmpty) {
-            while (trailingWSBuffer.isNotEmpty)
-              contentBuffer1.push(trailingWSBuffer.pop())
-          }
 
-          contentBuffer1.claimUTF8()
-          lastContentPosition.become(position)
+        // If we have leading space characters then we are _not_ going to
+        // collapse the ws and nl buffers, we are going to add them to the
+        // content as is.
+        if (leadingWSBuffer.isNotEmpty) {
+          while (trailingWSBuffer.isNotEmpty)
+            contentBuffer1.push(trailingWSBuffer.pop())
+          while (trailingNLBuffer.isNotEmpty)
+            contentBuffer1.push(trailingNLBuffer.pop())
+          while (leadingWSBuffer.isNotEmpty)
+            contentBuffer1.push(leadingWSBuffer.pop())
         }
+
+        // Otherwise, if we do not have any leading spaces...
+
+        // AND we have newlines to take care of:
+        else if (trailingNLBuffer.isNotEmpty) {
+          // Drop the trailing whitespace (because why would we care about it)
+          // TODO:
+          //  | the spec is ambiguous here (specifically section 6.5, block
+          //  | folding.  It doesn't clearly describe what to do with trailing
+          //  | whitespace characters in the event that the next line does not
+          //  | have extra leading whitespace characters.
+          trailingWSBuffer.clear()
+
+          // If there is only one newline to take care of
+          if (trailingNLBuffer.size == 1) {
+            contentBuffer1.push(A_SPACE)
+            trailingNLBuffer.clear()
+          } else {
+            // Skip the first newline character we saw
+            trailingNLBuffer.skipNewLine()
+            // Append the following newlines
+            while (trailingNLBuffer.isNotEmpty)
+              contentBuffer1.claimNewLine(trailingNLBuffer)
+          }
+        }
+
+        contentBuffer1.claimUTF8()
+        lastContentPosition.become(position)
       }
     }
   }

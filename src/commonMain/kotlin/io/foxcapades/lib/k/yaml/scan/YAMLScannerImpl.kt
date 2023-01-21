@@ -64,6 +64,7 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Context Indicators
 
+  // TODO: implement this check, right now nothing writes to it.
   internal var inDocument = false
 
   // region Flows
@@ -135,17 +136,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // region Reader Wrapping
 
-  internal fun skipUntilBlankBreakOrEOF() {
-    while (true) {
-      reader.cache(1)
-
-      if (reader.isBlankAnyBreakOrEOF())
-        return
-      else
-        skipUTF8()
-    }
-  }
-
   /**
    * Skips over the given number of ASCII characters in the reader buffer and
    * update the position tracker.
@@ -206,8 +196,6 @@ internal class YAMLScannerImpl : YAMLScanner {
     position.incLine(nl.characters.toUInt())
   }
 
-  internal inline fun asDecimal(offset: Int = 0) = reader.asDecimalDigit(offset)
-
   // endregion Reader Wrapping
 
   internal fun fetchNextToken() {
@@ -252,31 +240,6 @@ internal class YAMLScannerImpl : YAMLScanner {
     }
   }
 
-  internal fun skipToNextToken() {
-    // TODO:
-    //   | This method needs to differentiate between tabs and spaces when
-    //   | slurping up those delicious, delicious bytes.
-    //   |
-    //   | This is because TAB characters are not permitted as part of
-    //   | indentation.
-    //   |
-    //   | If we choose to warn about tab characters rather than throwing an
-    //   | error, we need to determine the width of the tab character so as to
-    //   | keep the column index correct...
-
-    while (true) {
-      reader.cache(1)
-
-      when {
-        // We found the end of the stream.
-        reader.isEOF()      -> break
-        reader.isSpace()    -> skipASCII()
-        reader.isTab()      -> TODO("What manner of tomfuckery is this")
-        reader.isAnyBreak() -> skipLine()
-        else                -> break
-      }
-    }
-  }
 
   internal fun parseUInt(): UInt {
     val intStart = position.mark()
@@ -430,17 +393,6 @@ internal class YAMLScannerImpl : YAMLScanner {
     }
   }
 
-  internal fun UByteBuffer.claimNewLine(type: NL, from: UByteBuffer, position: SourcePositionTracker) {
-    appendNewLine(type)
-    from.skipLine(type)
-
-    if (type == NL.CRLF) {
-      position.incLine(2u)
-    } else {
-      position.incLine(1u)
-    }
-  }
-
   internal fun UByteBuffer.skipNewLine(position: SourcePositionTracker) {
     skipNewLine(detectNewLineType(), position)
   }
@@ -487,12 +439,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // endregion Buffer Writing Helpers
 
-  // region Token Fetching
-
-  // region Directives
-
-  // region Tag Directive
-
   internal fun UByteBuffer.takeASCIIFrom(count: Int, reader: BufferedUTFStreamReader, position: SourcePositionTracker) {
     var i = 0
     while (i++ < count)
@@ -509,142 +455,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
     position.incPosition(bytes.toUInt())
   }
-
-  // endregion Tag Directive
-
-  // endregion Directives
-
-  // region Ambiguous Colon
-
-  // endregion Ambiguous Colon
-
-  // region Ambiguous Dash
-
-  internal fun fetchAmbiguousDashToken() {
-    // If we've hit a `-` character then we could be at the start of a block
-    // sequence entry, a document start, a plain scalar, or junk
-
-    // TODO:
-    //   | if we are in a flow context and we encounter "- ", what the fudge do
-    //   | we do with that?
-
-    // Cache the next 3 characters in the buffer to accommodate the size of the
-    // document start token `^---(?:\s|$)`
-    reader.cache(4)
-
-    // If we have `-(?:\s|$)`
-    if (reader.isBlankAnyBreakOrEOF(1))
-      return fetchBlockEntryIndicatorToken()
-
-    // See if we are at the start of the line and next up is `--(?:\s|$)`
-    if (atStartOfLine && reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3)) {
-      return fetchDocumentStartToken()
-    }
-
-    fetchPlainScalar()
-  }
-
-  internal fun fetchBlockEntryIndicatorToken() {
-    val start = position.mark()
-    skipASCII()
-    tokens.push(newSequenceEntryIndicatorToken(start, position.mark()))
-  }
-
-  internal fun fetchDocumentStartToken() {
-    val start = position.mark()
-    skipASCII(3)
-    tokens.push(newDocumentStartToken(start, position.mark()))
-  }
-
-  // endregion Ambiguous Dash
-
-  // region Ambiguous Period
-
-  internal fun fetchAmbiguousPeriodToken() {
-    reader.cache(4)
-
-    if (atStartOfLine && reader.isPeriod(1) && reader.isPeriod(2) && reader.isBlankAnyBreakOrEOF(3))
-      fetchDocumentEndToken()
-    else
-      fetchPlainScalar()
-  }
-
-  internal fun fetchDocumentEndToken() {
-    val start = position.mark()
-    skipASCII(3)
-    tokens.push(newDocumentEndToken(start, position.mark()))
-  }
-
-  // endregion Ambiguous Period
-
-  // region Ambiguous Question Mark
-
-  internal fun fetchAmbiguousQuestionToken() {
-    // If:      we are in a block context
-    //   If:      the question mark is followed by a space, newline, or EOF, it is
-    //            a mapping key indicator
-    //   Else If: the question mark is followed by anything else, it is a plain
-    //            scalar
-    // Else If: we are in a flow context
-    //   ????????
-
-    // TODO:
-    //   | This behavior does not take into account whether we are in a flow
-    //   | context or not when making the following determinations.  Determine if
-    //   | handling needs to be different for flow contexts and update if
-    //   | necessary
-
-    reader.cache(2)
-
-    return if (reader.isBlankAnyBreakOrEOF(1))
-      fetchMappingKeyIndicatorToken()
-    else
-      fetchPlainScalar()
-  }
-
-  internal fun fetchMappingKeyIndicatorToken() {
-    val start = position.mark()
-    skipASCII()
-    tokens.push(newMappingKeyIndicatorToken(start, position.mark()))
-  }
-
-  // endregion Ambiguous Question Mark
-
-  // region Flow Map Indicators
-
-  internal fun fetchFlowMappingStartToken() {
-    val start = position.mark()
-
-    reader.skip(1)
-    position.incPosition()
-
-    emitFlowMappingStartToken(start, position.mark())
-  }
-
-  internal fun emitFlowMappingStartToken(start: SourcePosition, end: SourcePosition) {
-    flows.push(FlowTypeMapping)
-    tokens.push(newFlowMappingStartToken(start, end))
-  }
-
-  internal fun fetchFlowMappingEndToken() {
-    val start = position.mark()
-
-    reader.skip(1)
-    position.incPosition()
-
-    emitFlowMappingEndToken(start, position.mark())
-  }
-
-  internal fun emitFlowMappingEndToken(start: SourcePosition, end: SourcePosition) {
-    if (inFlowMapping)
-      flows.pop()
-
-    tokens.push(newFlowMappingEndToken(start, end))
-  }
-
-  // endregion Flow Map Indicators
-
-  // endregion Token Fetching
 
   internal fun eatSpaces(): UInt {
     var count = 0u

@@ -234,6 +234,9 @@ internal inline fun UByteSource.uIsBOM(offset: Int = 0) =
 internal inline fun UByteSource.isCRLF(offset: Int = 0) =
   size > offset + 1 && uIsCarriageReturn(offset) && uIsLineFeed(offset + 1)
 
+internal inline fun UByteSource.uIsCRLF(offset: Int = 0) =
+  uIsCarriageReturn(offset) && uIsLineFeed(offset + 1)
+
 // endregion Multi-Character Tests
 
 // region YAML Character Class Tests

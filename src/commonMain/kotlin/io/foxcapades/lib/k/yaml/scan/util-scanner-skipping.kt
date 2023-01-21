@@ -1,10 +1,46 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.util.*
 import io.foxcapades.lib.k.yaml.util.isBlank
 import io.foxcapades.lib.k.yaml.util.isPound
 
-//
+internal fun YAMLScannerImpl.skipToNextToken() {
+  // TODO:
+  //   | This method needs to differentiate between tabs and spaces when
+  //   | slurping up those delicious, delicious bytes.
+  //   |
+  //   | This is because TAB characters are not permitted as part of
+  //   | indentation.
+  //   |
+  //   | If we choose to warn about tab characters rather than throwing an
+  //   | error, we need to determine the width of the tab character so as to
+  //   | keep the column index correct...
+
+  while (true) {
+    reader.cache(1)
+
+    when {
+      // We found the end of the stream.
+      reader.isEOF()      -> break
+      reader.isSpace()    -> skipASCII()
+      reader.isTab()      -> TODO("What manner of tomfuckery is this")
+      reader.isAnyBreak() -> skipLine()
+      else                -> break
+    }
+  }
+}
+
+internal fun YAMLScannerImpl.skipUntilBlankBreakOrEOF() {
+  while (true) {
+    reader.cache(1)
+
+    if (reader.isBlankAnyBreakOrEOF())
+      return
+    else
+      skipUTF8()
+  }
+}
+
 /**
  * # Skip Until Comment, Break, or EOF
  *
