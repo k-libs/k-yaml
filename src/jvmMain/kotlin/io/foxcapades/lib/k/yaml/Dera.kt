@@ -22,6 +22,3 @@ fun main() {
   while (scanner.hasNextToken)
     println(scanner.nextToken())
 }
-
-// 10000000101000
-// 10000000000000
