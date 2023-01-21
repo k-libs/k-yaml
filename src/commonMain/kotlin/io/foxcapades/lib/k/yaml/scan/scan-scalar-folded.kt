@@ -138,9 +138,11 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
   val keepSpacesStartingAt = indent - indentHint
   val lastContentPosition  = position.copy()
-  val contentOnThisLine    = false
+  var contentOnThisLine    = false
 
-  println(keepSpacesStartingAt)
+  var i = indent - keepSpacesStartingAt
+  while (i-- > 0u)
+    leadingWSBuffer.push(A_SPACE)
 
   while (true) {
     reader.cache(1)
@@ -148,21 +150,12 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
     when {
       reader.isSpace() -> {
         if (contentOnThisLine) {
-          trailingWSBuffer.claimASCII()
-        } else {
+          contentBuffer1.claimASCII()
+        } else if (position.column >= keepSpacesStartingAt) {
           leadingWSBuffer.claimASCII()
+        } else {
+          skipASCII()
         }
-
-        // We could be:
-        // - between non-space characters on a line
-        // - after the last non-space character on a line
-        // - before the first non-space character on a line
-        // - on an empty line
-
-        // We have 3 pieces of state:
-        //   whether the trailingNLBuffer is empty
-        //   whether the trailingWSBuffer is empty
-        //   whether the leadingWSBuffer is empty
       }
 
       reader.isAnyBreak() -> {
@@ -173,6 +166,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         }
 
         trailingNLBuffer.claimNewLine()
+        contentOnThisLine = false
       }
 
       reader.isEOF() -> {
@@ -180,6 +174,8 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
       }
 
       else -> {
+        contentOnThisLine = true
+
         // If the position of this character is before the detected indent, then
         // we are going to bail and call that a separate token.
         if (position.column < indent)
@@ -189,8 +185,6 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         // collapse the ws and nl buffers, we are going to add them to the
         // content as is.
         if (leadingWSBuffer.isNotEmpty) {
-          while (trailingWSBuffer.isNotEmpty)
-            contentBuffer1.push(trailingWSBuffer.pop())
           while (trailingNLBuffer.isNotEmpty)
             contentBuffer1.push(trailingNLBuffer.pop())
           while (leadingWSBuffer.isNotEmpty)
@@ -201,14 +195,6 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
         // AND we have newlines to take care of:
         else if (trailingNLBuffer.isNotEmpty) {
-          // Drop the trailing whitespace (because why would we care about it)
-          // TODO:
-          //  | the spec is ambiguous here (specifically section 6.5, block
-          //  | folding.  It doesn't clearly describe what to do with trailing
-          //  | whitespace characters in the event that the next line does not
-          //  | have extra leading whitespace characters.
-          trailingWSBuffer.clear()
-
           // If there is only one newline to take care of
           if (trailingNLBuffer.size == 1) {
             contentBuffer1.push(A_SPACE)
