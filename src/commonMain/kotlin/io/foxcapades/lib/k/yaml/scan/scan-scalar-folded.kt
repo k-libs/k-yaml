@@ -1,10 +1,10 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.bytes.A_LINE_FEED
+import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.err.YAMLScannerException
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
 
 /**
@@ -44,11 +44,13 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   val bTailNL  = this.trailingNLBuffer; bTailNL.clear()
 
   // Define some variables that we will be using later in this process.
-  var chompMode  = BlockScalarChompModeClip
-  var indentHint = 0u
+  val chompMode: BlockScalarChompMode
+  val indentHint: UInt
 
-  val minIndent:       UInt
+  val blockIndent:       UInt
   val keepIndentAfter: UInt
+
+  var keptLeadingSpaceCount = 0u
 
   /*
   ----
@@ -76,8 +78,8 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
     // Cache another character so we can test for digits.
     this.reader.cache(1)
 
-    if (this.reader.isDecimalDigit()) {
-      indentHint = try {
+    indentHint = if (this.reader.isDecimalDigit()) {
+      try {
         this.parseUInt()
       } catch (e: UIntOverflowException) {
         // Throw an exception about the error, but move the position forward 2
@@ -85,6 +87,8 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         // chomping indicator.
         throw YAMLScannerException("folded block scalar indent hint value overflows type uint32", start.copy(2, 0, 2))
       }
+    } else {
+      0u
     }
   }
 
@@ -99,9 +103,17 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
     this.reader.cache(1)
 
-    if (this.reader.isPlus() || this.reader.isDash())
-      chompMode = this.parseUByte()
+    chompMode = if (this.reader.isPlus() || this.reader.isDash())
+      this.parseUByte()
+    else
+      BlockScalarChompModeClip
   }
+
+  else {
+    chompMode = BlockScalarChompModeClip
+    indentHint = 0u
+  }
+
   /*
   ----
   Now we have processed any indent hint and/or chomping indicator.  At this
@@ -182,7 +194,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         this.haveContentOnThisLine = true
         this.indent = bLeadWS.size.toUInt()
 
-        minIndent = this.position.column
+        blockIndent = this.position.column
         break
       }
     }
@@ -229,32 +241,129 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         // then it is "leading" space
         this.indent++
 
-        // To implement the indent hint indent capturing, if the current line
-        // indentation
         if (this.indent >= keepIndentAfter)
-          bContent.claimASCII(this.reader, this.position)
+          keptLeadingSpaceCount++
+
+        skipASCII(this.reader, this.position)
       }
     }
 
+    // If we hit a line break
     else if (this.reader.isAnyBreak()) {
+      // If we had content on this line
+      if (this.haveContentOnThisLine) {
 
+      }
+
+      // else, if we didn't have any content on this line
+      else {
+        // then zero out the leading space count because it turns out that the
+        // leading space wasn't actually leading to anything.
+        keptLeadingSpaceCount = 0u
+      }
+
+      bTailNL.claimNewLine(this.reader, this.position)
     }
 
     else if (this.reader.isEOF()) {
-
+      return this.collapseFinishAndEmitFoldingScalarToken(
+        bContent,
+        bTailNL,
+        blockIndent,
+        chompMode,
+        indentHint,
+        start
+      )
     }
 
     else {
       this.haveContentOnThisLine = true
 
+      if (keptLeadingSpaceCount > 0u) {
+        // if we have a leading space count right now then we are on the first
+        // character of the new line.  In this case we need to verify that the
+        // indent of this line is not less than our required minimum indent
+        // value.
+
+        // If the indentation on this line was less than the required minimum
+        // indent for this block scalar, then
+        if (this.indent < blockIndent) {
+          // If we have an indent less than the indent level detected for the
+          // block scalar, then we will end our scalar here and call what we
+          // are seeing now the start of a new value.
+          return this.collapseFinishAndEmitFoldingScalarToken(
+            bContent,
+            bTailNL,
+            blockIndent,
+            chompMode,
+            indentHint,
+            start
+          )
+        }
+
+        // If we have leading whitespace on this line that is greater than any
+        // spaces expected due to the indent hint, then we cannot collapse the
+        // line breaks between this line and the last line with content.
+        if (keptLeadingSpaceCount > indentHint) {
+          while (bTailNL.isNotEmpty)
+            bContent.claimNewLine(bTailNL)
+        }
+
+        // If we have more than one line break between this line and the last,
+        else if (bTailNL.size > 1) {
+          bTailNL.skipNewLine()
+          while (bTailNL.isNotEmpty)
+            bContent.claimNewLine(bTailNL)
+        } else if (bTailNL.size == 1) {
+          bContent.push(A_SPACE)
+        }
+
+        keptLeadingSpaceCount = 0u
+      }
+
+      bContent.claimUTF8()
     }
   }
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
+private fun YAMLScannerImpl.collapseFinishAndEmitFoldingScalarToken(
+  scalarContent:    UByteBuffer,
+  trailingNewLines: UByteBuffer,
+  actualIndent:     UInt,
+  chompingMode:     BlockScalarChompMode,
+  indentHint:       UInt,
+  start:            SourcePosition,
+) {
+  if (trailingNewLines.isNotEmpty) {
+    if (chompingMode == BlockScalarChompModeStrip) {
+      // Do not write trailing line breaks to buffer.
+    } else if (chompingMode == BlockScalarChompModeClip) {
+      scalarContent.claimNewLine(trailingNewLines)
+    } else if (chompingMode == BlockScalarChompModeKeep) {
+      while (trailingNewLines.isNotEmpty)
+        scalarContent.claimNewLine(trailingNewLines)
+    } else {
+      throw IllegalStateException("invalid BlockScalarChompMode value")
+    }
+  }
+
+  this.tokens.push(this.newFoldedScalarToken(scalarContent.popToArray(), actualIndent, chompingMode, indentHint, start))
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
 private fun YAMLScannerImpl.newFoldedScalarToken(
-  value: UByteArray,
-  start: SourcePosition,
-  end: SourcePosition
+  value:    UByteArray,
+  indent:   UInt,
+  chomping: BlockScalarChompMode,
+  hint:     UInt,
+  start:    SourcePosition,
+  end:      SourcePosition = this.position.mark(),
 ) =
-  YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.Folded), start, end, getWarnings())
+  YAMLToken(
+    YAMLTokenTypeScalarFolded,
+    YAMLTokenDataBlockScalar(value, BlockScalarStyle.FOLDED, indent, chomping, hint),
+    start,
+    end,
+    getWarnings()
+  )

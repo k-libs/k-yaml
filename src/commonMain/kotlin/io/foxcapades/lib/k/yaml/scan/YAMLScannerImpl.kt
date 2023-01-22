@@ -221,10 +221,10 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun UByteBuffer.claimNewLine(from: UByteSource) {
     if (from.isCRLF()) {
       appendNewLine(NL.CRLF)
-      from.skipLine(NL.CRLF)
+      from.skipLine(NL.LF)
     } else if (from.isCarriageReturn()) {
       appendNewLine(NL.CR)
-      from.skipLine(NL.CR)
+      from.skipLine(NL.LF)
     } else if (from.isLineFeed()) {
       appendNewLine(NL.LF)
       from.skipLine(NL.LF)
@@ -247,11 +247,11 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun UByteBuffer.claimNewLine(from: UByteSource, position: SourcePositionTracker) {
     if (from.isCRLF()) {
       appendNewLine(NL.CRLF)
-      from.skipLine(NL.CRLF)
+      from.skipLine(NL.LF)
       position.incLine(NL.CRLF.characters.toUInt())
     } else if (from.isCarriageReturn()) {
       appendNewLine(NL.CR)
-      from.skipLine(NL.CR)
+      from.skipLine(NL.LF)
       position.incLine(NL.CR.characters.toUInt())
     } else if (from.isLineFeed()) {
       appendNewLine(NL.LF)

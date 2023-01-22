@@ -4,8 +4,14 @@ import io.foxcapades.lib.k.yaml.util.*
 import io.foxcapades.lib.k.yaml.util.isBlank
 import io.foxcapades.lib.k.yaml.util.isPound
 
+@Deprecated("use the other one.")
 internal fun YAMLScannerImpl.skipASCII(count: Int = 1) {
   reader.skip(count)
+  position.incPosition(count.toUInt())
+}
+
+internal fun skipASCII(from: UByteSource, position: SourcePositionTracker, count: Int = 1) {
+  from.skip(count)
   position.incPosition(count.toUInt())
 }
 

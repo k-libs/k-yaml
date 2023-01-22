@@ -1,32 +1,34 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.token.YAMLToken
+import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.util.SourcePosition
+
 
 internal fun YAMLScannerImpl.fetchAmbiguousColonToken() {
-  // So we've hit a colon character.  If it is followed by a space, linebreak
-  // or EOF then it is a mapping value indicator token.  If it is followed by
-  // anything else then it is the start of a plain scalar token.
+  this.reader.cache(2)
 
-  // Cache the character after the colon in the buffer.
-  reader.cache(2)
+  if (!(this.inFlow || this.reader.isBlankAnyBreakOrEOF(1)))
+    return this.fetchPlainScalar()
 
-  // If we are in a flow, then a colon automatically means value separator.
-  //
-  // If we are not in a flow, then the colon is only a value separator if it is
-  // followed by a blank, a line break, or the EOF
-  if (!(inFlow || reader.isBlankAnyBreakOrEOF(1)))
-    return fetchPlainScalar()
-
-  // Record the start position for our token (the position of the colon
-  // character)
-  val start = position.mark()
-
-  // Skip over the colon character in the stream
-  skipASCII()
-
-  // Record the end position for our token (the position immediately after the
-  // colon character)
-  val end = position.mark()
-
-  // Generate and queue up the token
-  tokens.push(newMappingValueIndicatorToken(start, end))
+  val start = this.position.mark()
+  skipASCII(this.reader, this.position)
+  return this.emitMappingValueIndicatorToken(start)
 }
+
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun YAMLScannerImpl.emitMappingValueIndicatorToken(
+  start: SourcePosition,
+  end:   SourcePosition = this.position.mark(),
+) {
+  this.tokens.push(newMappingValueIndicatorToken(start, end))
+}
+
+/**
+ * [MAPPING-VALUE][YAMLTokenType.MappingValue]
+ */
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun YAMLScannerImpl.newMappingValueIndicatorToken(start: SourcePosition, end: SourcePosition) =
+  YAMLToken(YAMLTokenType.MappingValue, null, start, end, getWarnings())
+
+
