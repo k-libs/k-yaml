@@ -13,9 +13,11 @@ sealed interface YAMLTokenDataScalar : YAMLTokenData {
 @JvmInline
 value class YAMLTokenDataStreamStart(val encoding: YAMLEncoding) : YAMLTokenData
 
-data class YAMLTokenDataVersionDirective(val major: UInt, val minor: UInt) : YAMLTokenData
+data class YAMLTokenDataDirectiveYAML(val major: UInt, val minor: UInt) : YAMLTokenData
 
 @JvmInline
 @OptIn(ExperimentalUnsignedTypes::class)
 value class YAMLTokenDataComment(val value: UByteArray) : YAMLTokenData
 
+@JvmInline
+value class YAMLTokenDataSequenceEntry(val indent: UInt) : YAMLTokenData

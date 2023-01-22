@@ -3,7 +3,7 @@ package io.foxcapades.lib.k.yaml.token
 import io.foxcapades.lib.k.yaml.util.decodeToString
 
 @OptIn(ExperimentalUnsignedTypes::class)
-class YAMLTokenDataTagDirective(
+class YAMLTokenDataDirectiveTag(
   private val handle: UByteArray,
   private val prefix: UByteArray
 ) : YAMLTokenData {
@@ -26,7 +26,7 @@ class YAMLTokenDataTagDirective(
   override fun equals(other: Any?) =
     (this === other)
     || (
-      other is YAMLTokenDataTagDirective
+      other is YAMLTokenDataDirectiveTag
       && handle.contentEquals(other.handle)
       && prefix.contentEquals(other.prefix)
     )

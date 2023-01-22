@@ -16,8 +16,9 @@ internal fun YAMLScannerImpl.fetchAmbiguousDashToken() {
   reader.cache(4)
 
   // If we have `-(?:\s|$)`
-  if (reader.isBlankAnyBreakOrEOF(1))
+  if (reader.isBlankAnyBreakOrEOF(1)) {
     return fetchBlockEntryIndicatorToken()
+  }
 
   // See if we are at the start of the line and next up is `--(?:\s|$)`
   if (atStartOfLine && reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3)) {

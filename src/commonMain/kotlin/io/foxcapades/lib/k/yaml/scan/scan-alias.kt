@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.token.YAMLToken
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDataAlias
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenTypeAlias
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
 import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
@@ -45,4 +45,4 @@ internal fun YAMLScannerImpl.fetchAliasToken() {
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun YAMLScannerImpl.newAliasToken(alias: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.Alias, YAMLTokenDataAlias(alias), start, end, getWarnings())
+  YAMLToken(YAMLTokenTypeAlias, YAMLTokenDataAlias(alias), start, end, getWarnings())

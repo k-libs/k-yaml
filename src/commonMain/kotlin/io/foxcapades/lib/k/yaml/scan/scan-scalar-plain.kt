@@ -11,6 +11,9 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
   trailingNLBuffer.clear()
 
   val startMark = position.mark()
+  val indent    = if (haveContentOnThisLine) 0u else startMark.column
+
+  haveContentOnThisLine = true
 
   // Rolling end position of this scalar value (don't create a mark every time
   // because that's a new class instantiation per stream character).
@@ -25,13 +28,13 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
       if (contentBuffer2.size == 1) {
         if (contentBuffer2.uIsSquareClose()) {
           if (contentBuffer1.isNotEmpty)
-            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
 
           emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
           return
         } else if (contentBuffer2.uIsCurlyClose()) {
           if (contentBuffer1.isNotEmpty)
-            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
 
           emitFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
           return
@@ -39,7 +42,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
       }
 
       collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
-      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
       return
     }
 
@@ -66,13 +69,13 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
       if (contentBuffer2.size == 1) {
         if (contentBuffer2.uIsSquareClose()) {
           if (contentBuffer1.isNotEmpty)
-            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
 
           emitFlowSequenceEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
           return
         } else if (contentBuffer2.uIsCurlyClose()) {
           if (contentBuffer1.isNotEmpty)
-            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+            tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
 
           emitFlowMappingEndToken(startOfLinePosition.mark(), startOfLinePosition.mark(1, 0, 1))
           return
@@ -106,9 +109,9 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
       // 4. Plain scalar: "taco"
       if (!inFlowMapping && reader.isBlankAnyBreakOrEOF(1)) {
         if (contentBuffer1.isNotEmpty)
-          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
 
-        tokens.push(newPlainScalarToken(contentBuffer2.popToArray(), startOfLinePosition.mark(), position.mark()))
+        tokens.push(newPlainScalarToken(contentBuffer2.popToArray(), indent, startOfLinePosition.mark(), position.mark()))
 
         return
       }
@@ -121,7 +124,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
 
         collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
 
-        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
 
         return
       }
@@ -131,26 +134,26 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
       reader.cache(4)
 
       if (reader.isBlankAnyBreakOrEOF(1)) {
-        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
         return
       }
     }
 
     if (inFlow && reader.isComma()) {
       collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
-      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
       return
     }
 
     if (inFlowMapping && reader.isCurlyClose()) {
       collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
-      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
       return
     }
 
     if (inFlowSequence && reader.isSquareClose()) {
       collapseNewlinesAndMergeBuffers(endPosition, contentBuffer1, contentBuffer2, trailingWSBuffer, trailingNLBuffer)
-      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+      tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
       return
     }
 
@@ -166,7 +169,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
         reader.cache(4)
 
         if (reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3)) {
-          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
           return
         }
       }
@@ -175,7 +178,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
         reader.cache (4)
 
         if (reader.isPeriod(1) && reader.isPeriod(2) && reader.isBlankAnyBreakOrEOF(3)) {
-          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
           return
         }
       }
@@ -184,7 +187,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
         reader.cache(2)
 
         if (reader.isBlankAnyBreakOrEOF(1)) {
-          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+          tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
           return
         }
       }
@@ -194,7 +197,7 @@ internal fun YAMLScannerImpl.fetchPlainScalar() {
         || reader.isSquareOpen()
         || reader.isCurlyOpen()
       ) {
-        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), startMark, endPosition.mark()))
+        tokens.push(newPlainScalarToken(contentBuffer1.popToArray(), indent, startMark, endPosition.mark()))
         return
       }
     } // end if (atStartOfLine)

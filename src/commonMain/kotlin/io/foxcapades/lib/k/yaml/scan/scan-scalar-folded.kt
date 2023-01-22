@@ -34,7 +34,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   */
   val start = this.position.mark()
 
-  this.skipASCII()
+  skipASCII(this.reader, this.position)
 
   // Now lets grab (and clear) some buffers for us to use in this parsing
   // process.
@@ -173,7 +173,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
     when {
       this.reader.isSpace() -> {
-        bLeadWS.claimASCII()
+        bLeadWS.claimASCII(this.reader, this.position)
       }
 
       this.reader.isAnyBreak() -> {
@@ -231,7 +231,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
     // If we hit a space
     if (this.reader.isSpace()) {
       // and we already have content on this line
-      if (haveContentOnThisLine) {
+      if (this.haveContentOnThisLine) {
         // we want to keep this whitespace as part of the content.
         bContent.claimASCII(this.reader, this.position)
       }
@@ -250,13 +250,8 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
     // If we hit a line break
     else if (this.reader.isAnyBreak()) {
-      // If we had content on this line
-      if (this.haveContentOnThisLine) {
-
-      }
-
-      // else, if we didn't have any content on this line
-      else {
+      // If we didn't have content on this line
+      if (!this.haveContentOnThisLine) {
         // then zero out the leading space count because it turns out that the
         // leading space wasn't actually leading to anything.
         keptLeadingSpaceCount = 0u
@@ -338,12 +333,18 @@ private fun YAMLScannerImpl.collapseFinishAndEmitFoldingScalarToken(
   if (trailingNewLines.isNotEmpty) {
     if (chompingMode == BlockScalarChompModeStrip) {
       // Do not write trailing line breaks to buffer.
-    } else if (chompingMode == BlockScalarChompModeClip) {
+    }
+
+    else if (chompingMode == BlockScalarChompModeClip) {
       scalarContent.claimNewLine(trailingNewLines)
-    } else if (chompingMode == BlockScalarChompModeKeep) {
+    }
+
+    else if (chompingMode == BlockScalarChompModeKeep) {
       while (trailingNewLines.isNotEmpty)
         scalarContent.claimNewLine(trailingNewLines)
-    } else {
+    }
+
+    else {
       throw IllegalStateException("invalid BlockScalarChompMode value")
     }
   }

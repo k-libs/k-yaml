@@ -1,9 +1,12 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.err.YAMLScannerException
+
 internal fun YAMLScannerImpl.fetchAmbiguousGraveToken() {
-  val start = position.mark()
-  skipUntilBlankBreakOrEOF()
-  val end = position.mark()
-  warn("illegal token: no token may start with the backtick/grave ('`') character", start, end)
-  tokens.push(newInvalidToken(start, end))
+  val start = this.position.mark()
+  skipASCII(this.reader, this.position)
+  throw YAMLScannerException(
+    "illegal token: no token may start with the reserved \"grave accent\" ('`') indicator character",
+    start
+  )
 }

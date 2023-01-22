@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.token.YAMLToken
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDataAnchor
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenTypeAnchor
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
 import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
@@ -10,11 +10,13 @@ import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchAnchorToken() {
+  haveContentOnThisLine = true
+
   contentBuffer1.clear()
 
   val start = position.mark()
 
-  skipASCII()
+  skipASCII(reader, position)
   reader.cache(1)
 
   if (reader.isBlankAnyBreakOrEOF()) {
@@ -45,4 +47,4 @@ internal fun YAMLScannerImpl.fetchAnchorToken() {
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun YAMLScannerImpl.newAnchorToken(anchor: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.Anchor, YAMLTokenDataAnchor(anchor), start, end, getWarnings())
+  YAMLToken(YAMLTokenTypeAnchor, YAMLTokenDataAnchor(anchor), start, end, getWarnings())
