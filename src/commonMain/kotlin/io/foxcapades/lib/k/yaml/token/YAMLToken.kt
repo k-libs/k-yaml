@@ -2,6 +2,7 @@ package io.foxcapades.lib.k.yaml.token
 
 import io.foxcapades.lib.k.yaml.scan.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.util.UByteString
 
 sealed interface YAMLToken {
   val start:    SourcePosition
@@ -9,23 +10,8 @@ sealed interface YAMLToken {
   val warnings: Array<SourceWarning>
 }
 
-class YAMLTokenDocumentStart(
-  override val start: SourcePosition,
-  override val end: SourcePosition,
-  override val warnings: Array<SourceWarning>
-) : YAMLToken {
-  override fun toString() =
-    "YAMLTokenDocumentStart(" +
-      "start=$start" +
-      ", " +
-      "end=$end" +
-      ", " +
-      "warnings=${warnings.joinToString(", ", "[", "]")}" +
-      ")"
-
-  override fun equals(other: Any?) =
-    this === other
-
+sealed interface YAMLTokenScalar : YAMLToken {
+  val value: UByteString
 }
 
 class YAMLTokenz(

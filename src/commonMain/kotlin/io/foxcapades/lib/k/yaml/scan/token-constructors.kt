@@ -72,17 +72,6 @@ internal inline fun YAMLScannerImpl.newMappingKeyIndicatorToken(start: SourcePos
   YAMLToken(YAMLTokenTypeMappingKey, null, start, end, getWarnings())
 
 
-/**
- * [FLOW-MAPPING-START][YAMLTokenType.FlowMappingStart]
- */
-internal inline fun YAMLScannerImpl.newFlowMappingStartToken(start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenTypeFlowMappingStart, null, start, end, getWarnings())
-
-/**
- * [FLOW-MAPPING-END][YAMLTokenType.FlowMappingEnd]
- */
-internal inline fun YAMLScannerImpl.newFlowMappingEndToken(start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenTypeFlowMappingEnd, null, start, end, getWarnings())
 
 /**
  * [FLOW-SEQUENCE-START][YAMLTokenType.FlowSequenceStart]
@@ -95,10 +84,6 @@ internal inline fun YAMLScannerImpl.newFlowSequenceStartToken(start: SourcePosit
  */
 internal inline fun YAMLScannerImpl.newFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenTypeFlowSequenceEnd, null, start, end, getWarnings())
-
-@OptIn(ExperimentalUnsignedTypes::class)
-internal inline fun YAMLScannerImpl.newCommentToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenTypeComment, YAMLTokenDataComment(value), start, end, getWarnings())
 
 internal inline fun YAMLScannerImpl.newInvalidToken(start: SourcePosition, end: SourcePosition) =
   YAMLToken(YAMLTokenTypeInvalid, null, start, end, getWarnings())
