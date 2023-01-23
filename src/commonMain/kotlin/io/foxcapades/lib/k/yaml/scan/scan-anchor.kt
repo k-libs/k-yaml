@@ -1,50 +1,52 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataAnchor
-import io.foxcapades.lib.k.yaml.token.YAMLTokenTypeAnchor
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.token.YAMLTokenAnchor
+import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
-import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
 
-
+/**
+ * # Fetch Anchor Token
+ *
+ * Parses and emits a token for a YAML anchor.
+ *
+ * @since 0.1.0
+ * @author Elizabeth Paige Harper - https://github.com/foxcapades
+ */
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchAnchorToken() {
-  haveContentOnThisLine = true
+  // We have content on this line.
+  this.haveContentOnThisLine = true
 
-  contentBuffer1.clear()
+  val bContent = this.contentBuffer1
+  val start    = this.position.mark()
 
-  val start = position.mark()
+  bContent.clear()
 
-  skipASCII(reader, position)
-  reader.cache(1)
+  skipASCII(this.reader, this.position)
+  this.reader.cache(1)
 
-  if (reader.isBlankAnyBreakOrEOF()) {
-    val end = position.mark()
-    warn("incomplete anchor token", start, end)
-    tokens.push(newInvalidToken(start, end))
+  if (this.reader.isBlankAnyBreakOrEOF()) {
+    emitInvalidToken("incomplete anchor token", start)
     return
   }
 
   while (true) {
-    if (reader.isBlankAnyBreakOrEOF()) {
+    if (this.reader.isBlankAnyBreakOrEOF()) {
       break
-    } else if (reader.isNsAnchorChar()) {
-      contentBuffer1.takeCodepointFrom(reader)
-      position.incPosition()
-    } else {
-      val end = position.mark()
-      warn("invalid or unexpected character while parsing an anchor token", start, end)
-      tokens.push(newInvalidToken(start, end))
+    }
+
+    else if (this.reader.isNsAnchorChar()) {
+      bContent.claimUTF8(this.reader, this.position)
+    }
+
+    else {
+      this.skipUntilBlankBreakOrEOF()
+      emitInvalidToken("invalid or unexpected character while parsing an anchor token", start)
       return
     }
 
-    reader.cache(1)
+    this.reader.cache(1)
   }
 
-  tokens.push(newAnchorToken(contentBuffer1.popToArray(), start, position.mark()))
+  this.tokens.push(YAMLTokenAnchor(UByteString(bContent.popToArray()), start, this.position.mark(), this.getWarnings()))
 }
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.newAnchorToken(anchor: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenTypeAnchor, YAMLTokenDataAnchor(anchor), start, end, getWarnings())

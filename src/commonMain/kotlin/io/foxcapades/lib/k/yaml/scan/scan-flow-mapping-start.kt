@@ -1,22 +1,13 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowMappingStart
-import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 internal fun YAMLScannerImpl.fetchFlowMappingStartToken() {
-  val start = position.mark()
+  // We have content on this line.
+  this.haveContentOnThisLine = true
 
-  reader.skip(1)
-  position.incPosition()
-
-  emitFlowMappingStartToken(start, position.mark())
+  val start = this.position.mark()
+  skipASCII(this.reader, this.position)
+  this.flows.push(FlowTypeMapping)
+  this.tokens.push(YAMLTokenFlowMappingStart(start, this.position.mark(), this.getWarnings()))
 }
-
-private fun YAMLScannerImpl.emitFlowMappingStartToken(start: SourcePosition, end: SourcePosition) {
-  flows.push(FlowTypeMapping)
-  tokens.push(newFlowMappingStartToken(start, end))
-}
-
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.newFlowMappingStartToken(start: SourcePosition, end: SourcePosition) =
-  YAMLTokenFlowMappingStart(start, end, getWarnings())

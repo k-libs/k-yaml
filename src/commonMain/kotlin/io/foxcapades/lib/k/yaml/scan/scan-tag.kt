@@ -4,9 +4,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_EXCLAIM
 import io.foxcapades.lib.k.yaml.bytes.StrEmpty
 import io.foxcapades.lib.k.yaml.bytes.StrPrimaryTagPrefix
 import io.foxcapades.lib.k.yaml.bytes.StrSecondaryTagPrefix
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataTag
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenTag
 import io.foxcapades.lib.k.yaml.util.*
 
 
@@ -14,7 +12,7 @@ internal fun YAMLScannerImpl.fetchTagToken() {
   val startMark = position.mark()
 
   // Skip the first `!`
-  skipASCII()
+  skipASCII(this.reader, this.position)
 
   // Queue up the next character to read
   reader.cache(1)
@@ -31,15 +29,16 @@ internal fun YAMLScannerImpl.fetchTagToken() {
   if (reader.isNsTagChar())
     return fetchHandleOrPrimaryTagToken(startMark)
 
+
   warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
   skipUntilBlankBreakOrEOF()
-  tokens.push(newInvalidToken(startMark, position.mark()))
+  emitInvalidToken(startMark, position.mark())
   return
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun YAMLScannerImpl.fetchNonSpecificTagToken(startMark: SourcePosition) {
-  tokens.push(newTagToken(StrPrimaryTagPrefix, StrEmpty, startMark, position.mark()))
+  emitTagToken(StrPrimaryTagPrefix, StrEmpty, startMark)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -88,7 +87,7 @@ private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePositi
     else {
       warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
       skipUntilBlankBreakOrEOF()
-      tokens.push(newInvalidToken(startMark, position.mark()))
+      emitInvalidToken(startMark, position.mark())
       return
     }
   }
@@ -96,7 +95,7 @@ private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePositi
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun YAMLScannerImpl.fetchPrimaryTagToken(startMark: SourcePosition, suffix: UByteArray) {
-  tokens.push(newTagToken(StrPrimaryTagPrefix, suffix, startMark, position.mark()))
+  emitTagToken(StrPrimaryTagPrefix, suffix, startMark)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -109,9 +108,7 @@ private fun YAMLScannerImpl.fetchLocalTagToken(startMark: SourcePosition, handle
   reader.cache(1)
 
   if (reader.isBlankAnyBreakOrEOF()) {
-    val end = position.mark()
-    warn("incomplete tag; tag had no suffix", startMark, end)
-    tokens.push(newInvalidToken(startMark, end))
+    emitInvalidToken("incomplete tag; tag had no suffix", startMark, position.mark())
     return
   }
 
@@ -127,14 +124,14 @@ private fun YAMLScannerImpl.fetchLocalTagToken(startMark: SourcePosition, handle
     else {
       warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
       skipUntilBlankBreakOrEOF()
-      tokens.push(newInvalidToken(startMark, position.mark()))
+      emitInvalidToken(startMark, position.mark())
       return
     }
 
     reader.cache(1)
   }
 
-  tokens.push(newTagToken(handle, contentBuffer1.popToArray(), startMark, position.mark()))
+  emitTagToken(handle, contentBuffer1.popToArray(), startMark)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -155,14 +152,14 @@ private fun YAMLScannerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
     } else {
       warn("invalid character in secondary tag token", position.mark(), position.mark(1, 0, 1))
       skipUntilBlankBreakOrEOF()
-      tokens.push(newInvalidToken(startMark, position.mark()))
+      emitInvalidToken(startMark, position.mark())
       return
     }
 
     reader.cache(1)
   }
 
-  tokens.push(newTagToken(StrSecondaryTagPrefix, contentBuffer1.popToArray(), startMark, position.mark()))
+  emitTagToken(StrSecondaryTagPrefix, contentBuffer1.popToArray(), startMark)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -187,10 +184,15 @@ private fun YAMLScannerImpl.fetchVerbatimTagToken(startMark: SourcePosition) {
     }
   }
 
-  tokens.push(newTagToken(contentBuffer1.popToArray(), StrEmpty, startMark, position.mark()))
+  emitTagToken(contentBuffer1.popToArray(), StrEmpty, startMark)
 }
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.newTagToken(handle: UByteArray, suffix: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.Tag, YAMLTokenDataTag(handle, suffix), start, end, getWarnings())
+private inline fun YAMLScannerImpl.emitTagToken(
+  handle: UByteArray,
+  suffix: UByteArray,
+  start:  SourcePosition,
+  end:    SourcePosition = this.position.mark()
+) =
+  this.tokens.push(YAMLTokenTag(UByteString(handle), UByteString(suffix), start, end, this.getWarnings()))

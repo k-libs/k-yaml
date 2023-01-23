@@ -1,7 +1,8 @@
 package io.foxcapades.lib.k.yaml.token
 
-import io.foxcapades.lib.k.yaml.scan.SourceWarning
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
 class YAMLTokenDocumentEnd(
   override val start:    SourcePosition,
@@ -9,13 +10,7 @@ class YAMLTokenDocumentEnd(
   override val warnings: Array<SourceWarning>
 ) : YAMLToken {
   override fun toString() =
-    "YAMLTokenDocumentEnd(" +
-      "start=$start" +
-      ", " +
-      "end=$end" +
-      ", " +
-      "warnings=${warnings.joinToString(", ", "[", "]")}" +
-      ")"
+    "DocumentEnd(start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun equals(other: Any?) =
     this === other

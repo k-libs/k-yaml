@@ -5,6 +5,9 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 
 internal fun YAMLScannerImpl.fetchFlowMappingEndToken() {
+  // We have content on this line.
+  this.haveContentOnThisLine = true
+
   val start = position.mark()
 
   reader.skip(1)
@@ -17,9 +20,5 @@ internal fun YAMLScannerImpl.emitFlowMappingEndToken(start: SourcePosition, end:
   if (inFlowMapping)
     flows.pop()
 
-  tokens.push(newFlowMappingEndToken(start, end))
+  tokens.push(YAMLTokenFlowMappingEnd(start, end, getWarnings()))
 }
-
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.newFlowMappingEndToken(start: SourcePosition, end: SourcePosition) =
-  YAMLTokenFlowMappingEnd(start, end, getWarnings())

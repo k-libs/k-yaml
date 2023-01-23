@@ -1,8 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.isBlank
-import io.foxcapades.lib.k.yaml.util.isPound
 
 @Deprecated("use the other one.")
 internal fun YAMLScannerImpl.skipASCII(count: Int = 1) {
@@ -31,7 +29,7 @@ internal fun YAMLScannerImpl.eatBlanks(): Int {
 
   reader.cache(1)
   while (reader.isBlank()) {
-    skipASCII()
+    skipASCII(this.reader, this.position)
     reader.cache(1)
     out++
   }
@@ -39,33 +37,37 @@ internal fun YAMLScannerImpl.eatBlanks(): Int {
   return out
 }
 
-internal fun YAMLScannerImpl.skipBlanks() {
-  this.reader.cache(1)
-  while (this.reader.isBlank()) {
-    this.skipASCII()
-    this.reader.cache(1)
+internal fun skipNewLine(from: UByteSource, position: SourcePositionTracker) {
+  when {
+    from.isCRLF() -> {
+      from.skip(2)
+      position.incLine(2u)
+    }
+
+    from.isLineFeedOrCarriageReturn() -> {
+      from.skip(1)
+      position.incLine()
+    }
+
+    from.isNextLine() -> {
+      from.skip(2)
+      position.incLine()
+    }
+
+    from.isLineOrParagraphSeparator() -> {
+      from.skip(3)
+      position.incLine()
+    }
+
+    else -> {
+      throw IllegalStateException(
+        "called skipNewLine(UByteSource, SourcePositionTracker) and provided a UByteSource whose next character is " +
+          "not a new line"
+      )
+    }
   }
 }
 
-internal fun YAMLScannerImpl.skipLine() {
-  reader.cache(4)
-
-  if (reader.isCRLF()) {
-    skipLine(NL.CRLF)
-  } else if (reader.isCarriageReturn()) {
-    skipLine(NL.CR)
-  } else if (reader.isLineFeed()) {
-    skipLine(NL.LF)
-  } else if (reader.isNextLine()) {
-    skipLine(NL.NEL)
-  } else if (reader.isLineSeparator()) {
-    skipLine(NL.LS)
-  } else if (reader.isParagraphSeparator()) {
-    skipLine(NL.PS)
-  } else {
-    throw IllegalStateException("called #skipLine() when the reader was not on a newline character")
-  }
-}
 
 internal fun YAMLScannerImpl.skipToNextToken() {
   // TODO:
@@ -85,11 +87,11 @@ internal fun YAMLScannerImpl.skipToNextToken() {
     when {
       // We found the end of the stream.
       reader.isSpace()    -> {
-        skipASCII()
+        skipASCII(this.reader, this.position)
       }
 
       reader.isAnyBreak() -> {
-        skipLine()
+        skipNewLine(this.reader, this.position)
         haveContentOnThisLine = false
       }
 

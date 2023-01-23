@@ -2,23 +2,29 @@ package io.foxcapades.lib.k.yaml.token
 
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
-class YAMLTokenStreamEnd(
+data class YAMLTokenAlias(
+           val alias:    UByteString,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>
 ) : YAMLToken {
   override fun toString() =
-    "StreamEnd(start=$start, end=$end, warnings=${warnings.toFlowSequence()}"
+    "Alias(alias=$alias, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    this.start.hashCode() + this.end.hashCode() + this.warnings.contentHashCode()
+    alias.contentHashCode() +
+    start.hashCode() +
+    end.hashCode() +
+    warnings.contentHashCode()
 
   override fun equals(other: Any?) =
     this === other
     || (
-      other is YAMLTokenStreamEnd
+      other is YAMLTokenAlias
+      && this.alias.contentEquals(other.alias)
       && this.start == other.start
       && this.end == other.end
       && this.warnings.contentEquals(other.warnings)

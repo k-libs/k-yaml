@@ -3,7 +3,8 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.DefaultYAMLVersion
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveYAML
+import io.foxcapades.lib.k.yaml.token.YAMLTokenInvalid
 import io.foxcapades.lib.k.yaml.util.*
 
 /**
@@ -19,10 +20,13 @@ import io.foxcapades.lib.k.yaml.util.*
  * @param startMark Mark of the start position of the token.
  */
 internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) {
+  // We have content on this line.
+  this.haveContentOnThisLine = true
+
   // We have already skipped over `%YAML<WS>`.  Eat any extra whitespaces
   // until we encounter something else, which will hopefully be a decimal
   // digit.
-  var trailingSpaceCount = eatBlanks()
+  var trailingSpaceCount = eatBlanks() + 1
 
   // If after skipping over the blank space characters after `%YAML` we hit
   // the EOF, a line break, or a `#` character (the start of a comment), then
@@ -60,7 +64,7 @@ internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) 
     return fetchMalformedYAMLDirectiveToken(startMark)
 
   // Skip the `.` character.
-  skipASCII()
+  skipASCII(this.reader, this.position)
 
   reader.cache(1)
   if (reader.isAnyBreakOrEOF())
@@ -123,12 +127,11 @@ internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) 
   if (major != 1u)
     return fetchUnsupportedYAMLDirectiveToken(major, minor, startMark, endMark)
 
-  if (minor == 1u)
-    version = YAMLVersion.VERSION_1_1
-  else if (minor == 2u)
-    version = YAMLVersion.VERSION_1_2
-  else
-    return fetchUnsupportedYAMLDirectiveToken(major, minor, startMark, endMark)
+  version = when (minor) {
+    1u   -> YAMLVersion.VERSION_1_1
+    2u   -> YAMLVersion.VERSION_1_2
+    else -> return fetchUnsupportedYAMLDirectiveToken(major, minor, startMark, endMark)
+  }
 
   tokens.push(newYAMLDirectiveToken(major, minor, startMark, endMark))
 }
@@ -160,23 +163,6 @@ internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) 
  *       ^^^^^^^^^^^^^^^^^^^^
  * ----
  * ```
- *
- * ## Generating the Invalid Token
- *
- * This function simply calls out to [finishInvalidDirectiveToken] to wrap up
- * finding the end of the invalid token.
- *
- * @param tokenStartMark Mark for the beginning of the `%YAML` token in the
- * source stream.  This value is passed through to
- * [finishInvalidDirectiveToken].
- *
- * @param intStartMark Mark for the beginning of the `int` value that is too
- * long to be a `uint32`.  This value is used for creating the warning which
- * will have the start and end marks for the invalid `int` value.
- *
- * @param isMajor Whether this was the major section of the version number or
- * not.  `true` if it was the major version, `false` if it was the minor
- * version.
  */
 private fun YAMLScannerImpl.fetchOverflowYAMLDirectiveToken(
   tokenStartMark: SourcePosition,
@@ -191,7 +177,7 @@ private fun YAMLScannerImpl.fetchOverflowYAMLDirectiveToken(
   while (reader.isDecimalDigit()) {
     // Skip it as ASCII because if it's a decimal digit then we know it's an
     // ASCII character
-    skipASCII()
+    skipASCII(this.reader, this.position)
 
     // Cache another character to test on the next pass of the loop
     reader.cache(1)
@@ -210,11 +196,11 @@ private fun YAMLScannerImpl.fetchOverflowYAMLDirectiveToken(
     position.mark()
   )
 
-  tokens.push(newInvalidToken(tokenStartMark, skipUntilCommentBreakOrEOF()))
+  return emitInvalidToken(tokenStartMark, skipUntilCommentBreakOrEOF())
 }
 
 /**
- * Fetches an [`INVALID`][YAMLTokenType.Invalid] token for the case where the
+ * Fetches an [invalid token][YAMLTokenInvalid] for the case where the
  * YAML directive token contains some junk characters.
  *
  * When called, the reader buffer cursor will be on the first junk character.
@@ -228,13 +214,13 @@ private fun YAMLScannerImpl.fetchMalformedYAMLDirectiveToken(tokenStartMark: Sou
   val junkEnd   = skipUntilCommentBreakOrEOF()
 
   warn("malformed %YAML directive", junkStart, junkEnd)
-  tokens.push(newInvalidToken(tokenStartMark, junkEnd))
+  return emitInvalidToken(tokenStartMark, junkEnd)
 }
 
 private fun YAMLScannerImpl.fetchIncompleteYAMLDirectiveToken(start: SourcePosition, end: SourcePosition) {
   version = DefaultYAMLVersion
   warn("incomplete %YAML directive; assuming YAML version $DefaultYAMLVersion", start, end)
-  tokens.push(newInvalidToken(start, end))
+  return emitInvalidToken(start, end)
 }
 
 private fun YAMLScannerImpl.fetchUnsupportedYAMLDirectiveToken(
@@ -247,3 +233,12 @@ private fun YAMLScannerImpl.fetchUnsupportedYAMLDirectiveToken(
   warn("unsupported YAML version $major.$minor; attempting to scan input as YAML version $DefaultYAMLVersion")
   tokens.push(newYAMLDirectiveToken(major, minor, start, end))
 }
+
+@Suppress("NOTHING_TO_INLINE")
+private inline fun YAMLScannerImpl.newYAMLDirectiveToken(
+  major: UInt,
+  minor: UInt,
+  start: SourcePosition,
+  end:   SourcePosition,
+) =
+  YAMLTokenDirectiveYAML(major, minor, start, end, getWarnings())

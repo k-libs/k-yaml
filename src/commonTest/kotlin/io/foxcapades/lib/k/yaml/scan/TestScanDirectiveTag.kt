@@ -3,8 +3,8 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataDirectiveTag
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveTag
+import io.foxcapades.lib.k.yaml.token.YAMLTokenInvalid
 import kotlin.test.*
 
 // TODO: test warnings on invalid tag outputs
@@ -26,8 +26,7 @@ class TestScanDirectiveTag {
     // Next token should be an invalid token because of the bad tag directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenInvalid>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -47,8 +46,7 @@ class TestScanDirectiveTag {
     // directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenInvalid>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -68,8 +66,7 @@ class TestScanDirectiveTag {
     // directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenInvalid>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -89,8 +86,7 @@ class TestScanDirectiveTag {
     // directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenInvalid>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -110,8 +106,7 @@ class TestScanDirectiveTag {
     // directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenInvalid>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -130,8 +125,7 @@ class TestScanDirectiveTag {
     // directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenInvalid>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -151,11 +145,9 @@ class TestScanDirectiveTag {
     // directive.
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.TagDirective, token.type)
-    assertIs<YAMLTokenDataDirectiveTag>(token.data).also {
-      assertEquals("!foo!", it.handleString)
-      assertEquals("tag:foo.com,2023/", it.handleString)
-    }
+    assertIs<YAMLTokenDirectiveTag>(token)
+    assertEquals("!foo!", token.handle.toString())
+    assertEquals("tag:foo.com,2023/", token.prefix.toString())
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)

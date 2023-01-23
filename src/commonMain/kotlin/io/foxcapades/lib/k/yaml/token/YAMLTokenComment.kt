@@ -1,8 +1,9 @@
 package io.foxcapades.lib.k.yaml.token
 
-import io.foxcapades.lib.k.yaml.scan.SourceWarning
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.UByteString
+import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
 class YAMLTokenComment(
            val value:    UByteString,
@@ -13,19 +14,7 @@ class YAMLTokenComment(
   override val warnings: Array<SourceWarning>,
 ) : YAMLToken {
   override fun toString() =
-    "YAMLTokenComment(" +
-      "value=$value" +
-      ", " +
-      "indent=$indent" +
-      ", " +
-      "trailing=$trailing" +
-      ", " +
-      "start=$start" +
-      ", " +
-      "end=$end" +
-      ", " +
-      "warnings=${warnings.joinToString(", ", "[", "]")}" +
-      ")"
+    "Comment(value=$value, indent=$indent, trailing=$trailing, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun equals(other: Any?) =
     this === other

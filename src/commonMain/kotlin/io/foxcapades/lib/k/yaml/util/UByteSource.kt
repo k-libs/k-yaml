@@ -72,6 +72,9 @@ internal inline fun UByteSource.isTab(offset: Int = 0) = test(A_TAB, offset)
 internal inline fun UByteSource.isTilde(offset: Int = 0) = test(A_TILDE, offset)
 internal inline fun UByteSource.isUnderscore(offset: Int = 0) = test(A_UNDERSCORE, offset)
 
+internal inline fun UByteSource.isLineFeedOrCarriageReturn(offset: Int = 0) =
+  size > offset && (uTest(A_LINE_FEED) || uTest(A_CARRIAGE_RETURN))
+
 // endregion Safe Single Byte Tests
 
 // region Unsafe Single Byte Tests
@@ -128,6 +131,15 @@ internal inline fun UByteSource.isLineSeparator(offset: Int = 0) =
 
 internal inline fun UByteSource.isParagraphSeparator(offset: Int = 0) =
   size > offset + 2 && uTest(UbE2, offset) && uTest(Ub80, offset + 1) && uTest(UbA9, offset + 2)
+
+internal inline fun UByteSource.isLineOrParagraphSeparator(offset: Int = 0) =
+  size > offset + 2
+    && uTest(UbE2, offset)
+    && uTest(Ub80, offset + 1)
+    && (uTest(UbA8, offset + 2) || uTest(UbA9, offset + 2))
+
+internal inline fun UByteSource.isBOM(offset: Int = 0) =
+  size > offset + 1 && uTest(UbFE, offset) && uTest(UbFF, offset + 1)
 
 // endregion Safe UTF-8 Character Tests
 
@@ -214,9 +226,6 @@ internal inline fun UByteSource.isBlankOrAnyBreak(offset: Int = 0) =
   (size > offset + 2 && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset) || uIsLineSeparator(offset) || uIsParagraphSeparator(offset)))
     || (size > offset + 1 && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset) || uIsNextLine(offset)))
     || (size > offset && (uIsBlank(offset) || uIsLineFeed(offset) || uIsCarriageReturn(offset)))
-
-internal inline fun UByteSource.isBOM(offset: Int = 0) =
-  size > offset + 1 && uTest(UbFE, offset) && uTest(UbFF, offset + 1)
 
 // endregion Safe Character Class Tests
 

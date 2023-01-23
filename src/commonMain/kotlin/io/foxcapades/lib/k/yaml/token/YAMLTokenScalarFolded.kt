@@ -1,8 +1,9 @@
 package io.foxcapades.lib.k.yaml.token
 
-import io.foxcapades.lib.k.yaml.scan.SourceWarning
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.UByteString
+import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
 class YAMLTokenScalarFolded(
   override val value:    UByteString,
@@ -12,17 +13,7 @@ class YAMLTokenScalarFolded(
   override val warnings: Array<SourceWarning>,
 ) : YAMLTokenScalar {
   override fun toString() =
-    "YAMLTokenScalarFolded(" +
-      "value=$value" +
-      ", " +
-      "indent=$indent" +
-      ", " +
-      "start=$start" +
-      ", " +
-      "end=$end" +
-      ", " +
-      "warnings=${warnings.joinToString(", ", "[", "]")}" +
-      ")"
+    "FoldedScalar(value=$value, indent=$indent, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun equals(other: Any?) =
     this === other

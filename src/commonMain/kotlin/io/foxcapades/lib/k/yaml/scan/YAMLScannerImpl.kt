@@ -7,6 +7,7 @@ import io.foxcapades.lib.k.yaml.bytes.*
 import io.foxcapades.lib.k.yaml.read.*
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
 
 @Suppress("NOTHING_TO_INLINE")
@@ -17,7 +18,10 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal var streamStartProduced = false
   internal var streamEndProduced = false
   internal val warnings = Queue<SourceWarning>(4)
+
   internal val tokens = Queue<YAMLToken>(4)
+  internal lateinit var lastToken: YAMLToken
+
   internal var haveContentOnThisLine = false
 
   internal val indents = UIntStack()
@@ -85,12 +89,12 @@ internal class YAMLScannerImpl : YAMLScanner {
       fetchNextToken()
     }
 
-    val out = tokens.pop()
+    lastToken = tokens.pop()
 
-    if (out.type == YAMLTokenType.StreamEnd)
+    if (lastToken is YAMLTokenStreamEnd)
       streamEndProduced = true
 
-    return out
+    return lastToken
   }
 
   // endregion Public Methods
@@ -98,28 +102,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   // region Reader Wrapping
 
 
-
-  internal fun skipLine(nl: NL) {
-    if (inDocument) {
-      when (nl) {
-        NL.NEL,
-        NL.LS,
-        NL.PS,
-             -> {
-          if (version != YAMLVersion.VERSION_1_1)
-            warn("invalid line break character; YAML 1.2 only permits line breaks consisting of CRLF, CR, or LF")
-        }
-
-        // CRLF
-        // CR
-        // LF
-        else -> { /* nothing special to for these line breaks */ }
-      }
-    }
-
-    reader.skip(nl.width)
-    position.incLine(nl.characters.toUInt())
-  }
 
   // endregion Reader Wrapping
 
@@ -149,7 +131,7 @@ internal class YAMLScannerImpl : YAMLScanner {
       reader.uIsSquareClose() -> fetchFlowSequenceEndToken()
       reader.uIsCurlyClose()  -> fetchFlowMappingEndToken()
       reader.uIsExclamation() -> fetchTagToken()
-      reader.uIsPercent()     -> fetchDirectiveToken()
+      reader.uIsPercent()     -> fetchAmbiguousPercent()
       reader.uIsPeriod()      -> fetchAmbiguousPeriodToken()
       reader.uIsAmpersand()   -> fetchAnchorToken()
       reader.uIsAsterisk()    -> fetchAliasToken()
@@ -172,8 +154,9 @@ internal class YAMLScannerImpl : YAMLScanner {
     message: String,
     start:   SourcePosition = position.mark(),
     end:     SourcePosition = position.mark(),
-  ) {
+  ): SourcePosition {
     warnings.push(SourceWarning(message, start, end))
+    return end
   }
 
   internal fun getWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
@@ -196,128 +179,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun UByteBuffer.claimASCII() {
     push(reader.pop())
     position.incPosition()
-  }
-
-  internal fun UByteBuffer.claimASCII(from: UByteSource, position: SourcePositionTracker) {
-    this.push(from.pop())
-    position.incPosition()
-  }
-
-  internal fun UByteSource.detectNewLineType() =
-    when {
-      isLineFeed()           -> NL.LF
-      isCRLF()               -> NL.CRLF
-      isCarriageReturn() -> NL.CR
-      isNextLine()       -> NL.NEL
-      isLineSeparator()  -> NL.LS
-      isParagraphSeparator() -> NL.PS
-      else                   -> throw IllegalStateException(
-        "called #detectNewLineType when the reader was not on a new line character"
-      )
-    }
-
-  internal inline fun UByteBuffer.claimNewLine() = claimNewLine(reader, position)
-
-  internal fun UByteBuffer.claimNewLine(from: UByteSource) {
-    if (from.isCRLF()) {
-      appendNewLine(NL.CRLF)
-      from.skipLine(NL.LF)
-    } else if (from.isCarriageReturn()) {
-      appendNewLine(NL.CR)
-      from.skipLine(NL.LF)
-    } else if (from.isLineFeed()) {
-      appendNewLine(NL.LF)
-      from.skipLine(NL.LF)
-    } else if (from.isNextLine()) {
-      appendNewLine(NL.NEL)
-      from.skipLine(NL.NEL)
-    } else if (from.isLineSeparator()) {
-      appendNewLine(NL.LS)
-      from.skipLine(NL.LS)
-    } else if (from.isParagraphSeparator()) {
-      appendNewLine(NL.PS)
-      from.skipLine(NL.PS)
-    } else {
-      throw IllegalStateException(
-        "called #claimNewLine(UByteSource) when the given buffer was not on a new line character"
-      )
-    }
-  }
-
-  internal fun UByteBuffer.claimNewLine(from: UByteSource, position: SourcePositionTracker) {
-    if (from.isCRLF()) {
-      appendNewLine(NL.CRLF)
-      from.skipLine(NL.LF)
-      position.incLine(NL.CRLF.characters.toUInt())
-    } else if (from.isCarriageReturn()) {
-      appendNewLine(NL.CR)
-      from.skipLine(NL.LF)
-      position.incLine(NL.CR.characters.toUInt())
-    } else if (from.isLineFeed()) {
-      appendNewLine(NL.LF)
-      from.skipLine(NL.LF)
-      position.incLine(NL.LF.characters.toUInt())
-    } else if (from.isNextLine()) {
-      appendNewLine(NL.NEL)
-      from.skipLine(NL.NEL)
-      position.incLine(NL.NEL.characters.toUInt())
-    } else if (from.isLineSeparator()) {
-      appendNewLine(NL.LS)
-      from.skipLine(NL.LS)
-      position.incLine(NL.LS.characters.toUInt())
-    } else if (from.isParagraphSeparator()) {
-      appendNewLine(NL.PS)
-      from.skipLine(NL.PS)
-      position.incLine(NL.PS.characters.toUInt())
-    } else {
-      throw IllegalStateException(
-        "called #claimNewLine(UByteSource, SourcePositionTracker) when the given buffer was not on a new line character"
-      )
-    }
-  }
-
-  internal fun UByteBuffer.skipNewLine(position: SourcePositionTracker) {
-    skipNewLine(detectNewLineType(), position)
-  }
-
-  internal fun UByteBuffer.skipNewLine(type: NL, position: SourcePositionTracker) {
-    skipLine(type)
-
-    if (type == NL.CRLF) {
-      position.incLine(2u)
-    } else {
-      position.incLine(1u)
-    }
-  }
-
-  internal fun UByteBuffer.appendNewLine(nl: NL) {
-    when (lineBreakType) {
-      LineBreakType.CRLF        -> NL.CRLF.writeUTF8(this)
-      LineBreakType.CR          -> NL.CR.writeUTF8(this)
-      LineBreakType.LF          -> NL.LF.writeUTF8(this)
-      LineBreakType.SameAsInput -> nl.writeUTF8(this)
-    }
-  }
-
-  internal fun UByteSource.skipLine(nl: NL) {
-    if (inDocument) {
-      when (nl) {
-        NL.NEL,
-        NL.LS,
-        NL.PS,
-             -> {
-          if (version != YAMLVersion.VERSION_1_1)
-            warn("invalid line break character; YAML 1.2 only permits line breaks consisting of CRLF, CR, or LF")
-        }
-
-        // CRLF
-        // CR
-        // LF
-        else -> { /* nothing special to for these line breaks */ }
-      }
-    }
-
-    skip(nl.width)
   }
 
   // endregion Buffer Writing Helpers

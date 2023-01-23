@@ -1,26 +1,36 @@
 package io.foxcapades.lib.k.yaml.token
 
-import io.foxcapades.lib.k.yaml.scan.SourceWarning
+import io.foxcapades.lib.k.yaml.YAMLScanner
 import io.foxcapades.lib.k.yaml.util.SourcePosition
-import io.foxcapades.lib.k.yaml.util.UByteString
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
+/**
+ * # YAML Token
+ *
+ * Represents a generic YAML token which is to be emitted by the YAML stream
+ * scanner & tokenizer [YAMLScanner].
+ *
+ * This is a sealed interface, meaning comprehensive when switches may be
+ * constructed on the type of value implementing this interface.
+ *
+ * @since 0.1.0
+ * @author Elizabeth Paige Harper - https://github.com/foxcapades
+ */
 sealed interface YAMLToken {
+
+  /**
+   * Token start position.
+   */
   val start:    SourcePosition
+
+  /**
+   * Token end position.
+   */
   val end:      SourcePosition
+
+  /**
+   * Warnings kicked up by the [YAMLScanner] while parsing this token.
+   */
   val warnings: Array<SourceWarning>
 }
 
-sealed interface YAMLTokenScalar : YAMLToken {
-  val value: UByteString
-}
-
-class YAMLTokenz(
-  val type: YAMLTokenType,
-  val data: YAMLTokenData?,
-  val start: SourcePosition,
-  val end: SourcePosition,
-  val warnings: Array<SourceWarning>,
-) {
-  override fun toString() =
-    "YAMLToken(type: $type, data: $data, start: $start, end: $end, warnings: ${warnings.contentToString()})"
-}

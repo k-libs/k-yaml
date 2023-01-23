@@ -3,8 +3,7 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedDouble
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import kotlin.test.*
 
@@ -24,8 +23,7 @@ class TestDoubleQuotedStringHexEscapeSequences {
     // The next token should be our string
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenScalarQuotedDouble>(token)
     assertEquals(SourcePosition(0u, 0u, 0u), token.start)
     assertEquals(SourcePosition(3u, 0u, 3u), token.end)
     assertEquals(2, token.warnings.size)
@@ -46,8 +44,7 @@ class TestDoubleQuotedStringHexEscapeSequences {
     // The next token should be our string
     val token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Invalid, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenScalarQuotedDouble>(token)
     assertEquals(SourcePosition(0u, 0u, 0u), token.start)
     assertEquals(SourcePosition(4u, 0u, 4u), token.end)
     assertEquals(2, token.warnings.size)
@@ -70,11 +67,8 @@ class TestDoubleQuotedStringHexEscapeSequences {
 
     println(token)
 
-    assertEquals(YAMLTokenType.Scalar, token.type)
-    assertIs<YAMLTokenDataScalar>(token.data).also {
-      assertEquals("\\x😀2", it.valueString())
-      assertEquals(YAMLScalarStyle.DoubleQuoted, it.style)
-    }
+    assertIs<YAMLTokenScalarQuotedDouble>(token)
+    assertEquals("\\x😀2", token.value.toString())
     assertEquals(SourcePosition(0u, 0u, 0u), token.start)
     assertEquals(SourcePosition(6u, 0u, 6u), token.end)
     assertEquals(1, token.warnings.size)
@@ -95,11 +89,8 @@ class TestDoubleQuotedStringHexEscapeSequences {
 
     println(token)
 
-    assertEquals(YAMLTokenType.Scalar, token.type)
-    assertIs<YAMLTokenDataScalar>(token.data).also {
-      assertEquals("\\x2😀", it.valueString())
-      assertEquals(YAMLScalarStyle.DoubleQuoted, it.style)
-    }
+    assertIs<YAMLTokenScalarQuotedDouble>(token)
+    assertEquals("\\x2😀", token.value.toString())
     assertEquals(SourcePosition(0u, 0u, 0u), token.start)
     assertEquals(SourcePosition(6u, 0u, 6u), token.end)
     assertEquals(1, token.warnings.size)

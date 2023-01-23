@@ -1,25 +1,10 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenTypeMappingValue
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.token.YAMLTokenMappingValue
 
 internal fun YAMLScannerImpl.fetchMappingValueIndicatorToken() {
-  haveContentOnThisLine = true
-
+  this.haveContentOnThisLine = true
   val start = this.position.mark()
   skipASCII(this.reader, this.position)
-  return this.emitMappingValueIndicatorToken(start)
+  this.tokens.push(YAMLTokenMappingValue(start, this.position.mark(), this.getWarnings()))
 }
-
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.emitMappingValueIndicatorToken(
-  start: SourcePosition,
-  end: SourcePosition = this.position.mark(),
-) {
-  this.tokens.push(newMappingValueIndicatorToken(start, end))
-}
-
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.newMappingValueIndicatorToken(start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenTypeMappingValue, null, start, end, getWarnings())

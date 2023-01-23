@@ -1,48 +1,55 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataAlias
-import io.foxcapades.lib.k.yaml.token.YAMLTokenTypeAlias
+import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
-import io.foxcapades.lib.k.yaml.util.takeCodepointFrom
 
 
+/**
+ * # Fetch Alias Token
+ *
+ * Parses and queues up a token for a YAML alias.
+ *
+ * @since 0.1.0
+ * @author Elizabeth Paige Harper - https://github.com/foxcapades
+ */
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchAliasToken() {
-  contentBuffer1.clear()
+  val bContent = this.contentBuffer1; bContent.clear()
 
-  val start = position.mark()
+  val start = this.position.mark()
 
-  skipASCII()
-  reader.cache(1)
+  skipASCII(this.reader, this.position)
+  this.reader.cache(1)
 
   if (reader.isBlankAnyBreakOrEOF()) {
-    val end = position.mark()
-    warn("incomplete alias token", start, end)
-    tokens.push(newInvalidToken(start, end))
-    return
+    return this.emitInvalidToken(start, this.warn("incomplete alias token", start))
   }
 
   while (true) {
-    if (reader.isBlankAnyBreakOrEOF()) {
+
+    if (this.reader.isBlankAnyBreakOrEOF()) {
       break
-    } else if (reader.isNsAnchorChar()) {
-      contentBuffer1.takeCodepointFrom(reader)
-      position.incPosition()
-    } else {
-      val end = position.mark()
-      warn("invalid or unexpected character while parsing an alias token", start, end)
-      tokens.push(newInvalidToken(start, end))
-      return
     }
 
-    reader.cache(1)
+    else if (this.reader.isNsAnchorChar()) {
+      bContent.claimUTF8(this.reader, this.position)
+    }
+
+    else {
+      this.skipUntilBlankBreakOrEOF()
+      return this.emitInvalidToken(start, this.warn("invalid or unexpected character while parsing an alias token", start))
+    }
+
+    this.reader.cache(1)
   }
 
-  tokens.push(newAliasToken(contentBuffer1.popToArray(), start, position.mark()))
+  return emitAlias(bContent.popToArray(), start, this.position.mark())
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.newAliasToken(alias: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenTypeAlias, YAMLTokenDataAlias(alias), start, end, getWarnings())
+private inline fun YAMLScannerImpl.emitAlias(alias: UByteArray, start: SourcePosition, end: SourcePosition) {
+  this.tokens.push(YAMLTokenAlias(UByteString(alias), start, end, getWarnings()))
+}

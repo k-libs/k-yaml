@@ -1,6 +1,5 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.bytes.A_LINE_FEED
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.err.YAMLScannerException
@@ -162,7 +161,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   ----
   */
   // Skip the newline that we are currently stopped at.
-  this.skipLine()
+  skipNewLine(this.reader, this.position)
 
   // We are on a new line now, so we don't know if the line has any content on
   // it yet.
@@ -266,7 +265,6 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         bTailNL,
         blockIndent,
         chompMode,
-        indentHint,
         start
       )
     }
@@ -291,7 +289,6 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
             bTailNL,
             blockIndent,
             chompMode,
-            indentHint,
             start
           )
         }
@@ -327,7 +324,6 @@ private fun YAMLScannerImpl.collapseFinishAndEmitFoldingScalarToken(
   trailingNewLines: UByteBuffer,
   actualIndent:     UInt,
   chompingMode:     BlockScalarChompMode,
-  indentHint:       UInt,
   start:            SourcePosition,
 ) {
   if (trailingNewLines.isNotEmpty) {
@@ -349,21 +345,19 @@ private fun YAMLScannerImpl.collapseFinishAndEmitFoldingScalarToken(
     }
   }
 
-  this.tokens.push(this.newFoldedScalarToken(scalarContent.popToArray(), actualIndent, chompingMode, indentHint, start))
+  this.tokens.push(this.newFoldedScalarToken(scalarContent.popToArray(), actualIndent, start))
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
 private fun YAMLScannerImpl.newFoldedScalarToken(
   value:    UByteArray,
   indent:   UInt,
-  chomping: BlockScalarChompMode,
-  hint:     UInt,
   start:    SourcePosition,
   end:      SourcePosition = this.position.mark(),
 ) =
-  YAMLToken(
-    YAMLTokenTypeScalarFolded,
-    YAMLTokenDataBlockScalar(value, BlockScalarStyle.FOLDED, indent, chomping, hint),
+  YAMLTokenScalarFolded(
+    UByteString(value),
+    indent,
     start,
     end,
     getWarnings()

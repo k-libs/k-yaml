@@ -1,11 +1,8 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedSingle
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.UByteBuffer
 
 internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
   contentBuffer1.clear()
@@ -44,12 +41,10 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
       reader.isBlank()      -> trailingWSBuffer.claimASCII()
       reader.isAnyBreak()   -> {
         trailingWSBuffer.clear()
-        trailingNLBuffer.claimNewLine()
+        trailingNLBuffer.claimNewLine(this.reader, this.position)
       }
       reader.isEOF()        -> {
-        val end = position.mark()
-        warn("incomplete string token; unexpected stream end", start, end)
-        tokens.push(newInvalidToken(start, end))
+        emitInvalidToken("incomplete string token; unexpected stream end", start)
         return
       }
       else                  -> {
@@ -80,10 +75,11 @@ private fun YAMLScannerImpl.collapseTrailingWhitespaceAndNewlinesIntoBuffer(
   }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.newSingleQuotedStringToken(
+private inline fun YAMLScannerImpl.newSingleQuotedStringToken(
   value: UByteArray,
   start: SourcePosition,
   end:   SourcePosition = position.mark()
 ) =
-  YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.SingleQuoted), start, end, getWarnings())
+  YAMLTokenScalarQuotedSingle(UByteString(value), start, end, getWarnings())

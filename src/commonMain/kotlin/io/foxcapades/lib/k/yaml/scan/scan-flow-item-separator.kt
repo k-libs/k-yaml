@@ -1,14 +1,12 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowItemSeparator
 
 internal fun YAMLScannerImpl.fetchFlowItemSeparatorToken() {
-  val start = position.mark()
-  skipASCII()
-  tokens.push(newFlowItemSeparatorToken(start, position.mark()))
-}
+  // We have content on this line.
+  this.haveContentOnThisLine = true
 
-private fun YAMLScannerImpl.newFlowItemSeparatorToken(start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.FlowEntry, null, start, end, getWarnings())
+  val start = this.position.mark()
+  skipASCII(this.reader, this.position)
+  tokens.push(YAMLTokenFlowItemSeparator(start, this.position.mark(), this.getWarnings()))
+}

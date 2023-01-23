@@ -3,10 +3,8 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataStreamStart
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.*
+import io.foxcapades.lib.k.yaml.util.SourcePosition
 import kotlin.test.*
 
 class TestPlainScalarsInFlowMapping {
@@ -23,8 +21,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.StreamStart, token.type)
-    assertIs<YAMLTokenDataStreamStart>(token.data)
+    assertIs<YAMLTokenStreamStart>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -36,8 +33,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.FlowMappingStart, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenFlowMappingStart>(token)
     assertEquals(0u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(0u, token.start.column)
@@ -49,11 +45,8 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Scalar, token.type)
-    assertIs<YAMLTokenDataScalar>(token.data).also {
-      assertEquals("this is a key", it.valueString())
-      assertEquals(YAMLScalarStyle.Plain, it.style)
-    }
+    assertIs<YAMLTokenScalarPlain>(token)
+    assertEquals("this is a key", token.value.toString())
     assertEquals(1u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(1u, token.start.column)
@@ -65,8 +58,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.MappingValue, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenMappingValue>(token)
     assertEquals(14u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(14u, token.start.column)
@@ -78,11 +70,8 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Scalar, token.type)
-    assertIs<YAMLTokenDataScalar>(token.data).also {
-      assertEquals("this is a value", it.valueString())
-      assertEquals(YAMLScalarStyle.Plain, it.style)
-    }
+    assertIs<YAMLTokenScalarPlain>(token)
+    assertEquals("this is a value", token.value.toString())
     assertEquals(15u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(15u, token.start.column)
@@ -94,8 +83,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.FlowMappingEnd, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenFlowMappingEnd>(token)
     assertEquals(30u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(30u, token.start.column)
@@ -107,8 +95,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.StreamEnd, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenStreamEnd>(token)
     assertEquals(31u, token.start.index)
     assertEquals(0u, token.start.line)
     assertEquals(31u, token.start.column)
@@ -126,56 +113,50 @@ class TestPlainScalarsInFlowMapping {
     val reader = BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray()))
     val scanner = YAMLScannerImpl(reader, LineBreakType.LF)
 
+    val expectedKey      = "this is\na\n\nkey"
+    val expectedKeyStart = SourcePosition(1u, 0u, 1u)
+    val expectedKeyEnd   = SourcePosition(17u, 6u, 3u)
+
+    val expectedVal = "this is a value"
+
     var token: YAMLToken
 
     // Ensure the first token should be a stream start token
     assertTrue(scanner.hasNextToken)
-    token = scanner.nextToken()
-
-    assertEquals(YAMLTokenType.StreamStart, token.type)
-    assertIs<YAMLTokenDataStreamStart>(token.data)
-    assertEquals(0u, token.start.index)
-    assertEquals(0u, token.start.line)
-    assertEquals(0u, token.start.column)
-    assertEquals(0u, token.end.index)
-    assertEquals(0u, token.end.line)
-    assertEquals(0u, token.end.column)
+    assertIs<YAMLTokenStreamStart>(scanner.nextToken()).also {
+      assertEquals(0u, it.start.index)
+      assertEquals(0u, it.start.line)
+      assertEquals(0u, it.start.column)
+      assertEquals(0u, it.end.index)
+      assertEquals(0u, it.end.line)
+      assertEquals(0u, it.end.column)
+    }
 
     // The second token (flow mapping start)
     assertTrue(scanner.hasNextToken)
-    token = scanner.nextToken()
-
-    assertEquals(YAMLTokenType.FlowMappingStart, token.type)
-    assertNull(token.data)
-    assertEquals(0u, token.start.index)
-    assertEquals(0u, token.start.line)
-    assertEquals(0u, token.start.column)
-    assertEquals(1u, token.end.index)
-    assertEquals(0u, token.end.line)
-    assertEquals(1u, token.end.column)
+    assertIs<YAMLTokenFlowMappingStart>(scanner.nextToken()).also {
+      assertEquals(0u, it.start.index)
+      assertEquals(0u, it.start.line)
+      assertEquals(0u, it.start.column)
+      assertEquals(1u, it.end.index)
+      assertEquals(0u, it.end.line)
+      assertEquals(1u, it.end.column)
+    }
 
     // The third token ("this is a key")
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Scalar, token.type)
-    assertIs<YAMLTokenDataScalar>(token.data).also {
-      assertEquals("this is\na\n\nkey", it.valueString())
-      assertEquals(YAMLScalarStyle.Plain, it.style)
-    }
-    assertEquals(1u, token.start.index)
-    assertEquals(0u, token.start.line)
-    assertEquals(1u, token.start.column)
-    assertEquals(17u, token.end.index)
-    assertEquals(6u, token.end.line)
-    assertEquals(3u, token.end.column)
+    assertIs<YAMLTokenScalarPlain>(token)
+    assertEquals("this is\na\n\nkey", token.value.toString())
+    assertEquals(SourcePosition(1u, 0u, 1u), token.start)
+    assertEquals(SourcePosition(17u, 6u, 3u), token.end)
 
     // The fourth token (mapping value indicator)
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.MappingValue, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenMappingValue>(token)
     assertEquals(17u, token.start.index)
     assertEquals(6u, token.start.line)
     assertEquals(3u, token.start.column)
@@ -187,11 +168,8 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.Scalar, token.type)
-    assertIs<YAMLTokenDataScalar>(token.data).also {
-      assertEquals("this is a value", it.valueString())
-      assertEquals(YAMLScalarStyle.Plain, it.style)
-    }
+    assertIs<YAMLTokenScalarPlain>(token)
+    assertEquals("this is a value", token.value.toString())
     assertEquals(18u, token.start.index)
     assertEquals(6u, token.start.line)
     assertEquals(4u, token.start.column)
@@ -203,8 +181,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.FlowMappingEnd, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenFlowMappingEnd>(token)
     assertEquals(33u, token.start.index)
     assertEquals(6u, token.start.line)
     assertEquals(19u, token.start.column)
@@ -216,8 +193,7 @@ class TestPlainScalarsInFlowMapping {
     assertTrue(scanner.hasNextToken)
     token = scanner.nextToken()
 
-    assertEquals(YAMLTokenType.StreamEnd, token.type)
-    assertNull(token.data)
+    assertIs<YAMLTokenStreamEnd>(token)
     assertEquals(34u, token.start.index)
     assertEquals(6u, token.start.line)
     assertEquals(20u, token.start.column)

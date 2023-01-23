@@ -1,9 +1,7 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.bytes.*
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataScalar
-import io.foxcapades.lib.k.yaml.token.YAMLTokenType
+import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedDouble
 import io.foxcapades.lib.k.yaml.util.*
 
 
@@ -17,7 +15,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
 
   // Skip the first double quote character as we don't put it into the token
   // value.
-  skipASCII()
+  skipASCII(this.reader, this.position)
 
   while (true) {
     reader.cache(1)
@@ -27,7 +25,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     }
 
     else if (reader.isDoubleQuote()) {
-      skipASCII()
+      skipASCII(this.reader, this.position)
       collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
       tokens.push(newDoubleQuotedStringToken(contentBuffer1.popToArray(), start, position.mark()))
       return
@@ -39,13 +37,11 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
 
     else if (reader.isAnyBreak()) {
       trailingWSBuffer.clear()
-      trailingNLBuffer.claimNewLine()
+      trailingNLBuffer.claimNewLine(this.reader, this.position)
     }
 
     else if (reader.isEOF()) {
-      val end = position.mark()
-      warn("unexpected end of double quoted string due to EOF", start, end)
-      tokens.push(newInvalidToken(start, end))
+      emitInvalidToken("unexpected end of double quoted string due to EOF", start)
       return
     }
 
@@ -81,7 +77,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
   val start = position.mark()
 
   // Skip the backslash character
-  skipASCII()
+  skipASCII(this.reader, this.position)
 
   // Try to ensure we have another character in the buffer
   reader.cache(1)
@@ -92,7 +88,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
   }
 
   else if (reader.isAnyBreak()) {
-    nlBuffer.claimNewLine()
+    nlBuffer.claimNewLine(this.reader, this.position)
   }
 
   else if (
@@ -102,7 +98,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
     || reader.uIsSlash()
     || reader.uIsTab()
   ) {
-    into.claimASCII()
+    into.claimASCII(this.reader, this.position)
   }
 
   // \xXX
@@ -123,69 +119,69 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
   // Null / Nil
   else if (reader.uTest(A_DIGIT_0)) {
     into.push(A_NIL)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Bell
   else if (reader.uTest(A_LOWER_A)) {
     into.push(A_BELL)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Backspace
   else if (reader.uTest(A_LOWER_B)) {
     into.push(A_BACKSPACE)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Tab
   else if (reader.uTest(A_LOWER_T)) {
     into.push(A_TAB)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Line Feed
   else if (reader.uTest(A_LOWER_N)) {
     into.push(A_LINE_FEED)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Vertical Tab
   else if (reader.uTest(A_LOWER_V)) {
     into.push(A_VERTICAL_TAB)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Form Feed
   else if (reader.uTest(A_LOWER_F)) {
     into.push(A_FORM_FEED)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Carriage Return
   else if (reader.uTest(A_LOWER_R)) {
     into.push(A_CARRIAGE_RETURN)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Escape
   else if (reader.uTest(A_LOWER_E)) {
     into.push(A_ESCAPE)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Next Line
   else if (reader.uTest(A_UPPER_N)) {
     into.push(UbC2)
     into.push(Ub85)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Non-Breaking Space
   else if (reader.uTest(A_UNDERSCORE)) {
     into.push(UbC2)
     into.push(UbA0)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Line Separator
@@ -193,7 +189,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
     into.push(UbE2)
     into.push(Ub80)
     into.push(UbA8)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Paragraph Separator
@@ -201,7 +197,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
     into.push(UbE2)
     into.push(Ub80)
     into.push(UbA9)
-    skipASCII()
+    skipASCII(this.reader, this.position)
   }
 
   // Junk
@@ -212,18 +208,19 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
   }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.newDoubleQuotedStringToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLToken(YAMLTokenType.Scalar, YAMLTokenDataScalar(value, YAMLScalarStyle.DoubleQuoted), start, end, getWarnings())
+private inline fun YAMLScannerImpl.newDoubleQuotedStringToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
+  YAMLTokenScalarQuotedDouble(UByteString(value), start, end, getWarnings())
 
 private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuffer) {
-  skipASCII()
+  skipASCII(this.reader, this.position)
   reader.cache(2)
 
   if (reader.isHexDigit() && reader.isHexDigit(1)) {
     val value = ((reader.asHexDigit() shl 4) + reader.asHexDigit(1)).toUByte()
     into.push(value)
-    skipASCII(2)
+    skipASCII(this.reader, this.position, 2)
   } else {
     into.push(A_BACKSLASH)
     into.push(A_LOWER_X)
@@ -244,7 +241,7 @@ private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuff
 }
 
 private fun YAMLScannerImpl.readSmallUnicodeEscape(start: SourcePosition, into: UByteBuffer) {
-  skipASCII()
+  skipASCII(this.reader, this.position)
   reader.cache(4)
 
   // If one or more of the next 4 bytes are NOT hex digits
@@ -282,11 +279,11 @@ private fun YAMLScannerImpl.readSmallUnicodeEscape(start: SourcePosition, into: 
       (reader.asHexDigit(3))
 
   value.toUTF8(into)
-  skipASCII(4)
+  skipASCII(this.reader, this.position, 4)
 }
 
 private fun YAMLScannerImpl.readBigUnicodeEscape(start: SourcePosition, into: UByteBuffer) {
-  skipASCII()
+  skipASCII(this.reader, this.position)
   reader.cache(8)
 
   // If one or more of the next 4 bytes are NOT hex digits
@@ -332,5 +329,5 @@ private fun YAMLScannerImpl.readBigUnicodeEscape(start: SourcePosition, into: UB
       (reader.asHexDigit(7))
 
   value.toUTF8(into)
-  skipASCII(8)
+  skipASCII(this.reader, this.position, 8)
 }

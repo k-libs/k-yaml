@@ -1,20 +1,18 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowSequenceEnd
 
 
 internal fun YAMLScannerImpl.fetchFlowSequenceEndToken() {
-  val start = position.mark()
+  // We have content on this line.
+  this.haveContentOnThisLine = true
 
-  reader.skip(1)
-  position.incPosition()
+  val start = this.position.mark()
 
-  emitFlowSequenceEndToken(start, position.mark())
-}
+  skipASCII(this.reader, this.position)
 
-internal fun YAMLScannerImpl.emitFlowSequenceEndToken(start: SourcePosition, end: SourcePosition) {
-  if (inFlowSequence)
-    flows.pop()
+  if (this.inFlowSequence)
+    this.flows.pop()
 
-  tokens.push(newFlowSequenceEndToken(start, end))
+  this.tokens.push(YAMLTokenFlowSequenceEnd(start, this.position.mark(), this.getWarnings()))
 }

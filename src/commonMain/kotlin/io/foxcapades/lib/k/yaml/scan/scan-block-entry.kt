@@ -1,14 +1,22 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.token.YAMLTokenDataSequenceEntry
-import io.foxcapades.lib.k.yaml.token.YAMLTokenTypeBlockEntryIndicator
+import io.foxcapades.lib.k.yaml.token.YAMLTokenSequenceEntry
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 
-internal fun YAMLScannerImpl.fetchBlockEntryIndicatorToken() {
+/**
+ * # Fetch Sequence Entry Indicator Token
+ *
+ * Emits a [sequence entry indicator token][YAMLTokenSequenceEntry].
+ *
+ * @since 0.1.0
+ * @author Elizabeth Paige Harper - https://github.com/foxcapades
+ */
+internal fun YAMLScannerImpl.fetchSequenceEntryIndicator() {
+  this.haveContentOnThisLine = true
+
   val start = this.position.mark()
   skipASCII(this.reader, this.position)
-  emitSequenceEntryIndicator(this.indent, start)
+  this.emitSequenceEntryIndicator(this.indent, start)
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -17,13 +25,4 @@ internal inline fun YAMLScannerImpl.emitSequenceEntryIndicator(
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()
 )
-  = this.tokens.push(newSequenceEntryIndicatorToken(indent, start, end, this.getWarnings()))
-
-@Suppress("NOTHING_TO_INLINE")
-private inline fun newSequenceEntryIndicatorToken(
-  indent:   UInt,
-  start:    SourcePosition,
-  end:      SourcePosition,
-  warnings: Array<SourceWarning>,
-) =
-  YAMLToken(YAMLTokenTypeBlockEntryIndicator, YAMLTokenDataSequenceEntry(indent), start, end, warnings)
+  = this.tokens.push(YAMLTokenSequenceEntry(indent, start, end, this.getWarnings()))

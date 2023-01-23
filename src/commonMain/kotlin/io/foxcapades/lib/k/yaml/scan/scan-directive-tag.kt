@@ -1,9 +1,13 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveTag
 import io.foxcapades.lib.k.yaml.util.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
+  // We have content on this line.
+  this.haveContentOnThisLine = true
+
   // At this point we've already skipped over `%TAG<WS>`.
   //
   // Skip over any additional blank spaces which will hopefully leave us at the
@@ -152,13 +156,22 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   ))
 }
 
-private fun YAMLScannerImpl.fetchInvalidTagDirectiveToken(reason: String, start: SourcePosition) {
-  val end = skipUntilCommentBreakOrEOF()
-  warn("malformed %TAG token: $reason", start, end)
-  tokens.push(newInvalidToken(start, end))
+@Suppress("NOTHING_TO_INLINE")
+private inline fun YAMLScannerImpl.fetchInvalidTagDirectiveToken(reason: String, start: SourcePosition) {
+  emitInvalidToken("malformed %TAG token: $reason", start, skipUntilCommentBreakOrEOF())
 }
 
-private fun YAMLScannerImpl.fetchIncompleteTagDirectiveToken(start: SourcePosition, end: SourcePosition) {
-  warn("incomplete %TAG directive", start, end)
-  tokens.push(newInvalidToken(start, end))
+@Suppress("NOTHING_TO_INLINE")
+private inline fun YAMLScannerImpl.fetchIncompleteTagDirectiveToken(start: SourcePosition, end: SourcePosition) {
+  emitInvalidToken("incomplete %TAG directive", start, end)
 }
+
+@Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalUnsignedTypes::class)
+private inline fun YAMLScannerImpl.newTagDirectiveToken(
+  handle: UByteArray,
+  prefix: UByteArray,
+  start:  SourcePosition,
+  end:    SourcePosition,
+) =
+  YAMLTokenDirectiveTag(UByteString(handle), UByteString(prefix), start, end, getWarnings())
