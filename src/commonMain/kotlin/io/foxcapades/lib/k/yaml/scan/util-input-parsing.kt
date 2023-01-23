@@ -35,7 +35,7 @@ internal fun YAMLScannerImpl.parseUInt(): UInt {
 
       intValue += addValue
 
-      skipASCII()
+      skipASCII(this.reader, this.position)
     } else {
       break
     }

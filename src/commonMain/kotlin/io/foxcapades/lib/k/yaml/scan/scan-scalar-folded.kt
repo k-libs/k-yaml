@@ -1,8 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
-import io.foxcapades.lib.k.yaml.err.UIntOverflowException
-import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
 
@@ -33,6 +31,8 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   */
   val start = this.position.mark()
 
+  this.haveContentOnThisLine = true
+
   skipASCII(this.reader, this.position)
 
   // Now lets grab (and clear) some buffers for us to use in this parsing
@@ -51,66 +51,9 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
 
   var keptLeadingSpaceCount = 0u
 
-  /*
-  ----
-
-  Let's get down to business.  We now need to check to see if we have an indent
-  hint and/or a chomping indicator.  These two values could appear in any order
-  which complicates this slightly, but we can just brute force it and try both
-  possible orderings directly.
-
-  [source, kotlin]
-  ----
-  */
-
-  // Cache a character in the reader buffer.
-  this.reader.cache(1)
-
-  // First we'll check for a chomping indicator (optionally followed by an
-  // indent hint)
-  if (this.reader.isPlus() || this.reader.isDash()) {
-    // Luckily for us, "chomp mode" is a UByte value based on the actual int
-    // value of the `-` or `+` characters, so we can just pop off the next UByte
-    // as the chomp mode type.
-    chompMode = this.parseUByte()
-
-    // Cache another character so we can test for digits.
-    this.reader.cache(1)
-
-    indentHint = if (this.reader.isDecimalDigit()) {
-      try {
-        this.parseUInt()
-      } catch (e: UIntOverflowException) {
-        // Throw an exception about the error, but move the position forward 2
-        // from the start of the token to skip over the `>` character and the
-        // chomping indicator.
-        throw YAMLScannerException("folded block scalar indent hint value overflows type uint32", start.copy(2, 0, 2))
-      }
-    } else {
-      0u
-    }
-  }
-
-  // Okay, so the first character wasn't a chomping indicator, but it still may
-  // be an indent hint.
-  else if (this.reader.isDecimalDigit()) {
-    indentHint = try {
-      this.parseUInt()
-    } catch (e: UIntOverflowException) {
-      throw YAMLScannerException("folded block scalar indent hint value overflows type uint32", start.copy(1, 0, 1))
-    }
-
-    this.reader.cache(1)
-
-    chompMode = if (this.reader.isPlus() || this.reader.isDash())
-      this.parseUByte()
-    else
-      BlockScalarChompModeClip
-  }
-
-  else {
-    chompMode = BlockScalarChompModeClip
-    indentHint = 0u
+  detectBlockScalarIndicators(start) { cm, ih ->
+    chompMode  = cm
+    indentHint = ih
   }
 
   /*
@@ -128,7 +71,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
   [source, kotlin]
   ----
   */
-  if (this.eatBlanks() > 0) {
+  if (this.skipBlanks() > 0) {
 
     this.reader.cache(1)
 

@@ -29,7 +29,7 @@ internal fun YAMLScannerImpl.fetchCommentToken() {
   bTailWS.clear()
 
   skipASCII(this.reader, this.position)
-  eatBlanks()
+  skipBlanks()
 
   // The comment line may be empty
   if (this.reader.isAnyBreakOrEOF())

@@ -4,6 +4,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedSingle
 import io.foxcapades.lib.k.yaml.util.*
 
+@OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
   contentBuffer1.clear()
   trailingWSBuffer.clear()
@@ -11,15 +12,17 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
 
   val start = position.mark()
 
+  haveContentOnThisLine = true
+
   // Skip the leading `'` character.
-  skipASCII()
+  skipASCII(this.reader, this.position)
 
   while (true) {
     reader.cache(1)
 
     when {
       reader.isApostrophe() -> {
-        skipASCII()
+        skipASCII(this.reader, this.position)
 
         collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
 

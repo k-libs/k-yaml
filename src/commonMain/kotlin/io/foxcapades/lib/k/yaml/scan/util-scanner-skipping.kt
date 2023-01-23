@@ -2,12 +2,6 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.util.*
 
-@Deprecated("use the other one.")
-internal fun YAMLScannerImpl.skipASCII(count: Int = 1) {
-  reader.skip(count)
-  position.incPosition(count.toUInt())
-}
-
 internal fun skipASCII(from: UByteSource, position: SourcePositionTracker, count: Int = 1) {
   from.skip(count)
   position.incPosition(count.toUInt())
@@ -24,7 +18,7 @@ internal fun YAMLScannerImpl.skipUTF8(count: Int = 1) {
  *
  * @return The number of blank characters that were skipped.
  */
-internal fun YAMLScannerImpl.eatBlanks(): Int {
+internal fun YAMLScannerImpl.skipBlanks(): Int {
   var out = 0
 
   reader.cache(1)
@@ -197,7 +191,7 @@ internal fun YAMLScannerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
       // because it may be trailing whitespace (which we want to "ignore").
       reader.isBlank() -> {
         trailingWhitespaceCount++
-        skipASCII()
+        skipASCII(this.reader, this.position)
       }
 
       // Else, it's a junk "content" character

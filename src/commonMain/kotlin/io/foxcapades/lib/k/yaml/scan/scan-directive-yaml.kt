@@ -26,7 +26,7 @@ internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) 
   // We have already skipped over `%YAML<WS>`.  Eat any extra whitespaces
   // until we encounter something else, which will hopefully be a decimal
   // digit.
-  var trailingSpaceCount = eatBlanks() + 1
+  var trailingSpaceCount = skipBlanks() + 1
 
   // If after skipping over the blank space characters after `%YAML` we hit
   // the EOF, a line break, or a `#` character (the start of a comment), then
@@ -93,7 +93,7 @@ internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) 
   // character:
   if (reader.isBlank()) {
     // Eat the whitespace(s) until we hit something else.
-    trailingSpaceCount = eatBlanks()
+    trailingSpaceCount = skipBlanks()
 
     // Attempt to cache a character in our reader buffer
     reader.cache(1)

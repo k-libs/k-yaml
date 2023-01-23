@@ -152,10 +152,4 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun getWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
 
   // endregion Warning Helpers
-
-  internal fun fetchLiteralStringToken() {
-    // TODO: chomping indicator
-    // TODO: indent indicator
-    TODO("fetch pipe string")
-  }
 }

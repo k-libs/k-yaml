@@ -15,7 +15,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   //
   // We add 1 to the space count to account for the one space we've already seen
   // before this function was called.
-  var infixSpace = 1 + eatBlanks()
+  var infixSpace = 1 + skipBlanks()
 
   // If, after skipping over the empty spaces, we hit a `#`, line break, or the
   // EOF, then we have an incomplete token.
@@ -86,7 +86,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
     return fetchInvalidTagDirectiveToken("unexpected character after tag handle", startMark)
 
   // Skip the whitespaces until we encounter something else.
-  infixSpace = eatBlanks()
+  infixSpace = skipBlanks()
 
   // If the next thing after the blanks was a linebreak or EOF then we have an
   // incomplete directive.
@@ -139,7 +139,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
     //
     // Skip the spaces and see what's next.  If it is something other than a
     // comment or a newline, then we have an invalid tag directive.
-    infixSpace = eatBlanks()
+    infixSpace = skipBlanks()
 
     if (!(reader.isAnyBreakOrEOF() || reader.isPound()))
       return fetchInvalidTagDirectiveToken("unexpected character after prefix value", startMark)
