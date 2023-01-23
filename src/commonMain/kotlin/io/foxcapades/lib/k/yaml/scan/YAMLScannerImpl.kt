@@ -3,15 +3,14 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.YAMLScanner
 import io.foxcapades.lib.k.yaml.YAMLVersion
-import io.foxcapades.lib.k.yaml.bytes.*
-import io.foxcapades.lib.k.yaml.read.*
-import io.foxcapades.lib.k.yaml.token.*
+import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.foxcapades.lib.k.yaml.token.YAMLToken
+import io.foxcapades.lib.k.yaml.token.YAMLTokenStreamEnd
 import io.foxcapades.lib.k.yaml.util.*
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
 
 @Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalUnsignedTypes::class)
 internal class YAMLScannerImpl : YAMLScanner {
 
   internal val position = SourcePositionTracker()
@@ -28,9 +27,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal var indent = 0u
 
   // region Context Indicators
-
-  // TODO: implement this check, right now nothing writes to it.
-  internal var inDocument = false
 
   // region Flows
 
@@ -99,12 +95,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   // endregion Public Methods
 
-  // region Reader Wrapping
-
-
-
-  // endregion Reader Wrapping
-
   internal fun fetchNextToken() {
     if (!streamStartProduced)
       return fetchStreamStartToken()
@@ -162,56 +152,6 @@ internal class YAMLScannerImpl : YAMLScanner {
   internal fun getWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
 
   // endregion Warning Helpers
-
-  // region Buffer Writing Helpers
-  //
-  // TODO:
-  //   | This whole region is suspect, these things should not be here, or at
-  //   | least should be reworked.
-
-  internal fun UByteBuffer.claimUTF8() {
-    if (!takeCodepointFrom(reader))
-      throw IllegalStateException("invalid utf-8 codepoint in the reader buffer or buffer is offset")
-    position.incPosition()
-  }
-
-  @Deprecated("use the other one")
-  internal fun UByteBuffer.claimASCII() {
-    push(reader.pop())
-    position.incPosition()
-  }
-
-  // endregion Buffer Writing Helpers
-
-  internal fun UByteBuffer.takeASCIIFrom(count: Int, reader: BufferedUTFStreamReader, position: SourcePositionTracker) {
-    var i = 0
-    while (i++ < count)
-      push(reader.pop())
-
-    position.incPosition(count.toUInt())
-  }
-
-  @Deprecated("use takeASCIIFrom")
-  internal fun UByteBuffer.claimASCII(bytes: Int, other: UByteBuffer, position: SourcePositionTracker) {
-    var i = 0
-    while (i++ < bytes)
-      push(other.pop())
-
-    position.incPosition(bytes.toUInt())
-  }
-
-  internal fun eatSpaces(): UInt {
-    var count = 0u
-
-    reader.cache(1)
-    while (reader.isSpace()) {
-      count++
-      skipASCII()
-      reader.cache(1)
-    }
-
-    return count
-  }
 
   internal fun fetchLiteralStringToken() {
     // TODO: chomping indicator

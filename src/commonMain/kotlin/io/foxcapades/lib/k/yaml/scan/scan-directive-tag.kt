@@ -35,7 +35,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   val handleBuffer = UByteBuffer(16)
 
   // Claim the first `!` character from the reader into our buffer.
-  handleBuffer.takeASCIIFrom(1, reader, position)
+  handleBuffer.claimASCII(reader, position)
 
   while (true) {
     reader.cache(1)
@@ -43,7 +43,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
     // If we have our ending exclamation mark:
     if (reader.isExclamation()) {
       // eat it
-      handleBuffer.takeASCIIFrom(1, reader, position)
+      handleBuffer.claimASCII(reader, position)
       // break out of the loop because we are done with the handle
       break
     }
@@ -52,7 +52,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
       reader.cache(3)
 
       if (reader.isHexDigit(1) && reader.isHexDigit(2)) {
-        handleBuffer.takeASCIIFrom(3, reader, position)
+        handleBuffer.claimASCII(reader, position, 3)
         continue
       }
 
@@ -74,7 +74,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
 
     // If it _is_ an `ns-word-char` then it is in the ASCII range and is a
     // single byte.
-    handleBuffer.takeASCIIFrom(1, reader, position)
+    handleBuffer.claimASCII(reader, position)
   }
 
   // Okay, so if we've made it this far, we've seen at least `%TAG !` and at
@@ -108,7 +108,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   val prefixBuffer = UByteBuffer(16)
 
   // Claim the starting character that we already inspected.
-  prefixBuffer.takeASCIIFrom(1, reader, position)
+  prefixBuffer.claimASCII(reader, position)
 
   while (true) {
     reader.cache(1)
@@ -124,7 +124,7 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
     if (!reader.uIsNsURIChar())
       return fetchInvalidTagDirectiveToken("unexpected non-URI safe character in tag prefix", startMark)
 
-    prefixBuffer.takeASCIIFrom(1, reader, position)
+    prefixBuffer.claimASCII(reader, position)
   }
 
   infixSpace = 0

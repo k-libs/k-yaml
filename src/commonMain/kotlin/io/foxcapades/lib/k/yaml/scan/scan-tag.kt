@@ -50,7 +50,7 @@ private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePositi
   contentBuffer1.push(A_EXCLAIM)
 
   // Claim the URI character the cursor is currently on.
-  contentBuffer1.claimUTF8()
+  contentBuffer1.claimUTF8(this.reader, this.position)
 
   while (true) {
     reader.cache(1)
@@ -71,7 +71,7 @@ private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePositi
       // Then what we have is the handle for a local tag.
 
       // Eat the exclamation mark to finish off our handle
-      contentBuffer1.claimASCII()
+      contentBuffer1.claimASCII(this.reader, this.position)
 
       // Generate a local tag token
       return fetchLocalTagToken(startMark, contentBuffer1.popToArray())
@@ -80,7 +80,7 @@ private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePositi
     // If we hit a URI character
     else if (reader.isNsURIChar()) {
       // append it to the buffer
-      contentBuffer1.claimUTF8()
+      contentBuffer1.claimUTF8(this.reader, this.position)
     }
 
     // If we hit any other character
@@ -114,7 +114,7 @@ private fun YAMLScannerImpl.fetchLocalTagToken(startMark: SourcePosition, handle
 
   while (true) {
     if (reader.isNsURIChar()) {
-      contentBuffer1.claimUTF8()
+      contentBuffer1.claimUTF8(this.reader, this.position)
     }
 
     else if (reader.isBlankAnyBreakOrEOF()) {
@@ -138,7 +138,7 @@ private fun YAMLScannerImpl.fetchLocalTagToken(startMark: SourcePosition, handle
 private fun YAMLScannerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
   contentBuffer1.clear()
 
-  skipASCII()
+  skipASCII(this.reader, this.position)
   reader.cache(1)
 
   if (reader.isBlankAnyBreakOrEOF())
@@ -146,7 +146,7 @@ private fun YAMLScannerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
 
   while (true) {
     if (reader.isNsTagChar()) {
-      contentBuffer1.claimUTF8()
+      contentBuffer1.claimUTF8(this.reader, this.position)
     } else if (reader.isBlankAnyBreakOrEOF()) {
       break
     } else {
@@ -167,16 +167,16 @@ private fun YAMLScannerImpl.fetchVerbatimTagToken(startMark: SourcePosition) {
   contentBuffer1.clear()
 
   contentBuffer1.push(A_EXCLAIM)
-  contentBuffer1.claimASCII()
+  contentBuffer1.claimASCII(this.reader, this.position)
 
   while (true) {
     reader.cache(1)
 
     if (reader.isGreaterThan()) {
-      contentBuffer1.claimASCII()
+      contentBuffer1.claimASCII(this.reader, this.position)
       break
     } else if (reader.isNsURIChar()) {
-      contentBuffer1.claimASCII()
+      contentBuffer1.claimASCII(this.reader, this.position)
     } else if (reader.isBlankAnyBreakOrEOF()) {
       TODO("incomplete verbatim tag")
     } else {

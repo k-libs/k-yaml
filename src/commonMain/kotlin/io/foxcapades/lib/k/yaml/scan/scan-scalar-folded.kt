@@ -313,7 +313,7 @@ internal fun YAMLScannerImpl.fetchFoldedStringToken() {
         keptLeadingSpaceCount = 0u
       }
 
-      bContent.claimUTF8()
+      bContent.claimUTF8(this.reader, this.position)
     }
   }
 }

@@ -32,7 +32,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     }
 
     else if (reader.isBlank()) {
-      trailingWSBuffer.claimASCII()
+      trailingWSBuffer.claimASCII(this.reader, this.position)
     }
 
     else if (reader.isAnyBreak()) {
@@ -47,7 +47,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
 
     else {
       collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
-      contentBuffer1.claimUTF8()
+      contentBuffer1.claimUTF8(this.reader, this.position)
     }
   }
 }
@@ -203,7 +203,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
   // Junk
   else {
     into.push(A_BACKSLASH)
-    into.claimUTF8()
+    into.claimUTF8(this.reader, this.position)
     warn("unrecognized or invalid escape sequence", start, position.mark())
   }
 }
@@ -232,7 +232,7 @@ private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuff
         warn("incomplete hex escape sequence", start, position.mark())
         return
       } else {
-        into.claimUTF8()
+        into.claimUTF8(this.reader, this.position)
       }
     }
 
@@ -261,7 +261,7 @@ private fun YAMLScannerImpl.readSmallUnicodeEscape(start: SourcePosition, into: 
         warn("incomplete unicode escape sequence", start, position.mark())
         return
       } else {
-        into.claimUTF8()
+        into.claimUTF8(this.reader, this.position)
       }
     }
 
@@ -307,7 +307,7 @@ private fun YAMLScannerImpl.readBigUnicodeEscape(start: SourcePosition, into: UB
         warn("incomplete unicode escape sequence", start, position.mark())
         return
       } else {
-        into.claimUTF8()
+        into.claimUTF8(this.reader, this.position)
       }
     }
 

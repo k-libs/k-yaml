@@ -31,14 +31,14 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
         // Instead, append a single apostrophe to the content buffer and move
         // on.
         if (reader.isApostrophe()) {
-          contentBuffer1.claimASCII()
+          contentBuffer1.claimASCII(this.reader, this.position)
           continue
         }
 
         tokens.push(newSingleQuotedStringToken(contentBuffer1.popToArray(), start))
         return
       }
-      reader.isBlank()      -> trailingWSBuffer.claimASCII()
+      reader.isBlank()      -> trailingWSBuffer.claimASCII(this.reader, this.position)
       reader.isAnyBreak()   -> {
         trailingWSBuffer.clear()
         trailingNLBuffer.claimNewLine(this.reader, this.position)
@@ -49,7 +49,7 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
       }
       else                  -> {
         collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
-        contentBuffer1.claimUTF8()
+        contentBuffer1.claimUTF8(this.reader, this.position)
       }
     }
   }
