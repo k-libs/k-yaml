@@ -7,7 +7,7 @@ import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
 data class YAMLTokenScalarPlain(
   override val value:    UByteString,
-           val indent:   UInt,
+  override val indent:   UInt,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>

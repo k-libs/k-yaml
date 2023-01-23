@@ -9,5 +9,5 @@ internal fun YAMLScannerImpl.fetchFlowMappingStartToken() {
   val start = this.position.mark()
   skipASCII(this.reader, this.position)
   this.flows.push(FlowTypeMapping)
-  this.tokens.push(YAMLTokenFlowMappingStart(start, this.position.mark(), this.getWarnings()))
+  this.tokens.push(YAMLTokenFlowMappingStart(start, this.position.mark(), this.indent, this.getWarnings()))
 }

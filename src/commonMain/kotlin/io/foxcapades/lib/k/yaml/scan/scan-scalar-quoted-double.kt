@@ -11,6 +11,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()
 
+  val indent = this.indent
   val start = position.mark()
 
   // Skip the first double quote character as we don't put it into the token
@@ -21,23 +22,32 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     reader.cache(1)
 
     if (reader.isBackslash()) {
-      readPossibleEscapeSequence(contentBuffer1, trailingNLBuffer)
+      this.haveContentOnThisLine = true
+      readPossibleEscapeSequence(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
     }
 
     else if (reader.isDoubleQuote()) {
+      this.haveContentOnThisLine = true
       skipASCII(this.reader, this.position)
       collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
-      tokens.push(newDoubleQuotedStringToken(contentBuffer1.popToArray(), start, position.mark()))
+      tokens.push(newDoubleQuotedStringToken(contentBuffer1.popToArray(), indent, start, position.mark()))
       return
     }
 
     else if (reader.isBlank()) {
-      trailingWSBuffer.claimASCII(this.reader, this.position)
+      if (this.haveContentOnThisLine) {
+        trailingWSBuffer.claimASCII(this.reader, this.position)
+      } else {
+        skipASCII(this.reader, this.position)
+        this.indent++
+      }
     }
 
     else if (reader.isAnyBreak()) {
       trailingWSBuffer.clear()
       trailingNLBuffer.claimNewLine(this.reader, this.position)
+      this.haveContentOnThisLine = false
+      this.indent = 0u
     }
 
     else if (reader.isEOF()) {
@@ -46,13 +56,14 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     }
 
     else {
+      this.haveContentOnThisLine = true
       collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
       contentBuffer1.claimUTF8(this.reader, this.position)
     }
   }
 }
 
-private fun YAMLScannerImpl.collapseTrailingWhitespaceAndNewlinesIntoBuffer(
+private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
   target:   UByteBuffer,
   newlines: UByteBuffer,
   blanks:   UByteBuffer,
@@ -70,10 +81,17 @@ private fun YAMLScannerImpl.collapseTrailingWhitespaceAndNewlinesIntoBuffer(
     while (blanks.isNotEmpty)
       target.push(blanks.pop())
   }
+
+  newlines.clear()
+  blanks.clear()
 }
 
 
-private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuffer: UByteBuffer) {
+private fun YAMLScannerImpl.readPossibleEscapeSequence(
+  into:     UByteBuffer,
+  nlBuffer: UByteBuffer,
+  wsBuffer: UByteBuffer,
+) {
   val start = position.mark()
 
   // Skip the backslash character
@@ -83,6 +101,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
   reader.cache(1)
 
   if (reader.isEOF()) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BACKSLASH)
     warn("invalid or unfinished escape sequence due to EOF", start, position.mark())
   }
@@ -98,80 +117,94 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
     || reader.uIsSlash()
     || reader.uIsTab()
   ) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.claimASCII(this.reader, this.position)
   }
 
   // \xXX
   else if (reader.uTest(A_LOWER_X)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     readHexEscape(start, into)
   }
 
   // \uXXXX
   else if (reader.uTest(A_LOWER_U)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     readSmallUnicodeEscape(start, into)
   }
 
   // \UXXXXXXXX
   else if (reader.uTest(A_UPPER_U)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     readBigUnicodeEscape(start, into)
+  }
+
+  // Line Feed
+  else if (reader.uTest(A_LOWER_N)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    into.push(A_LINE_FEED)
+    skipASCII(this.reader, this.position)
   }
 
   // Null / Nil
   else if (reader.uTest(A_DIGIT_0)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_NIL)
     skipASCII(this.reader, this.position)
   }
 
   // Bell
   else if (reader.uTest(A_LOWER_A)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BELL)
     skipASCII(this.reader, this.position)
   }
 
   // Backspace
   else if (reader.uTest(A_LOWER_B)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BACKSPACE)
     skipASCII(this.reader, this.position)
   }
 
   // Tab
   else if (reader.uTest(A_LOWER_T)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_TAB)
-    skipASCII(this.reader, this.position)
-  }
-
-  // Line Feed
-  else if (reader.uTest(A_LOWER_N)) {
-    into.push(A_LINE_FEED)
     skipASCII(this.reader, this.position)
   }
 
   // Vertical Tab
   else if (reader.uTest(A_LOWER_V)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_VERTICAL_TAB)
     skipASCII(this.reader, this.position)
   }
 
   // Form Feed
   else if (reader.uTest(A_LOWER_F)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_FORM_FEED)
     skipASCII(this.reader, this.position)
   }
 
   // Carriage Return
   else if (reader.uTest(A_LOWER_R)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_CARRIAGE_RETURN)
     skipASCII(this.reader, this.position)
   }
 
   // Escape
   else if (reader.uTest(A_LOWER_E)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_ESCAPE)
     skipASCII(this.reader, this.position)
   }
 
   // Next Line
   else if (reader.uTest(A_UPPER_N)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbC2)
     into.push(Ub85)
     skipASCII(this.reader, this.position)
@@ -179,6 +212,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
 
   // Non-Breaking Space
   else if (reader.uTest(A_UNDERSCORE)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbC2)
     into.push(UbA0)
     skipASCII(this.reader, this.position)
@@ -186,6 +220,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
 
   // Line Separator
   else if (reader.uTest(A_UPPER_L)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbE2)
     into.push(Ub80)
     into.push(UbA8)
@@ -194,6 +229,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
 
   // Paragraph Separator
   else if (reader.uTest(A_UPPER_P)) {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbE2)
     into.push(Ub80)
     into.push(UbA9)
@@ -202,6 +238,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
 
   // Junk
   else {
+    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BACKSLASH)
     into.claimUTF8(this.reader, this.position)
     warn("unrecognized or invalid escape sequence", start, position.mark())
@@ -210,8 +247,13 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(into: UByteBuffer, nlBuff
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.newDoubleQuotedStringToken(value: UByteArray, start: SourcePosition, end: SourcePosition) =
-  YAMLTokenScalarQuotedDouble(UByteString(value), start, end, getWarnings())
+private inline fun YAMLScannerImpl.newDoubleQuotedStringToken(
+  value: UByteArray,
+  indent: UInt,
+  start: SourcePosition,
+  end: SourcePosition
+) =
+  YAMLTokenScalarQuotedDouble(UByteString(value), start, end, indent, getWarnings())
 
 private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuffer) {
   skipASCII(this.reader, this.position)

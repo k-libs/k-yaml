@@ -1,6 +1,5 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.YAMLScanner
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
@@ -23,7 +22,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   internal var haveContentOnThisLine = false
 
-  internal val indents = UIntStack()
   internal var indent = 0u
 
   // region Context Indicators
@@ -55,8 +53,6 @@ internal class YAMLScannerImpl : YAMLScanner {
 
   internal val reader: BufferedUTFStreamReader
 
-  internal val lineBreakType: LineBreakType
-
   // region Reusable Buffers
 
   internal val contentBuffer1   = UByteBuffer(1024)
@@ -67,9 +63,8 @@ internal class YAMLScannerImpl : YAMLScanner {
   // endregion Reusable Buffers
 
 
-  constructor(reader: BufferedUTFStreamReader, lineBreak: LineBreakType) {
+  constructor(reader: BufferedUTFStreamReader) {
     this.reader = reader
-    this.lineBreakType = lineBreak
   }
 
   // region Public Methods
@@ -116,8 +111,8 @@ internal class YAMLScannerImpl : YAMLScanner {
       reader.uIsDoubleQuote() -> fetchDoubleQuotedStringToken()
       reader.uIsSquareOpen()  -> fetchFlowSequenceStartToken()
       reader.uIsCurlyOpen()   -> fetchFlowMappingStartToken()
-      reader.uIsPipe()        -> fetchLiteralStringToken()
-      reader.uIsGreaterThan() -> fetchFoldedStringToken()
+      reader.uIsPipe()        -> fetchBlockScalar(true)
+      reader.uIsGreaterThan() -> fetchBlockScalar(false)
       reader.uIsSquareClose() -> fetchFlowSequenceEndToken()
       reader.uIsCurlyClose()  -> fetchFlowMappingEndToken()
       reader.uIsExclamation() -> fetchTagToken()
@@ -128,8 +123,8 @@ internal class YAMLScannerImpl : YAMLScanner {
       reader.uIsQuestion()    -> fetchAmbiguousQuestionToken()
 
       // BAD NONO CHARACTERS: @ `
-      reader.isAt()          -> fetchAmbiguousAtToken()
-      reader.isGrave()       -> fetchAmbiguousGraveToken()
+      reader.uIsAt()          -> fetchAmbiguousAtToken()
+      reader.uIsGrave()       -> fetchAmbiguousGraveToken()
 
       // Meh characters: ~ $ ^ ( ) _ + = \ ; < /
       // And everything else...

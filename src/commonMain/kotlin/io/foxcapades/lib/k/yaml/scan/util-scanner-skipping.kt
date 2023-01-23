@@ -64,29 +64,24 @@ internal fun skipNewLine(from: UByteSource, position: SourcePositionTracker) {
 
 
 internal fun YAMLScannerImpl.skipToNextToken() {
-  // TODO:
-  //   | This method needs to differentiate between tabs and spaces when
-  //   | slurping up those delicious, delicious bytes.
-  //   |
-  //   | This is because TAB characters are not permitted as part of
-  //   | indentation.
-  //   |
-  //   | If we choose to warn about tab characters rather than throwing an
-  //   | error, we need to determine the width of the tab character so as to
-  //   | keep the column index correct...
-
   while (true) {
     reader.cache(1)
 
     when {
-      // We found the end of the stream.
-      reader.isSpace()    -> {
-        skipASCII(this.reader, this.position)
+      reader.isSpace() -> {
+        skipASCII(reader, position)
+        if (!haveContentOnThisLine)
+          indent++
+      }
+
+      haveContentOnThisLine && reader.isTab() -> {
+        skipASCII(reader, position)
       }
 
       reader.isAnyBreak() -> {
         skipNewLine(this.reader, this.position)
         haveContentOnThisLine = false
+        indent = 0u
       }
 
       reader.isEOF()      -> {
@@ -94,7 +89,6 @@ internal fun YAMLScannerImpl.skipToNextToken() {
       }
 
       else                -> {
-        haveContentOnThisLine = true
         break
       }
     }

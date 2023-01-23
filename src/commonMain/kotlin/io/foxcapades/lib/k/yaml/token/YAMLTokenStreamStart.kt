@@ -6,7 +6,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
 class YAMLTokenStreamStart(
-  val encoding: YAMLEncoding,
+           val encoding: YAMLEncoding,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>,

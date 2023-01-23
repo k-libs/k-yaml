@@ -21,12 +21,12 @@ sealed interface YAMLToken {
   /**
    * Token start position.
    */
-  val start:    SourcePosition
+  val start: SourcePosition
 
   /**
    * Token end position.
    */
-  val end:      SourcePosition
+  val end: SourcePosition
 
   /**
    * Warnings kicked up by the [YAMLScanner] while parsing this token.

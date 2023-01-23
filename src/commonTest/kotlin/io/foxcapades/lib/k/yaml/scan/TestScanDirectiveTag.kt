@@ -1,6 +1,5 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveTag
@@ -11,7 +10,7 @@ import kotlin.test.*
 class TestScanDirectiveTag {
 
   private fun makeScanner(input: String) =
-    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())), LineBreakType.LF)
+    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
 
   @Test
   fun testInvalidBecausePrefixDoesNotStartWithExclaim() {

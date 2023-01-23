@@ -10,6 +10,7 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()
 
+  val indent = this.indent
   val start = position.mark()
 
   haveContentOnThisLine = true
@@ -38,7 +39,7 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
           continue
         }
 
-        tokens.push(newSingleQuotedStringToken(contentBuffer1.popToArray(), start))
+        tokens.push(newSingleQuotedStringToken(contentBuffer1.popToArray(), indent, start))
         return
       }
       reader.isBlank()      -> trailingWSBuffer.claimASCII(this.reader, this.position)
@@ -81,8 +82,9 @@ private fun YAMLScannerImpl.collapseTrailingWhitespaceAndNewlinesIntoBuffer(
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 private inline fun YAMLScannerImpl.newSingleQuotedStringToken(
-  value: UByteArray,
-  start: SourcePosition,
-  end:   SourcePosition = position.mark()
+  value:  UByteArray,
+  indent: UInt,
+  start:  SourcePosition,
+  end:    SourcePosition = position.mark()
 ) =
-  YAMLTokenScalarQuotedSingle(UByteString(value), start, end, getWarnings())
+  YAMLTokenScalarQuotedSingle(UByteString(value), start, end, indent, getWarnings())

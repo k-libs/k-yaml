@@ -1,6 +1,5 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.LineBreakType
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.token.YAMLTokenInvalid
@@ -11,7 +10,7 @@ import kotlin.test.*
 class TestDoubleQuotedStringHexEscapeSequences {
 
   private fun makeScanner(input: String) =
-    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())), LineBreakType.LF)
+    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
 
   @Test
   fun invalidHexSequenceDueToEOF1() {
@@ -66,8 +65,6 @@ class TestDoubleQuotedStringHexEscapeSequences {
     // The next token should be our string
     val token = scanner.nextToken()
 
-    println(token)
-
     assertIs<YAMLTokenScalarQuotedDouble>(token)
     assertEquals("\\x😀2", token.value.toString())
     assertEquals(SourcePosition(0u, 0u, 0u), token.start)
@@ -87,8 +84,6 @@ class TestDoubleQuotedStringHexEscapeSequences {
 
     // The next token should be our string
     val token = scanner.nextToken()
-
-    println(token)
 
     assertIs<YAMLTokenScalarQuotedDouble>(token)
     assertEquals("\\x2😀", token.value.toString())

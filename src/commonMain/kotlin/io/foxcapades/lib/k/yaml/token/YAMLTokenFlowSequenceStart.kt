@@ -7,13 +7,14 @@ import io.foxcapades.lib.k.yaml.util.toFlowSequence
 class YAMLTokenFlowSequenceStart(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
+           val indent:   UInt,
   override val warnings: Array<SourceWarning>
 ) : YAMLToken {
   override fun toString() =
-    "FlowSequenceStart(start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
+    "FlowSequenceStart(start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    this.start.hashCode() + this.end.hashCode() + this.warnings.contentHashCode()
+    this.start.hashCode() + this.end.hashCode() + this.indent.hashCode() + this.warnings.contentHashCode()
 
   override fun equals(other: Any?) =
     this === other
@@ -21,6 +22,7 @@ class YAMLTokenFlowSequenceStart(
       other is YAMLTokenFlowSequenceStart
       && this.start == other.start
       && this.end == other.end
+      && this.indent == other.indent
       && this.warnings.contentEquals(other.warnings)
     )
 }

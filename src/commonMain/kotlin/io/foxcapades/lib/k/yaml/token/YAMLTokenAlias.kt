@@ -9,15 +9,17 @@ data class YAMLTokenAlias(
            val alias:    UByteString,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
+           val indent:   UInt,
   override val warnings: Array<SourceWarning>
 ) : YAMLToken {
   override fun toString() =
-    "Alias(alias=$alias, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
+    "Alias(alias=$alias, start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
     alias.contentHashCode() +
     start.hashCode() +
     end.hashCode() +
+    indent.hashCode() +
     warnings.contentHashCode()
 
   override fun equals(other: Any?) =
@@ -27,6 +29,7 @@ data class YAMLTokenAlias(
       && this.alias.contentEquals(other.alias)
       && this.start == other.start
       && this.end == other.end
+      && this.indent == other.indent
       && this.warnings.contentEquals(other.warnings)
     )
 }

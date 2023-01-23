@@ -11,10 +11,10 @@ internal inline fun YAMLScannerImpl.emitInvalidToken(
   end:     SourcePosition = this.position.mark(),
 ) {
   this.warnings.push(SourceWarning(warning, start, end))
-  this.tokens.push(YAMLTokenInvalid(start, end, getWarnings()))
+  this.tokens.push(YAMLTokenInvalid(start, end, this.indent, getWarnings()))
 }
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun YAMLScannerImpl.emitInvalidToken(start: SourcePosition, end: SourcePosition) {
-  this.tokens.push(YAMLTokenInvalid(start, end, getWarnings()))
+  this.tokens.push(YAMLTokenInvalid(start, end, this.indent, getWarnings()))
 }

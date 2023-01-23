@@ -5,6 +5,8 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
 import io.foxcapades.lib.k.yaml.util.*
 
 internal fun YAMLScannerImpl.fetchPlainScalar() {
+  // TODO: catch the case where the first character in the plain scalar is a tab
+  //       because that may be illegal
   when {
     this.inFlowMapping  -> this.fetchPlainScalarInFlowMapping()
     this.inFlowSequence -> this.fetchPlainScalarInFlowSequence()
@@ -65,6 +67,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
       || this.reader.isEOF()
       -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
+        haveContentOnThisLine = true
         return
       }
 
@@ -76,6 +79,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
 
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
+        haveContentOnThisLine = true
       }
     }
   }
@@ -117,6 +121,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
       || this.reader.isEOF()
       -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
+        this.haveContentOnThisLine = true
         return
       }
 
@@ -128,6 +133,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
 
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
+        this.haveContentOnThisLine = true
       }
     }
   }
@@ -138,7 +144,6 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
 private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
   val start       = this.position.mark()
   val tokenIndent = this.indent
-  val minIndent   = if (this.atStartOfLine) 0u else this.indent + 1u
   val bConfirmed  = this.contentBuffer1
   val bAmbiguous  = this.contentBuffer2
   val bTailWS     = this.trailingWSBuffer
@@ -154,9 +159,9 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
     this.reader.cache(1)
 
     if (this.reader.isSpace()) {
-      if (this.haveContentOnThisLine)
+      if (this.haveContentOnThisLine) {
         bTailWS.claimASCII(this.reader, this.position)
-      else {
+      } else {
         skipASCII(this.reader, this.position)
         this.indent++
       }
@@ -191,45 +196,35 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       this.indent = 0u
     }
 
-    // If we've made it here, then we are on a character that is NOT a space, a
-    // tab, or any newline character.  That means it's a content character.  If
-    // a content character appears before the minimum required indent, then we
-    // will consider it the start of a separate token.
-    if (this.indent < minIndent) {
+    else if (this.indent < tokenIndent) {
       collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
       emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+      return
     }
 
-    if (this.reader.isColon()) {
-      this.reader.cache(2)
+    else if (reader.isColon()) {
+      reader.cache(2)
 
-      if (this.reader.isBlankAnyBreakOrEOF(1)) {
+      if (reader.isBlankAnyBreakOrEOF(1)) {
         // If the confirmed buffer is not empty, then we are not on the same
         // line we were when we started parsing this plain scalar.  There is a
         // special case here, where if the indent level for this line is 0, then
         // we are to consider the content on this, separate line to be its own
         // separate plain scalar.
-        //
-        // Example:
-        // ```
-        // foo
-        // bar
-        // fizz:
-        // ```
-        // Here, "foo bar" will be the first token, "fizz" will be the second,
-        // and the next index of this token iterator will emit a mapping value
-        // indicator token.
         if (bConfirmed.isNotEmpty) {
           emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
 
-          val subStart = -(bAmbiguous.size + bTailWS.size)
-          val subEnd   = -bTailWS.size
-          emitPlainScalar(
-            bAmbiguous,
-            tokenIndent,
-            this.position.mark(modIndex = subStart, modColumn = subStart),
-            this.position.mark(modIndex = subEnd, modColumn = subEnd)
-          )
+          if (bAmbiguous.isNotEmpty) {
+            val subStart = -(bAmbiguous.size + bTailWS.size)
+            val subEnd = -bTailWS.size
+
+            emitPlainScalar(
+              bAmbiguous,
+              tokenIndent,
+              this.position.mark(modIndex = subStart, modColumn = subStart),
+              this.position.mark(modIndex = subEnd, modColumn = subEnd)
+            )
+          }
           return
         } else {
           collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
@@ -238,15 +233,16 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
         }
       } else {
         bAmbiguous.claimASCII(this.reader, this.position)
+        haveContentOnThisLine = true
       }
     }
 
-    else if (this.reader.isDash() && this.atStartOfLine) {
+    else if (this.reader.isDash()) {
       this.reader.cache(4)
 
       if (
-        (this.reader.isDash(1) && this.reader.isDash(2) && this.reader.isBlankAnyBreakOrEOF(3))
-        || this.reader.isBlankAnyBreakOrEOF(1)
+        (atStartOfLine && reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3))
+        || (this.indent <= tokenIndent && reader.isBlankAnyBreakOrEOF(1))
       ) {
         collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
         emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
@@ -254,9 +250,9 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       }
 
       bAmbiguous.claimASCII(this.reader, this.position)
+      haveContentOnThisLine = true
     }
 
-    // If it's a period, rule out end of document
     else if (this.reader.isPeriod() && this.atStartOfLine) {
       this.reader.cache(4)
 
@@ -267,6 +263,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       }
 
       bAmbiguous.claimASCII(this.reader, this.position)
+      this.haveContentOnThisLine = true
     }
 
     else if (
@@ -283,7 +280,11 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
     }
 
     else {
+      while (bTailWS.isNotEmpty)
+        bAmbiguous.claimASCII(bTailWS)
+
       bAmbiguous.claimUTF8(this.reader, this.position)
+      this.haveContentOnThisLine = true
     }
   }
 }
@@ -294,24 +295,18 @@ private fun collapseBuffers(
   from:     UByteSource,
   pos:      SourcePositionTracker,
 ) {
-  if (newLines.size == 1) {
-    into.push(A_SPACE)
-    pos.incPosition()
-  } else if (newLines.size > 1) {
-    newLines.skipNewLine(pos)
-    while (newLines.isNotEmpty)
-      into.claimNewLine(newLines, pos)
-  }
+  if (from.size > 0) {
+    if (newLines.size == 1) {
+      into.push(A_SPACE)
+      pos.incPosition()
+    } else if (newLines.size > 1) {
+      newLines.skipNewLine(pos)
+      while (newLines.isNotEmpty)
+        into.claimNewLine(newLines, pos)
+    }
 
-  var i: Int
-  var w: Int
-  while (from.size > 0) {
-    i = 0
-    w = from.utf8Width()
-    while (i++ < w)
-      into.push(from.pop())
-
-    pos.incPosition()
+    while (from.size > 0)
+      into.claimUTF8(from, pos)
   }
 }
 

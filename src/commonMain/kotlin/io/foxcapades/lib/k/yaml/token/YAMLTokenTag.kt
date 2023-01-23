@@ -5,6 +5,7 @@ import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
+// TODO: Tag should probably have indent as well since it can start a line
 data class YAMLTokenTag(
            val handle:   UByteString,
            val suffix:   UByteString,

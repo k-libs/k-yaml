@@ -1,129 +1,101 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.err.UIntOverflowException
-import io.foxcapades.lib.k.yaml.err.YAMLScannerException
+import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
+import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarLiteral
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.isDash
-import io.foxcapades.lib.k.yaml.util.isDecimalDigit
-import io.foxcapades.lib.k.yaml.util.isPlus
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
-internal fun YAMLScannerImpl.fetchLiteralStringToken() {
-  val start     = this.position.mark()
-  val indent    = this.indent
-  val minIndent = if (this.atStartOfLine) 0u else this.indent + 1u
-  val content   = contentBuffer1
-  val leadWS    = contentBuffer2
-  val tailWS    = trailingWSBuffer
-  val tailNL    = trailingNLBuffer
+internal fun YAMLScannerImpl.fetchLiteralScalar(
+  start: SourcePosition,
+  chompMode: BlockScalarChompMode,
+  indentHint: UInt,
+  minIndent: UInt,
+  actualIndent: UInt,
+  tailComment: YAMLTokenComment?,
+  trailingNewLines: UByteBuffer,
+) {
+  val scalarContent    = contentBuffer1
+  val endPosition      = this.position.copy()
+  val keepIndentAfter  = this.indent - indentHint
 
-  val chompMode:  BlockScalarChompMode
-  val indentHint: UInt
+  scalarContent.clear()
 
-  this.haveContentOnThisLine = true
-
-  content.clear()
-  leadWS.clear()
-  tailWS.clear()
-  tailNL.clear()
-
-  skipASCII(this.reader, this.position)
-
-  detectBlockScalarIndicators(start) { cm, ih ->
-    chompMode  = cm
-    indentHint = ih
-  }
-
-  if (this.skipBlanks() > 0) {
-    this.reader.cache(1)
-
-    when {
-      this.reader.isPound()    -> TODO("handle trailing comment after a literal scalar start indicator.  This comment should be kept and emitted _after_ the scalar token")
-      this.reader.isAnyBreak() -> {}
-      this.reader.isEOF()      -> TODO("wrap up the scalar value (which is empty)")
-      else                     -> TODO("handle invalid/unexpected character on the same line as the literal scalar start indicator")
-    }
-  } else {
-    this.reader.cache(1)
-
-    when {
-      this.reader.isAnyBreak() -> {}
-      this.reader.isEOF()      -> TODO("wrap up the scalar value (which is empty)")
-      else                     -> TODO("handle invalid/unexpected character immediately following the literal scalar start indicator")
-    }
-  }
-
-  skipNewLine(this.reader, this.position)
-  this.haveContentOnThisLine = false
-
-  // Determine the scalar block's indent level
   while (true) {
     this.reader.cache(1)
 
     if (this.reader.isSpace()) {
-      leadWS.claimASCII(this.reader, this.position)
-      this.indent++
+      if (this.haveContentOnThisLine) {
+        scalarContent.claimASCII(this.reader, this.position)
+        endPosition.become(this.position)
+      }
+
+      else {
+        if (this.indent >= keepIndentAfter) {
+          scalarContent.claimASCII(this.reader, this.position)
+          endPosition.become(this.position)
+        } else {
+          skipASCII(this.reader, this.position)
+        }
+
+        this.indent++
+      }
     }
 
     else if (this.reader.isAnyBreak()) {
-      leadWS.clear()
-      tailNL.claimNewLine(this.reader, this.position)
+      trailingNewLines.claimNewLine(this.reader, this.position)
       this.haveContentOnThisLine = false
       this.indent = 0u
     }
 
     else if (this.reader.isEOF()) {
-      TODO("we have an empty scalar that may have newlines that need to be appended to the literal content")
+      applyChomping(scalarContent, trailingNewLines, chompMode, endPosition)
+      finishLiteralScalar(scalarContent, actualIndent, start, endPosition)
+
+      if (tailComment != null)
+        this.tokens.push(tailComment)
+
+      return
+    }
+
+    else {
+      if (this.indent < minIndent) {
+        applyChomping(scalarContent, trailingNewLines, chompMode, endPosition)
+        finishLiteralScalar(scalarContent, actualIndent, start, endPosition)
+
+        if (tailComment != null)
+          this.tokens.push(tailComment)
+
+        return
+      }
+
+      while (trailingNewLines.isNotEmpty)
+        scalarContent.claimNewLine(trailingNewLines)
+
+      this.haveContentOnThisLine = true
+
+      scalarContent.claimUTF8(this.reader, this.position)
+      endPosition.become(this.position)
     }
   }
-
-  TODO("fetch pipe string")
 }
 
-@OptIn(ExperimentalContracts::class)
-internal inline fun YAMLScannerImpl.detectBlockScalarIndicators(
-  start: SourcePosition,
-  fn: (cm: BlockScalarChompMode, ih: UInt) -> Unit
+@Suppress("NOTHING_TO_INLINE")
+@OptIn(ExperimentalUnsignedTypes::class)
+internal inline fun YAMLScannerImpl.emitEmptyLiteralScalar(indent: UInt, start: SourcePosition) {
+  this.tokens.push(YAMLTokenScalarLiteral(UByteString(UByteArray(0)), indent, start, start, this.getWarnings()))
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+internal fun YAMLScannerImpl.finishLiteralScalar(
+  scalarContent: UByteBuffer,
+  actualIndent:  UInt,
+  start:         SourcePosition,
+  endPosition:   SourcePositionTracker,
 ) {
-  contract {
-    callsInPlace(fn, InvocationKind.EXACTLY_ONCE)
-  }
-
-  val chompMode:  BlockScalarChompMode
-  val indentHint: UInt
-
-  this.reader.cache(1)
-
-  if (this.reader.isPlus() || this.reader.isDash()) {
-    chompMode = this.parseUByte()
-
-    this.reader.cache(1)
-
-    indentHint = if (this.reader.isDecimalDigit())
-      try { this.parseUInt() }
-      catch (e: UIntOverflowException) {
-        throw YAMLScannerException("block scalar indent hint value overflows type uint32", start.copy(2, 0, 2))
-      }
-    else
-      0u
-  } else if (this.reader.isDecimalDigit()) {
-    indentHint = try { this.parseUInt() }
-      catch (e: UIntOverflowException) {
-        throw YAMLScannerException("block scalar indent hint value overflows type uint32", start.copy(2, 0, 2))
-      }
-
-    this.reader.cache(1)
-
-    chompMode = if (this.reader.isPlus() || this.reader.isDash())
-      this.parseUByte()
-    else
-      BlockScalarChompModeClip
-  } else {
-    indentHint = 0u
-    chompMode  = BlockScalarChompModeClip
-  }
-
-  fn(chompMode, indentHint)
+  this.tokens.push(YAMLTokenScalarLiteral(
+    UByteString(scalarContent.toArray()),
+    actualIndent,
+    start,
+    endPosition.mark(),
+    this.getWarnings()
+  ))
 }

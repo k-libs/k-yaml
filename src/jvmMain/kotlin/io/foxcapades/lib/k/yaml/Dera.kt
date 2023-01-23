@@ -17,7 +17,7 @@ foo
 
 
 fun main() {
-  val scanner = YAMLScannerImpl(BufferedUTFStreamReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))), LineBreakType.LF)
+  val scanner = YAMLScannerImpl(BufferedUTFStreamReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))))
 
   while (scanner.hasNextToken)
     println(scanner.nextToken())

@@ -15,13 +15,14 @@ import io.foxcapades.lib.k.yaml.util.toFlowSequence
 data class YAMLTokenInvalid(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
+           val indent:   UInt,
   override val warnings: Array<SourceWarning>
 ) : YAMLToken {
   override fun toString() =
-    "Invalid(start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
+    "Invalid(start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    start.hashCode() + end.hashCode() + warnings.contentHashCode()
+    start.hashCode() + end.hashCode() + indent.hashCode() + warnings.contentHashCode()
 
   override fun equals(other: Any?) =
     this === other
@@ -29,6 +30,7 @@ data class YAMLTokenInvalid(
       other is YAMLTokenInvalid
       && this.start == other.start
       && this.end == other.end
+      && this.indent == other.indent
       && this.warnings.contentEquals(other.warnings)
     )
 }

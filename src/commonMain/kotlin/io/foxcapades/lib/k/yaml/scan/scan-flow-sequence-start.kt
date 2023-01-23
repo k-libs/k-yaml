@@ -12,5 +12,5 @@ internal fun YAMLScannerImpl.fetchFlowSequenceStartToken() {
   skipASCII(this.reader, this.position)
 
   this.flows.push(FlowTypeSequence)
-  this.tokens.push(YAMLTokenFlowSequenceStart(start, this.position.mark(), this.getWarnings()))
+  this.tokens.push(YAMLTokenFlowSequenceStart(start, this.position.mark(), this.indent, this.getWarnings()))
 }

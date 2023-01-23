@@ -7,13 +7,14 @@ import io.foxcapades.lib.k.yaml.warn.SourceWarning
 data class YAMLTokenMappingKey(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
+           val indent:   UInt,
   override val warnings: Array<SourceWarning>
 ) : YAMLToken {
   override fun toString() =
-    "MappingKeyIndicator(start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
+    "MappingKeyIndicator(start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    start.hashCode() + end.hashCode() + warnings.contentHashCode()
+    start.hashCode() + end.hashCode() + indent.hashCode() + warnings.contentHashCode()
 
   override fun equals(other: Any?) =
     this === other
@@ -21,6 +22,7 @@ data class YAMLTokenMappingKey(
       other is YAMLTokenMappingKey
       && this.start == other.start
       && this.end == other.end
+      && this.indent == other.indent
       && this.warnings.contentEquals(other.warnings)
     )
 }
