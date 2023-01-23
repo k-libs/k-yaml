@@ -55,6 +55,30 @@ internal fun YAMLScannerImpl.fetchLiteralStringToken() {
     }
   }
 
+  skipNewLine(this.reader, this.position)
+  this.haveContentOnThisLine = false
+
+  // Determine the scalar block's indent level
+  while (true) {
+    this.reader.cache(1)
+
+    if (this.reader.isSpace()) {
+      leadWS.claimASCII(this.reader, this.position)
+      this.indent++
+    }
+
+    else if (this.reader.isAnyBreak()) {
+      leadWS.clear()
+      tailNL.claimNewLine(this.reader, this.position)
+      this.haveContentOnThisLine = false
+      this.indent = 0u
+    }
+
+    else if (this.reader.isEOF()) {
+      TODO("we have an empty scalar that may have newlines that need to be appended to the literal content")
+    }
+  }
+
   TODO("fetch pipe string")
 }
 
