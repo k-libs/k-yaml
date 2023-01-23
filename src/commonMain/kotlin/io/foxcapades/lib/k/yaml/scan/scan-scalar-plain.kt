@@ -53,7 +53,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
         bTailWS.clear()
 
         // Eat the newline and append it to our trailing newline buffer.
-        bTailNL.claimNewLine(this.reader)
+        bTailNL.claimNewLine(this.reader, this.position)
 
         // Now we are starting a new line, which has no content yet.
         this.haveContentOnThisLine = false
@@ -72,7 +72,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
         while (bTailWS.isNotEmpty)
           bContent.claimASCII(bTailWS)
 
-        collapseNewLinesInto(bContent, bTailNL)
+        collapseNewLinesInto(bContent, bTailNL, endPosition)
 
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
@@ -124,7 +124,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
         while (bTailWS.isNotEmpty)
           bContent.claimASCII(bTailWS)
 
-        collapseNewLinesInto(bContent, bTailNL)
+        collapseNewLinesInto(bContent, bTailNL, endPosition)
 
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
@@ -316,31 +316,48 @@ private fun collapseBuffers(
 }
 
 @Suppress("NOTHING_TO_INLINE")
-private inline fun collapseNewLinesInto(into: UByteBuffer, newLines: UByteBuffer) {
-  // If the newlines buffer has some content
-  if (newLines.isNotEmpty) {
-
-    // Get the width of the first character
-    val width = newLines.utf8Width()
-
-    // If the size of the buffer is the same as the width of the next character,
-    // then there is only one character in the buffer.
-    if (newLines.size == width) {
-      // Replace the single line break with a space
+private fun collapseNewLinesInto(into: UByteBuffer, newLines: UByteBuffer, pos: SourcePositionTracker) {
+  if (newLines.isCRLF() || newLines.isNextLine()) {
+    if (newLines.size == 2) {
       into.push(A_SPACE)
-      // Then clear out the buffer
       newLines.clear()
+      pos.incLine(2u)
+    } else {
+      newLines.skipNewLine(pos)
+      while (newLines.size > 0)
+        into.claimNewLine(newLines, pos)
     }
+  }
 
-    // Else, if the size of the buffer is greater than the width of the next
-    // character, then there is multiple line breaks to deal with.
-    else if (newLines.size > width) {
-      // Skip the first one to "collapse" the line breaks
-      newLines.skipNewLine()
-      // Eat the rest of the line breaks into the content buffer
-      while (newLines.isNotEmpty)
-        into.claimNewLine(newLines)
+  else if (newLines.isLineFeedOrCarriageReturn()) {
+    if (newLines.size == 1) {
+      into.push(A_SPACE)
+      newLines.clear()
+      pos.incLine()
+    } else {
+      newLines.skipNewLine(pos)
+      while (newLines.size > 0)
+        into.claimNewLine(newLines, pos)
     }
+  }
+
+  else if (newLines.isLineOrParagraphSeparator()) {
+    if (newLines.size == 3) {
+      into.push(A_SPACE)
+      newLines.clear()
+      pos.incLine()
+    } else {
+      newLines.skipNewLine(pos)
+      while (newLines.size > 0)
+        into.claimNewLine(newLines, pos)
+    }
+  }
+
+  else if (newLines.isNotEmpty) {
+    throw IllegalStateException(
+      "collapseNewLinesInto(UByteBuffer, UByteBuffer, SourcePositionTracker) called on a newLines buffer containing " +
+        "one or more non-newline characters"
+    )
   }
 }
 

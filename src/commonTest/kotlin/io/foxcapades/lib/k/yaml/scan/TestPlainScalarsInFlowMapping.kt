@@ -148,9 +148,9 @@ class TestPlainScalarsInFlowMapping {
     token = scanner.nextToken()
 
     assertIs<YAMLTokenScalarPlain>(token)
-    assertEquals("this is\na\n\nkey", token.value.toString())
-    assertEquals(SourcePosition(1u, 0u, 1u), token.start)
-    assertEquals(SourcePosition(17u, 6u, 3u), token.end)
+    assertEquals(expectedKey, token.value.toString())
+    assertEquals(expectedKeyStart, token.start)
+    assertEquals(expectedKeyEnd, token.end)
 
     // The fourth token (mapping value indicator)
     assertTrue(scanner.hasNextToken)
