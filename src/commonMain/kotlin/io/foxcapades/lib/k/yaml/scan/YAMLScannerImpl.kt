@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.YAMLScanner
+import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.token.YAMLToken
@@ -10,7 +10,7 @@ import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
 
 @Suppress("NOTHING_TO_INLINE")
-internal class YAMLScannerImpl : YAMLScanner {
+internal class YAMLScannerImpl : YAMLStreamTokenizer {
 
   internal val position = SourcePositionTracker()
   internal var streamStartProduced = false

@@ -30,6 +30,9 @@ internal fun YAMLScannerImpl.fetchLiteralScalar(
 
       else {
         if (this.indent >= keepIndentAfter) {
+          while (trailingNewLines.isNotEmpty)
+            scalarContent.claimNewLine(trailingNewLines)
+
           scalarContent.claimASCII(this.reader, this.position)
           endPosition.become(this.position)
         } else {

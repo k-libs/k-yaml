@@ -74,8 +74,15 @@ internal fun YAMLScannerImpl.skipToNextToken() {
           indent++
       }
 
-      haveContentOnThisLine && reader.isTab() -> {
-        skipASCII(reader, position)
+      reader.isTab() -> {
+        if (haveContentOnThisLine) {
+          skipASCII(reader, position)
+        } else if (inFlow) {
+          skipASCII(reader, position)
+          indent++
+        } else {
+          break
+        }
       }
 
       reader.isAnyBreak() -> {

@@ -42,7 +42,7 @@ class TestSpecExamples : ScannerTest() {
 
     //   ? sky
     //   : blue
-    scanner.testMappingKey(2u, SourcePosition(33u, 4u, 2u))
+    scanner.expectMappingKey(2u, SourcePosition(33u, 4u, 2u))
     scanner.expectPlainScalar("sky", 2u, SourcePosition(35u, 4u, 4u))
     scanner.expectMappingValue(2u, SourcePosition(41u, 5u, 2u))
     scanner.expectPlainScalar("blue", 2u, SourcePosition(43u, 5u, 4u))
@@ -70,7 +70,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectFlowItemSeparator(SourcePosition(15u, 0u, 15u))
     scanner.expectPlainScalar("two", 0u, SourcePosition(17u, 0u, 17u))
     scanner.expectFlowItemSeparator(SourcePosition(20u, 0u, 20u))
-    scanner.testFlowSequenceEnd(SourcePosition(22u, 0u, 22u))
+    scanner.expectFlowSequenceEnd(SourcePosition(22u, 0u, 22u))
     scanner.expectPlainScalar("mapping", 0u, SourcePosition(24u, 1u, 0u))
     scanner.expectMappingValue(0u, SourcePosition(31u, 1u, 7u))
     scanner.testFlowMappingStart(0u, SourcePosition(33u, 1u, 9u))
@@ -272,7 +272,7 @@ class TestSpecExamples : ScannerTest() {
   }
 
   @Test
-  fun testExample6_1IndentationSpaces() {
+  fun example_6_1_indentation_spaces() {
     //language=yaml
     val input = """  # Leading comment line spaces are
    # neither content nor indentation.
@@ -316,6 +316,43 @@ Not indented:
     scanner.expectFlowItemSeparator(SourcePosition(217u, 9u, 13u))
     scanner.expectComment("are neither", 2u, true, SourcePosition(222u, 9u, 18u), SourcePosition(235u, 9u, 31u))
 
-//    scanner.expectPlainScalar("Still by two", 2u, SourcePosition())
+    scanner.expectPlainScalar("Still by two", 3u, SourcePosition(239u, 10u, 3u), SourcePosition(251u, 10u, 15u))
+    scanner.expectComment("content nor", 3u, true, SourcePosition(254u, 10u, 18u), SourcePosition(267u, 10u, 31u))
+
+    scanner.expectFlowSequenceEnd(SourcePosition(272u, 11u, 4u))
+    scanner.expectComment("indentation.", 4u, true, SourcePosition(286u, 11u, 18u), SourcePosition(300u, 11u, 32u))
+
+    scanner.expectStreamEnd(SourcePosition(300u, 11u, 32u))
+  }
+
+  @Test
+  fun example_6_2_indentation_indicators() {
+    //language=yaml
+    val input = """? a
+: -	b
+  -  -	tc
+     - d"""
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+
+    scanner.expectMappingKey(0u, SourcePosition(0u, 0u, 0u))
+    scanner.expectPlainScalar("a", 0u, SourcePosition(2u, 0u, 2u), SourcePosition(3u, 0u, 3u))
+
+    scanner.expectMappingValue(0u, SourcePosition(4u, 1u, 0u))
+
+    scanner.expectSequenceEntry(2u, SourcePosition(6u, 1u, 0u))
+    scanner.expectPlainScalar("b", 2u, SourcePosition(8u, 1u, 4u), SourcePosition(9u, 1u, 5u))
+
+    scanner.expectSequenceEntry(2u, SourcePosition(12u, 2u, 2u))
+
+    scanner.expectSequenceEntry(5u, SourcePosition(15u, 2u, 5u))
+    scanner.expectPlainScalar("c", 5u, SourcePosition(17u, 2u, 7u), SourcePosition(18u, 2u, 8u))
+
+    scanner.expectSequenceEntry(5u, SourcePosition(24u, 3u, 5u))
+    scanner.expectPlainScalar("d", 5u, SourcePosition(26u, 3u, 7u), SourcePosition(27u, 3u, 8u))
+
+    scanner.expectStreamEnd(SourcePosition(27u, 3u, 8u))
   }
 }

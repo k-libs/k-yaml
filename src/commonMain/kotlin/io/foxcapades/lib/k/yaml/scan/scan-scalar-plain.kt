@@ -93,6 +93,8 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
   val bTailNL     = this.trailingNLBuffer
   val endPosition = this.position.copy()
 
+  var lastWasBlankOrNewLine = false
+
   bContent.clear()
   bTailWS.clear()
   bTailNL.clear()
@@ -103,29 +105,40 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
     this.reader.cache(1)
 
     when {
-      this.reader.isBlank() -> {
+      this.reader.isBlank()                     -> {
         if (this.haveContentOnThisLine)
           bTailWS.claimASCII(this.reader, this.position)
         else
           skipASCII(this.reader, this.position)
+
+        lastWasBlankOrNewLine = true
       }
 
-      this.reader.isAnyBreak() -> {
+      this.reader.isAnyBreak()                  -> {
         bTailWS.clear()
         bTailNL.claimNewLine(this.reader)
         this.haveContentOnThisLine = false
+        lastWasBlankOrNewLine = true
       }
 
-      this.reader.isComma()
+         this.reader.isComma()
       || this.reader.isSquareClose()
       || this.reader.isEOF()
-      -> {
+                                                -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
-        this.haveContentOnThisLine = true
+        haveContentOnThisLine = true
+        lastWasBlankOrNewLine = false
         return
       }
 
-      else -> {
+      lastWasBlankOrNewLine && reader.isPound() ->{
+        emitPlainScalar(bContent, indent, start, endPosition.mark())
+        haveContentOnThisLine = true
+        lastWasBlankOrNewLine = false
+        return
+      }
+
+      else                                      -> {
         while (bTailWS.isNotEmpty)
           bContent.claimASCII(bTailWS)
 
@@ -134,6 +147,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
         this.haveContentOnThisLine = true
+        lastWasBlankOrNewLine = false
       }
     }
   }

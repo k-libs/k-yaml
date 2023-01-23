@@ -1,7 +1,7 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.YAMLEncoding
-import io.foxcapades.lib.k.yaml.YAMLScanner
+import io.foxcapades.lib.k.yaml.YAMLTokenScanner
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.token.*
@@ -14,13 +14,13 @@ import kotlin.test.assertTrue
 typealias WarningChecker = (warnings: Array<SourceWarning>) -> Unit
 
 open class ScannerTest {
-  protected fun makeScanner(input: ByteArray): YAMLScanner =
+  protected fun makeScanner(input: ByteArray): YAMLTokenScanner =
     YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input)))
 
-  protected fun makeScanner(input: String): YAMLScanner =
+  protected fun makeScanner(input: String): YAMLTokenScanner =
     YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
 
-  protected fun YAMLScanner.expectStreamStart(
+  protected fun YAMLTokenScanner.expectStreamStart(
     expectedEncoding: YAMLEncoding   = YAMLEncoding.UTF8,
     expectedStart:    SourcePosition = SourcePosition(0u, 0u, 0u),
     expectedEnd:      SourcePosition = expectedStart,
@@ -35,7 +35,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectStreamEnd(
+  protected fun YAMLTokenScanner.expectStreamEnd(
     expectedStart:    SourcePosition,
     expectedEnd:      SourcePosition = expectedStart,
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
@@ -48,22 +48,21 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testMappingKey(
+  protected fun YAMLTokenScanner.expectMappingKey(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenMappingKey>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedEnd, it.end)
+      assertEquals(expectedStart.copy(1, 0, 1), it.end)
       warningChecker(it.warnings)
     }
   }
 
-  protected fun YAMLScanner.expectMappingValue(
+  protected fun YAMLTokenScanner.expectMappingValue(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
@@ -77,9 +76,9 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectSequenceEntry(
+  protected fun YAMLTokenScanner.expectSequenceEntry(
     expectedIndent: UInt,
-    expectedStart: SourcePosition,
+    expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
     assertTrue(this.hasNextToken)
@@ -91,7 +90,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectFlowSequenceStart(
+  protected fun YAMLTokenScanner.expectFlowSequenceStart(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
     expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
@@ -106,20 +105,19 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testFlowSequenceEnd(
+  protected fun YAMLTokenScanner.expectFlowSequenceEnd(
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenFlowSequenceEnd>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedEnd, it.end)
+      assertEquals(expectedStart.copy(1, 0, 1), it.end)
       warningChecker(it.warnings)
     }
   }
 
-  protected fun YAMLScanner.testFlowMappingStart(
+  protected fun YAMLTokenScanner.testFlowMappingStart(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
     expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
@@ -134,7 +132,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testFlowMappingEnd(
+  protected fun YAMLTokenScanner.testFlowMappingEnd(
     expectedStart:  SourcePosition,
     expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
@@ -147,7 +145,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectFlowItemSeparator(
+  protected fun YAMLTokenScanner.expectFlowItemSeparator(
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
@@ -159,7 +157,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testAnchor(
+  protected fun YAMLTokenScanner.testAnchor(
     expectedAnchor: String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -179,7 +177,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testAlias(
+  protected fun YAMLTokenScanner.testAlias(
     expectedAlias:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -199,7 +197,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testTag(
+  protected fun YAMLTokenScanner.testTag(
     expectedHandle: String,
     expectedSuffix: String,
     expectedStart:  SourcePosition,
@@ -219,7 +217,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectPlainScalar(
+  protected fun YAMLTokenScanner.expectPlainScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -236,7 +234,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectLiteralScalar(
+  protected fun YAMLTokenScanner.expectLiteralScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -253,7 +251,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testFoldedScalar(
+  protected fun YAMLTokenScanner.testFoldedScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -270,7 +268,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testSingleQuotedScalar(
+  protected fun YAMLTokenScanner.testSingleQuotedScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -287,7 +285,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectDoubleQuotedScalar(
+  protected fun YAMLTokenScanner.expectDoubleQuotedScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -304,7 +302,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.expectComment(
+  protected fun YAMLTokenScanner.expectComment(
     expectedValue:    String,
     expectedIndent:   UInt,
     expectedTrailing: Boolean,
@@ -323,7 +321,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testYAMLDirective(
+  protected fun YAMLTokenScanner.testYAMLDirective(
     expectedMajor:  UInt,
     expectedMinor:  UInt,
     expectedStart:  SourcePosition,
@@ -341,7 +339,7 @@ open class ScannerTest {
   }
 
 
-  protected fun YAMLScanner.testDocumentStart(
+  protected fun YAMLTokenScanner.testDocumentStart(
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
@@ -353,7 +351,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLScanner.testDocumentEnd(
+  protected fun YAMLTokenScanner.testDocumentEnd(
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {

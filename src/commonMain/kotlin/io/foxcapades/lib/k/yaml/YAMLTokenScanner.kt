@@ -1,10 +1,13 @@
 package io.foxcapades.lib.k.yaml
 
 import io.foxcapades.lib.k.yaml.token.YAMLToken
-import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
-interface YAMLScanner {
+interface YAMLTokenScanner {
   val hasNextToken: Boolean
 
   fun nextToken(): YAMLToken
 }
+
+interface YAMLStreamTokenizer : YAMLTokenScanner
+
+interface YAMLTokenSource : YAMLTokenScanner

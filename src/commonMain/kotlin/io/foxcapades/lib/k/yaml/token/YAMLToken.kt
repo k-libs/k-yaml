@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.token
 
-import io.foxcapades.lib.k.yaml.YAMLScanner
+import io.foxcapades.lib.k.yaml.YAMLTokenScanner
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
@@ -8,7 +8,7 @@ import io.foxcapades.lib.k.yaml.warn.SourceWarning
  * # YAML Token
  *
  * Represents a generic YAML token which is to be emitted by the YAML stream
- * scanner & tokenizer [YAMLScanner].
+ * scanner & tokenizer [YAMLTokenScanner].
  *
  * This is a sealed interface, meaning comprehensive when switches may be
  * constructed on the type of value implementing this interface.
@@ -29,7 +29,7 @@ sealed interface YAMLToken {
   val end: SourcePosition
 
   /**
-   * Warnings kicked up by the [YAMLScanner] while parsing this token.
+   * Warnings kicked up by the [YAMLTokenScanner] while parsing this token.
    */
   val warnings: Array<SourceWarning>
 }
