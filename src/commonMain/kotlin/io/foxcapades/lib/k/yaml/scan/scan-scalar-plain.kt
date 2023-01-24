@@ -394,5 +394,5 @@ private inline fun YAMLScannerImpl.emitPlainScalar(
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()
 ) {
-  this.tokens.push(YAMLTokenScalarPlain(UByteString(value.popToArray()), indent, start, end, getWarnings()))
+  this.tokens.push(YAMLTokenScalarPlain(UByteString(value.popToArray()), indent, start, end, popWarnings()))
 }

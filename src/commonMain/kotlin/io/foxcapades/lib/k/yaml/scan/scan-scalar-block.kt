@@ -89,7 +89,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
             true,
             commentStart,
             this.position.mark(modIndex = -trailingBlanks.size, modColumn = -trailingBlanks.size),
-            this.getWarnings()
+            this.popWarnings()
           )
 
           break

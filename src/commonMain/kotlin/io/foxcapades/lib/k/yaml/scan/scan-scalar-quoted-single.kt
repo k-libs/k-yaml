@@ -87,4 +87,4 @@ private inline fun YAMLScannerImpl.newSingleQuotedStringToken(
   start:  SourcePosition,
   end:    SourcePosition = position.mark()
 ) =
-  YAMLTokenScalarQuotedSingle(UByteString(value), start, end, indent, getWarnings())
+  YAMLTokenScalarQuotedSingle(UByteString(value), start, end, indent, popWarnings())

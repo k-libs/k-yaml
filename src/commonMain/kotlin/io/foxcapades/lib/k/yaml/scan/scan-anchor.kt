@@ -46,5 +46,5 @@ internal fun YAMLScannerImpl.fetchAnchorToken() {
     this.reader.cache(1)
   }
 
-  this.tokens.push(YAMLTokenAnchor(UByteString(anchorName.popToArray()), start, this.position.mark(), this.indent, this.getWarnings()))
+  this.tokens.push(YAMLTokenAnchor(UByteString(anchorName.popToArray()), start, this.position.mark(), this.indent, this.popWarnings()))
 }

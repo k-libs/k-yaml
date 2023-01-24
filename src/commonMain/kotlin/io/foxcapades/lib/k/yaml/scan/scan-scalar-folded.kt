@@ -168,7 +168,7 @@ internal fun YAMLScannerImpl.fetchFoldedScalar(
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 internal inline fun YAMLScannerImpl.emitEmptyFoldedScalar(indent: UInt, start: SourcePosition) {
-  this.tokens.push(YAMLTokenScalarFolded(UByteString(UByteArray(0)), indent, start, start, this.getWarnings()))
+  this.tokens.push(YAMLTokenScalarFolded(UByteString(UByteArray(0)), indent, start, start, this.popWarnings()))
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -184,6 +184,6 @@ internal inline fun YAMLScannerImpl.finishFoldingScalar(
     actualIndent,
     start,
     endPosition.mark(),
-    this.getWarnings()
+    this.popWarnings()
   ))
 }

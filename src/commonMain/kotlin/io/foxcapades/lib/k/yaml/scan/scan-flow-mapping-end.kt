@@ -15,5 +15,5 @@ internal fun YAMLScannerImpl.emitFlowMappingEndToken(start: SourcePosition, end:
   if (inFlowMapping)
     flows.pop()
 
-  tokens.push(YAMLTokenFlowMappingEnd(start, end, getWarnings()))
+  tokens.push(YAMLTokenFlowMappingEnd(start, end, popWarnings()))
 }

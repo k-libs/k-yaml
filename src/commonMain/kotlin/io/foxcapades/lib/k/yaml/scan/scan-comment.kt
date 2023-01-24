@@ -97,6 +97,6 @@ private inline fun YAMLScannerImpl.emitCommentToken(
     trailing,
     start,
     end,
-    this.getWarnings(),
+    this.popWarnings(),
   ))
 }

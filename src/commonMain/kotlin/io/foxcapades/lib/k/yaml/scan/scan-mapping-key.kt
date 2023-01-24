@@ -8,7 +8,7 @@ internal fun YAMLScannerImpl.fetchMappingKeyIndicatorToken() {
 
   skipASCII(this.reader, this.position)
 
-  this.tokens.push(YAMLTokenMappingKey(start, this.position.mark(), this.indent, this.getWarnings()))
+  this.tokens.push(YAMLTokenMappingKey(start, this.position.mark(), this.indent, this.popWarnings()))
 
   if (!lineContentIndicator.haveHardContent) {
     lineContentIndicator = LineContentIndicatorBlanksAndIndicators

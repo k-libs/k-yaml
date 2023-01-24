@@ -8,5 +8,5 @@ internal fun YAMLScannerImpl.fetchFlowSequenceStartToken() {
   skipASCII(this.reader, this.position)
   lineContentIndicator = LineContentIndicatorContent
   this.flows.push(FlowTypeSequence)
-  this.tokens.push(YAMLTokenFlowSequenceStart(start, this.position.mark(), this.indent, this.getWarnings()))
+  this.tokens.push(YAMLTokenFlowSequenceStart(start, this.position.mark(), this.indent, this.popWarnings()))
 }

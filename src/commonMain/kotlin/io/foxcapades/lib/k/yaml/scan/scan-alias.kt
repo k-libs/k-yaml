@@ -53,5 +53,5 @@ internal fun YAMLScannerImpl.fetchAliasToken() {
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 private inline fun YAMLScannerImpl.emitAlias(alias: UByteArray, start: SourcePosition, end: SourcePosition) {
-  this.tokens.push(YAMLTokenAlias(UByteString(alias), start, end, this.indent, getWarnings()))
+  this.tokens.push(YAMLTokenAlias(UByteString(alias), start, end, this.indent, popWarnings()))
 }

@@ -13,5 +13,5 @@ internal fun YAMLScannerImpl.fetchFlowSequenceEndToken() {
   if (this.inFlowSequence)
     this.flows.pop()
 
-  this.tokens.push(YAMLTokenFlowSequenceEnd(start, this.position.mark(), this.getWarnings()))
+  this.tokens.push(YAMLTokenFlowSequenceEnd(start, this.position.mark(), this.popWarnings()))
 }

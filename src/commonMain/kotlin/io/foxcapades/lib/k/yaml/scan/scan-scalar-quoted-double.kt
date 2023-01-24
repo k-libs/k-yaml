@@ -253,7 +253,7 @@ private inline fun YAMLScannerImpl.newDoubleQuotedStringToken(
   start: SourcePosition,
   end: SourcePosition
 ) =
-  YAMLTokenScalarQuotedDouble(UByteString(value), start, end, indent, getWarnings())
+  YAMLTokenScalarQuotedDouble(UByteString(value), start, end, indent, popWarnings())
 
 private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuffer) {
   skipASCII(this.reader, this.position)

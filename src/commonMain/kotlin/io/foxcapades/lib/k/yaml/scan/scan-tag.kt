@@ -197,4 +197,4 @@ private inline fun YAMLScannerImpl.emitTagToken(
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()
 ) =
-  this.tokens.push(YAMLTokenTag(UByteString(handle), UByteString(suffix), start, end, this.getWarnings()))
+  this.tokens.push(YAMLTokenTag(UByteString(handle), UByteString(suffix), start, end, this.popWarnings()))

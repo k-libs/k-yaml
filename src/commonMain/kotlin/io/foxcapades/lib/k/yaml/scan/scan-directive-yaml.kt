@@ -241,4 +241,4 @@ private inline fun YAMLScannerImpl.newYAMLDirectiveToken(
   start: SourcePosition,
   end:   SourcePosition,
 ) =
-  YAMLTokenDirectiveYAML(major, minor, start, end, getWarnings())
+  YAMLTokenDirectiveYAML(major, minor, start, end, popWarnings())

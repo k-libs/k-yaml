@@ -24,11 +24,16 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
 
   internal var indent = 0u
 
-  // region Context Indicators
-
-  // region Flows
-
   internal val flows = ByteStack(4)
+
+  internal var version = YAMLVersion.VERSION_1_2
+
+  internal val reader: BufferedUTFStreamReader
+
+  internal val contentBuffer1   = UByteBuffer(1024)
+  internal val contentBuffer2   = UByteBuffer(1024)
+  internal val trailingWSBuffer = UByteBuffer(16)
+  internal val trailingNLBuffer = UByteBuffer(4)
 
   internal inline val inFlow: Boolean
     get() = flows.isNotEmpty
@@ -39,29 +44,11 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
   internal inline val inFlowMapping
     get() = inFlow && flows.peek() == FlowTypeMapping
 
-  // endregion Flows
-
   internal val atStartOfLine: Boolean
     get() = position.column == 0u
 
-  // endregion Context Indicators
-
   internal inline val haveMoreCharactersAvailable
     get() = !reader.atEOF || reader.isNotEmpty
-
-  internal var version = YAMLVersion.VERSION_1_2
-
-  internal val reader: BufferedUTFStreamReader
-
-  // region Reusable Buffers
-
-  internal val contentBuffer1   = UByteBuffer(1024)
-  internal val contentBuffer2   = UByteBuffer(1024)
-  internal val trailingWSBuffer = UByteBuffer(16)
-  internal val trailingNLBuffer = UByteBuffer(4)
-
-  // endregion Reusable Buffers
-
 
   constructor(reader: BufferedUTFStreamReader) {
     this.reader = reader
@@ -132,7 +119,6 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
     }
   }
 
-
   // region Warning Helpers
 
   internal fun warn(
@@ -144,7 +130,7 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
     return end
   }
 
-  internal fun getWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
+  internal fun popWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
 
   // endregion Warning Helpers
 }

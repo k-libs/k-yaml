@@ -6,5 +6,5 @@ internal fun YAMLScannerImpl.fetchStreamStartToken() {
   reader.cache(1)
   streamStartProduced = true
   val mark = position.mark()
-  tokens.push(YAMLTokenStreamStart(reader.encoding, mark, mark, getWarnings()))
+  tokens.push(YAMLTokenStreamStart(reader.encoding, mark, mark, popWarnings()))
 }

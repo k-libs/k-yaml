@@ -11,4 +11,4 @@ internal fun YAMLScannerImpl.fetchStreamEndToken() {
 
 @Suppress("NOTHING_TO_INLINE")
 private inline fun YAMLScannerImpl.newStreamEndToken(start: SourcePosition, end: SourcePosition) =
-  YAMLTokenStreamEnd(start, end, getWarnings())
+  YAMLTokenStreamEnd(start, end, popWarnings())

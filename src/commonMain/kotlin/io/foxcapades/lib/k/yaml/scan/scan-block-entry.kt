@@ -30,4 +30,4 @@ internal inline fun YAMLScannerImpl.emitSequenceEntryIndicator(
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()
 )
-  = this.tokens.push(YAMLTokenSequenceEntry(indent, start, end, this.getWarnings()))
+  = this.tokens.push(YAMLTokenSequenceEntry(indent, start, end, this.popWarnings()))

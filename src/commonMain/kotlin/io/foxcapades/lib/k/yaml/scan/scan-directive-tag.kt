@@ -174,4 +174,4 @@ private inline fun YAMLScannerImpl.newTagDirectiveToken(
   start:  SourcePosition,
   end:    SourcePosition,
 ) =
-  YAMLTokenDirectiveTag(UByteString(handle), UByteString(prefix), start, end, getWarnings())
+  YAMLTokenDirectiveTag(UByteString(handle), UByteString(prefix), start, end, popWarnings())
