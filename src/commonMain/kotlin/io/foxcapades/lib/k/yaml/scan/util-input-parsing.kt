@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.util.asDecimalDigit
 import io.foxcapades.lib.k.yaml.util.isDecimalDigit
 
-internal fun YAMLScannerImpl.parseUByte(isNewLine: Boolean = false): UByte {
+internal fun YAMLStreamTokenizerImpl.parseUByte(isNewLine: Boolean = false): UByte {
   reader.cache(1)
 
   if (isNewLine)
@@ -15,7 +15,7 @@ internal fun YAMLScannerImpl.parseUByte(isNewLine: Boolean = false): UByte {
   return reader.pop()
 }
 
-internal fun YAMLScannerImpl.parseUInt(): UInt {
+internal fun YAMLStreamTokenizerImpl.parseUInt(): UInt {
   val intStart = position.mark()
   var intValue = 0u
   var addValue: UInt

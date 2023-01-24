@@ -7,7 +7,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.util.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.parseBlockScalar(isLiteral: Boolean) {
+internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
   val startMark        = this.position.mark()
   var minIndent        = if (this.atStartOfLine) 0u else this.indent + 1u
   val trailingNewLines = this.trailingNLBuffer

@@ -4,14 +4,14 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowMappingEnd
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 
-internal fun YAMLScannerImpl.parseFlowMappingEndToken() {
+internal fun YAMLStreamTokenizerImpl.parseFlowMappingEndToken() {
   val start = position.mark()
   skipASCII(reader, position)
   lineContentIndicator = LineContentIndicatorContent
   emitFlowMappingEndToken(start, position.mark())
 }
 
-internal fun YAMLScannerImpl.emitFlowMappingEndToken(start: SourcePosition, end: SourcePosition) {
+internal fun YAMLStreamTokenizerImpl.emitFlowMappingEndToken(start: SourcePosition, end: SourcePosition) {
   if (inFlowMapping)
     flows.pop()
 

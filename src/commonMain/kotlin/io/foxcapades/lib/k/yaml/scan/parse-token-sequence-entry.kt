@@ -11,7 +11,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
  * @since 0.1.0
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
-internal fun YAMLScannerImpl.fetchSequenceEntryIndicator() {
+internal fun YAMLStreamTokenizerImpl.fetchSequenceEntryIndicator() {
   val start = this.position.mark()
 
   skipASCII(this.reader, this.position)
@@ -25,7 +25,7 @@ internal fun YAMLScannerImpl.fetchSequenceEntryIndicator() {
 }
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.emitSequenceEntryIndicator(
+internal inline fun YAMLStreamTokenizerImpl.emitSequenceEntryIndicator(
   indent: UInt,
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()

@@ -26,7 +26,7 @@ import io.foxcapades.lib.k.yaml.util.isDash
  * @since 0.1.0
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
-internal fun YAMLScannerImpl.parseAmbiguousDashToken() {
+internal fun YAMLStreamTokenizerImpl.parseAmbiguousDashToken() {
   // TODO:
   //   | if we are in a flow context and we encounter "- ", what the fudge do
   //   | we do with that?

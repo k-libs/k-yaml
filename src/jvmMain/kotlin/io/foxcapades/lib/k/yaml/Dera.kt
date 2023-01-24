@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml
 
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.scan.YAMLScannerImpl
+import io.foxcapades.lib.k.yaml.scan.YAMLStreamTokenizerImpl
 
 val input1 = """
 the problem is:
@@ -17,7 +17,7 @@ foo
 
 
 fun main() {
-  val scanner = YAMLScannerImpl(BufferedUTFStreamReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))))
+  val scanner = YAMLStreamTokenizerImpl(BufferedUTFStreamReader(2048, ByteArrayReader(input1.toByteArray(Charsets.UTF_8))))
 
   while (scanner.hasNextToken)
     println(scanner.nextToken())

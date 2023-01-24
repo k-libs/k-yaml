@@ -5,7 +5,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.emitInvalidToken(
+internal inline fun YAMLStreamTokenizerImpl.emitInvalidToken(
   warning: String,
   start:   SourcePosition,
   end:     SourcePosition = this.position.mark(),
@@ -15,6 +15,6 @@ internal inline fun YAMLScannerImpl.emitInvalidToken(
 }
 
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun YAMLScannerImpl.emitInvalidToken(start: SourcePosition, end: SourcePosition) {
+internal inline fun YAMLStreamTokenizerImpl.emitInvalidToken(start: SourcePosition, end: SourcePosition) {
   this.tokens.push(YAMLTokenInvalid(start, end, this.indent, popWarnings()))
 }

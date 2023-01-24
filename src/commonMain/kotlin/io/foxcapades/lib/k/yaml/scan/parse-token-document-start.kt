@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDocumentStart
 
-internal fun YAMLScannerImpl.fetchDocumentStartToken() {
+internal fun YAMLStreamTokenizerImpl.fetchDocumentStartToken() {
   val start = position.mark()
   skipASCII(this.reader, this.position, 3)
   this.lineContentIndicator = LineContentIndicatorContent

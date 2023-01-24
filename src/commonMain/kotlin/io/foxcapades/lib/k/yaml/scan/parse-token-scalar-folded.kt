@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
 
-internal fun YAMLScannerImpl.fetchFoldedScalar(
+internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
   start: SourcePosition,
   chompMode: BlockScalarChompMode,
   indentHint: UInt,
@@ -167,13 +167,13 @@ internal fun YAMLScannerImpl.fetchFoldedScalar(
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-internal inline fun YAMLScannerImpl.emitEmptyFoldedScalar(indent: UInt, start: SourcePosition) {
+internal inline fun YAMLStreamTokenizerImpl.emitEmptyFoldedScalar(indent: UInt, start: SourcePosition) {
   this.tokens.push(YAMLTokenScalarFolded(UByteString(UByteArray(0)), indent, start, start, this.popWarnings()))
 }
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-internal inline fun YAMLScannerImpl.finishFoldingScalar(
+internal inline fun YAMLStreamTokenizerImpl.finishFoldingScalar(
   scalarContent:    UByteBuffer,
   actualIndent:     UInt,
   start:            SourcePosition,

@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
 import io.foxcapades.lib.k.yaml.util.*
 
-internal fun YAMLScannerImpl.parsePlainScalar() {
+internal fun YAMLStreamTokenizerImpl.parsePlainScalar() {
   // TODO: catch the case where the first character in the plain scalar is a tab
   //       because that may be illegal
   when {
@@ -14,7 +14,7 @@ internal fun YAMLScannerImpl.parsePlainScalar() {
   }
 }
 
-private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
+private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowMapping() {
   val start       = this.position.mark()
   val indent      = this.indent
   val bContent    = this.contentBuffer1
@@ -85,7 +85,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
   }
 }
 
-private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
+private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowSequence() {
   val start       = this.position.mark()
   val indent      = this.indent
   val bContent    = this.contentBuffer1
@@ -155,7 +155,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
 
 
 
-private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
+private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
   val start       = this.position.mark()
   val tokenIndent = this.indent
   val bConfirmed  = this.contentBuffer1
@@ -388,7 +388,7 @@ private fun collapseNewLinesInto(into: UByteBuffer, newLines: UByteBuffer, pos: 
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.emitPlainScalar(
+private inline fun YAMLStreamTokenizerImpl.emitPlainScalar(
   value:  UByteBuffer,
   indent: UInt,
   start:  SourcePosition,

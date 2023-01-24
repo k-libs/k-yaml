@@ -10,11 +10,31 @@ import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
 
 @Suppress("NOTHING_TO_INLINE")
-internal class YAMLScannerImpl : YAMLStreamTokenizer {
+internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
 
-  internal val position = SourcePositionTracker()
+  /**
+   * Whether the stream start token has yet been emitted.
+   */
   internal var streamStartProduced = false
+
+  /**
+   * Whether the stream end token has yet been emitted.
+   */
   internal var streamEndProduced = false
+
+  /**
+   * Current "cursor" position tracker in the source stream.
+   */
+  internal val position = SourcePositionTracker()
+
+  /**
+   * Warnings that have been emitted by parser functions that have not yet been
+   * claimed.
+   *
+   * This queue will generally be empty between [nextToken] calls as the token
+   * emitting process involves grabbing all the warnings that were kicked up
+   * while parsing the token being emitted.
+   */
   internal val warnings = Queue<SourceWarning>(4)
 
   internal val tokens = Queue<YAMLToken>(4)

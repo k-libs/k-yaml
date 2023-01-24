@@ -37,7 +37,7 @@ import io.foxcapades.lib.k.yaml.util.test
  * @since 0.1.0
  * @author Elizabeth Paige Harper
  */
-internal fun YAMLScannerImpl.parseAmbiguousPercent() {
+internal fun YAMLStreamTokenizerImpl.parseAmbiguousPercent() {
   // Record the start position
   val start = position.mark()
 

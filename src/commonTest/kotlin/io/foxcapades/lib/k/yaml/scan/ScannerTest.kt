@@ -15,10 +15,10 @@ typealias WarningChecker = (warnings: Array<SourceWarning>) -> Unit
 
 open class ScannerTest {
   protected fun makeScanner(input: ByteArray): YAMLTokenScanner =
-    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input)))
+    YAMLStreamTokenizerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input)))
 
   protected fun makeScanner(input: String): YAMLTokenScanner =
-    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
+    YAMLStreamTokenizerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
 
   protected fun YAMLTokenScanner.expectStreamStart(
     expectedEncoding: YAMLEncoding   = YAMLEncoding.UTF8,

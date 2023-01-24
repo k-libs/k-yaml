@@ -10,7 +10,7 @@ import kotlin.test.*
 class TestDoubleQuotedStringHexEscapeSequences {
 
   private fun makeScanner(input: String) =
-    YAMLScannerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
+    YAMLStreamTokenizerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
 
   @Test
   fun invalidHexSequenceDueToEOF1() {

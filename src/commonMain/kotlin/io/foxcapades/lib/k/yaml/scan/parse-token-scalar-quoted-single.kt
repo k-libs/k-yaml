@@ -5,7 +5,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedSingle
 import io.foxcapades.lib.k.yaml.util.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.parseSingleQuotedStringToken() {
+internal fun YAMLStreamTokenizerImpl.parseSingleQuotedStringToken() {
   contentBuffer1.clear()
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()
@@ -81,7 +81,7 @@ private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.newSingleQuotedStringToken(
+private inline fun YAMLStreamTokenizerImpl.newSingleQuotedStringToken(
   value:  UByteArray,
   indent: UInt,
   start:  SourcePosition,

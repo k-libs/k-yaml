@@ -6,7 +6,7 @@ import io.foxcapades.lib.k.yaml.util.*
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.parseDoubleQuotedStringToken() {
+internal fun YAMLStreamTokenizerImpl.parseDoubleQuotedStringToken() {
   contentBuffer1.clear()
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()
@@ -87,7 +87,7 @@ private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
 }
 
 
-private fun YAMLScannerImpl.readPossibleEscapeSequence(
+private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
   into:     UByteBuffer,
   nlBuffer: UByteBuffer,
   wsBuffer: UByteBuffer,
@@ -247,7 +247,7 @@ private fun YAMLScannerImpl.readPossibleEscapeSequence(
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.newDoubleQuotedStringToken(
+private inline fun YAMLStreamTokenizerImpl.newDoubleQuotedStringToken(
   value: UByteArray,
   indent: UInt,
   start: SourcePosition,
@@ -255,7 +255,7 @@ private inline fun YAMLScannerImpl.newDoubleQuotedStringToken(
 ) =
   YAMLTokenScalarQuotedDouble(UByteString(value), start, end, indent, popWarnings())
 
-private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuffer) {
+private fun YAMLStreamTokenizerImpl.readHexEscape(start: SourcePosition, into: UByteBuffer) {
   skipASCII(this.reader, this.position)
   reader.cache(2)
 
@@ -282,7 +282,7 @@ private fun YAMLScannerImpl.readHexEscape(start: SourcePosition, into: UByteBuff
   }
 }
 
-private fun YAMLScannerImpl.readSmallUnicodeEscape(start: SourcePosition, into: UByteBuffer) {
+private fun YAMLStreamTokenizerImpl.readSmallUnicodeEscape(start: SourcePosition, into: UByteBuffer) {
   skipASCII(this.reader, this.position)
   reader.cache(4)
 
@@ -324,7 +324,7 @@ private fun YAMLScannerImpl.readSmallUnicodeEscape(start: SourcePosition, into: 
   skipASCII(this.reader, this.position, 4)
 }
 
-private fun YAMLScannerImpl.readBigUnicodeEscape(start: SourcePosition, into: UByteBuffer) {
+private fun YAMLStreamTokenizerImpl.readBigUnicodeEscape(start: SourcePosition, into: UByteBuffer) {
   skipASCII(this.reader, this.position)
   reader.cache(8)
 

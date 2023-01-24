@@ -13,7 +13,7 @@ import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.parseAnchorToken() {
+internal fun YAMLStreamTokenizerImpl.parseAnchorToken() {
   val anchorName = this.contentBuffer1
   val start    = this.position.mark()
 

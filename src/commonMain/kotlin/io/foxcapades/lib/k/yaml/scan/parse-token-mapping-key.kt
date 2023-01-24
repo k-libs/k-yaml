@@ -3,7 +3,7 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.token.YAMLTokenMappingKey
 
 
-internal fun YAMLScannerImpl.fetchMappingKeyIndicatorToken() {
+internal fun YAMLStreamTokenizerImpl.fetchMappingKeyIndicatorToken() {
   val start = this.position.mark()
 
   skipASCII(this.reader, this.position)

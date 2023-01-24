@@ -8,7 +8,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenTag
 import io.foxcapades.lib.k.yaml.util.*
 
 
-internal fun YAMLScannerImpl.parseTagToken() {
+internal fun YAMLStreamTokenizerImpl.parseTagToken() {
   val startMark = position.mark()
 
   // Skip the first `!`
@@ -39,12 +39,12 @@ internal fun YAMLScannerImpl.parseTagToken() {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.fetchNonSpecificTagToken(startMark: SourcePosition) {
+private fun YAMLStreamTokenizerImpl.fetchNonSpecificTagToken(startMark: SourcePosition) {
   emitTagToken(StrPrimaryTagPrefix, StrEmpty, startMark)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePosition) {
+private fun YAMLStreamTokenizerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePosition) {
   // Clear our reusable buffer just in case some goober left something in it.
   contentBuffer1.clear()
 
@@ -96,12 +96,12 @@ private fun YAMLScannerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePositi
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.fetchPrimaryTagToken(startMark: SourcePosition, suffix: UByteArray) {
+private fun YAMLStreamTokenizerImpl.fetchPrimaryTagToken(startMark: SourcePosition, suffix: UByteArray) {
   emitTagToken(StrPrimaryTagPrefix, suffix, startMark)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.fetchLocalTagToken(startMark: SourcePosition, handle: UByteArray) {
+private fun YAMLStreamTokenizerImpl.fetchLocalTagToken(startMark: SourcePosition, handle: UByteArray) {
   // !foo!bar
   // we've seen `!foo!`
 
@@ -137,7 +137,7 @@ private fun YAMLScannerImpl.fetchLocalTagToken(startMark: SourcePosition, handle
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
+private fun YAMLStreamTokenizerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
   contentBuffer1.clear()
 
   skipASCII(this.reader, this.position)
@@ -165,7 +165,7 @@ private fun YAMLScannerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLScannerImpl.fetchVerbatimTagToken(startMark: SourcePosition) {
+private fun YAMLStreamTokenizerImpl.fetchVerbatimTagToken(startMark: SourcePosition) {
   contentBuffer1.clear()
 
   contentBuffer1.push(A_EXCLAIM)
@@ -191,7 +191,7 @@ private fun YAMLScannerImpl.fetchVerbatimTagToken(startMark: SourcePosition) {
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.emitTagToken(
+private inline fun YAMLStreamTokenizerImpl.emitTagToken(
   handle: UByteArray,
   suffix: UByteArray,
   start:  SourcePosition,

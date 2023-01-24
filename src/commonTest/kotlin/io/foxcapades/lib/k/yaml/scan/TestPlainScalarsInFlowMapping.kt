@@ -12,7 +12,7 @@ class TestPlainScalarsInFlowMapping {
   fun simpleFlowMapping() {
     val input = "{this is a key:this is a value}"
     val reader = BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray()))
-    val scanner = YAMLScannerImpl(reader)
+    val scanner = YAMLStreamTokenizerImpl(reader)
 
     var token: YAMLToken
 
@@ -110,7 +110,7 @@ class TestPlainScalarsInFlowMapping {
   fun simpleFlowMappingWithMultilineKey() {
     val input = "{this\nis\n\na\n\n\nkey:this is a value}"
     val reader = BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray()))
-    val scanner = YAMLScannerImpl(reader)
+    val scanner = YAMLStreamTokenizerImpl(reader)
 
     val expectedKey      = "this is\na\n\nkey"
     val expectedKeyStart = SourcePosition(1u, 0u, 1u)

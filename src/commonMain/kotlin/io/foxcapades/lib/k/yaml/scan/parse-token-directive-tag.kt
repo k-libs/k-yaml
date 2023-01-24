@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveTag
 import io.foxcapades.lib.k.yaml.util.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
+internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   // We have content on this line.
   this.lineContentIndicator = LineContentIndicatorContent
 
@@ -157,18 +157,18 @@ internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
 }
 
 @Suppress("NOTHING_TO_INLINE")
-private inline fun YAMLScannerImpl.fetchInvalidTagDirectiveToken(reason: String, start: SourcePosition) {
+private inline fun YAMLStreamTokenizerImpl.fetchInvalidTagDirectiveToken(reason: String, start: SourcePosition) {
   emitInvalidToken("malformed %TAG token: $reason", start, skipUntilCommentBreakOrEOF())
 }
 
 @Suppress("NOTHING_TO_INLINE")
-private inline fun YAMLScannerImpl.fetchIncompleteTagDirectiveToken(start: SourcePosition, end: SourcePosition) {
+private inline fun YAMLStreamTokenizerImpl.fetchIncompleteTagDirectiveToken(start: SourcePosition, end: SourcePosition) {
   emitInvalidToken("incomplete %TAG directive", start, end)
 }
 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLScannerImpl.newTagDirectiveToken(
+private inline fun YAMLStreamTokenizerImpl.newTagDirectiveToken(
   handle: UByteArray,
   prefix: UByteArray,
   start:  SourcePosition,

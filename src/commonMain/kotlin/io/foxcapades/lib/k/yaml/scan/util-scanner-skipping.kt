@@ -7,7 +7,7 @@ internal fun skipASCII(from: UByteSource, position: SourcePositionTracker, count
   position.incPosition(count.toUInt())
 }
 
-internal fun YAMLScannerImpl.skipUTF8(count: Int = 1) {
+internal fun YAMLStreamTokenizerImpl.skipUTF8(count: Int = 1) {
   reader.skipCodepoints(count)
   position.incPosition(count.toUInt())
 }
@@ -18,7 +18,7 @@ internal fun YAMLScannerImpl.skipUTF8(count: Int = 1) {
  *
  * @return The number of blank characters that were skipped.
  */
-internal fun YAMLScannerImpl.skipBlanks(): Int {
+internal fun YAMLStreamTokenizerImpl.skipBlanks(): Int {
   var out = 0
 
   reader.cache(1)
@@ -63,7 +63,7 @@ internal fun skipNewLine(from: UByteSource, position: SourcePositionTracker) {
 }
 
 
-internal fun YAMLScannerImpl.skipToNextToken() {
+internal fun YAMLStreamTokenizerImpl.skipToNextToken() {
   while (true) {
     reader.cache(1)
 
@@ -102,7 +102,7 @@ internal fun YAMLScannerImpl.skipToNextToken() {
   }
 }
 
-internal fun YAMLScannerImpl.skipUntilBlankBreakOrEOF() {
+internal fun YAMLStreamTokenizerImpl.skipUntilBlankBreakOrEOF() {
   while (true) {
     reader.cache(1)
 
@@ -170,7 +170,7 @@ internal fun YAMLScannerImpl.skipUntilBlankBreakOrEOF() {
  * @return A source position mark that is one after the last "content" character
  * in the line, excluding any trailing whitespaces.
  */
-internal fun YAMLScannerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
+internal fun YAMLStreamTokenizerImpl.skipUntilCommentBreakOrEOF(): SourcePosition {
   var trailingWhitespaceCount = 0
   val endMark: SourcePosition
 

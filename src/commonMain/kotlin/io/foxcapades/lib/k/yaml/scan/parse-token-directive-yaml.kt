@@ -19,7 +19,7 @@ import io.foxcapades.lib.k.yaml.util.*
  *
  * @param startMark Mark of the start position of the token.
  */
-internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) {
+internal fun YAMLStreamTokenizerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) {
   // We have content on this line.
   this.lineContentIndicator = LineContentIndicatorContent
 
@@ -164,7 +164,7 @@ internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) 
  * ----
  * ```
  */
-private fun YAMLScannerImpl.fetchOverflowYAMLDirectiveToken(
+private fun YAMLStreamTokenizerImpl.fetchOverflowYAMLDirectiveToken(
   tokenStartMark: SourcePosition,
   intStartMark: SourcePosition,
   isMajor:        Boolean,
@@ -209,7 +209,7 @@ private fun YAMLScannerImpl.fetchOverflowYAMLDirectiveToken(
  * create a warning highlighting that junk before queueing up an `INVALID`
  * token and returning.
  */
-private fun YAMLScannerImpl.fetchMalformedYAMLDirectiveToken(tokenStartMark: SourcePosition) {
+private fun YAMLStreamTokenizerImpl.fetchMalformedYAMLDirectiveToken(tokenStartMark: SourcePosition) {
   val junkStart = position.mark()
   val junkEnd   = skipUntilCommentBreakOrEOF()
 
@@ -217,13 +217,13 @@ private fun YAMLScannerImpl.fetchMalformedYAMLDirectiveToken(tokenStartMark: Sou
   return emitInvalidToken(tokenStartMark, junkEnd)
 }
 
-private fun YAMLScannerImpl.fetchIncompleteYAMLDirectiveToken(start: SourcePosition, end: SourcePosition) {
+private fun YAMLStreamTokenizerImpl.fetchIncompleteYAMLDirectiveToken(start: SourcePosition, end: SourcePosition) {
   version = DefaultYAMLVersion
   warn("incomplete %YAML directive; assuming YAML version $DefaultYAMLVersion", start, end)
   return emitInvalidToken(start, end)
 }
 
-private fun YAMLScannerImpl.fetchUnsupportedYAMLDirectiveToken(
+private fun YAMLStreamTokenizerImpl.fetchUnsupportedYAMLDirectiveToken(
   major: UInt,
   minor: UInt,
   start: SourcePosition,
@@ -235,7 +235,7 @@ private fun YAMLScannerImpl.fetchUnsupportedYAMLDirectiveToken(
 }
 
 @Suppress("NOTHING_TO_INLINE")
-private inline fun YAMLScannerImpl.newYAMLDirectiveToken(
+private inline fun YAMLStreamTokenizerImpl.newYAMLDirectiveToken(
   major: UInt,
   minor: UInt,
   start: SourcePosition,
