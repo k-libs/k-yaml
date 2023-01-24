@@ -143,7 +143,7 @@ class TestSpecExamples : ScannerTest() {
     // >
     //   some
     //   text
-    scanner.testFoldedScalar("some text\n", 0u, SourcePosition(33u, 3u, 8u), SourcePosition(48u, 5u, 6u))
+    scanner.expectFoldedScalar("some text\n", 0u, SourcePosition(33u, 3u, 8u), SourcePosition(48u, 5u, 6u))
 
     scanner.expectStreamEnd(SourcePosition(48u, 5u, 6u))
   }
@@ -428,5 +428,137 @@ Chomping: |
     scanner.expectStreamEnd(SourcePosition(81u, 6u, 1u))
   }
 
+  @Test
+  fun example_6_6_line_folding() {
+    val input = """>-
+  trimmed
   
+ 
+
+  as
+  space"""
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectFoldedScalar("trimmed\n\n\nas space", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(31u, 6u, 7u))
+    scanner.expectStreamEnd(SourcePosition(31u, 6u, 7u))
+  }
+
+  @Test
+  fun example_6_7_block_folding() {
+    //language=yaml
+    val input = """>
+  foo 
+ 
+  	 bar
+
+  baz
+"""
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectFoldedScalar("foo \n\n\t bar\n\nbaz\n", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(26u, 6u, 0u))
+    scanner.expectStreamEnd(SourcePosition(26u, 6u, 0u))
+  }
+
+  @Test
+  fun example_6_8_flow_folding() {
+    //language=yaml
+    val input = """"
+  foo 
+ 
+  	 bar
+
+  baz
+ """"
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectDoubleQuotedScalar(" foo\nbar\nbaz ", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(28u, 6u, 2u))
+    scanner.expectStreamEnd(SourcePosition(28u, 6u, 2u))
+  }
+
+  @Test
+  fun example_6_9_separated_comment() {
+    //language=yaml
+    val input = """key:    # Comment
+  value"""
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectPlainScalar("key", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(3u, 0u, 3u))
+    scanner.expectMappingValue(0u, SourcePosition(3u, 0u, 3u))
+    scanner.expectComment("Comment", 0u, true, SourcePosition(8u, 0u, 8u), SourcePosition(17u, 0u, 17u))
+    scanner.expectPlainScalar("value", 2u, SourcePosition(20u, 1u, 2u), SourcePosition(25u, 1u, 7u))
+    scanner.expectStreamEnd(SourcePosition(25u, 1u, 7u))
+  }
+
+  @Test
+  fun example_6_10_comment_lines() {
+    val input = """  # Comment
+   
+
+"""
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectComment("Comment", 2u, false, SourcePosition(2u, 0u, 2u), SourcePosition(11u, 0u, 11u))
+    scanner.expectStreamEnd(SourcePosition(17u, 3u, 0u))
+  }
+
+  @Test
+  fun example_6_11_multi_line_comments() {
+    //language=yaml
+    val input = """key:    # Comment
+        # lines
+  value
+
+"""
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectPlainScalar("key", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(3u, 0u, 3u))
+    scanner.expectMappingValue(0u, SourcePosition(3u, 0u, 3u))
+    scanner.expectComment("Comment", 0u, true, SourcePosition(8u, 0u, 8u), SourcePosition(17u, 0u, 17u))
+    scanner.expectComment("lines", 8u, false, SourcePosition(26u, 1u, 8u), SourcePosition(33u, 1u, 15u))
+    scanner.expectPlainScalar("value", 2u, SourcePosition(36u, 2u, 2u), SourcePosition(41u, 2u, 7u))
+    scanner.expectStreamEnd(SourcePosition(43u, 4u, 0u))
+  }
+
+  @Test
+  fun example_6_12_separation_spaces() {
+    //language=yaml
+    val input = """{ first: Sammy, last: Sosa }:
+# Statistics:
+  hr:  # Home runs
+     65
+  avg: # Average
+   0.278"""
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectFlowMappingStart(0u, SourcePosition(0u, 0u, 0u))
+    scanner.expectPlainScalar("first", 0u, SourcePosition(2u, 0u, 2u), SourcePosition(7u, 0u, 7u))
+    scanner.expectMappingValue(0u, SourcePosition(7u, 0u, 7u))
+    scanner.expectPlainScalar("Sammy", 0u, SourcePosition(9u, 0u, 9u), SourcePosition(14u, 0u, 14u))
+    scanner.expectFlowItemSeparator(SourcePosition(14u, 0u, 14u))
+    scanner.expectPlainScalar("last", 0u, SourcePosition(16u, 0u, 16u), SourcePosition(20u, 0u, 20u))
+    scanner.expectMappingValue(0u, SourcePosition(20u, 0u, 20u))
+    scanner.expectPlainScalar("Sosa", 0u, SourcePosition(22u, 0u, 22u), SourcePosition(26u, 0u, 26u))
+    scanner.expectFlowMappingEnd(SourcePosition(27u, 0u, 27u))
+    scanner.expectMappingValue(0u, SourcePosition(28u, 0u, 28u))
+    scanner.expectComment("Statistics:", 0u, false, SourcePosition(30u, 1u, 0u), SourcePosition(43u, 1u, 13u))
+    scanner.expectPlainScalar("hr", 2u, SourcePosition(46u, 2u, 2u), SourcePosition(48u, 2u, 4u))
+    scanner.expectMappingValue(2u, SourcePosition(48u, 2u, 4u))
+    scanner.expectComment("Home runs", 2u, true, SourcePosition(51u, 2u, 7u), SourcePosition(62u, 2u, 18u))
+    scanner.expectPlainScalar("65", 5u, SourcePosition(68u, 3u, 5u), SourcePosition(70u, 3u, 7u))
+    scanner.expectPlainScalar("avg", 2u, SourcePosition(73u, 4u, 2u), SourcePosition(76u, 4u, 5u))
+    scanner.expectMappingValue(2u, SourcePosition(76u, 4u, 5u))
+    scanner.expectComment("Average", 2u, true, SourcePosition(78u, 4u, 7u), SourcePosition(87u, 4u, 16u))
+    scanner.expectPlainScalar("0.278", 3u, SourcePosition(91u, 5u, 3u), SourcePosition(96u, 5u, 8u))
+    scanner.expectStreamEnd(SourcePosition(96u, 5u, 8u))
+  }
 }

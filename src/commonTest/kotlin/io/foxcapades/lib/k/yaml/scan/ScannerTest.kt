@@ -251,7 +251,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLTokenScanner.testFoldedScalar(
+  protected fun YAMLTokenScanner.expectFoldedScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
