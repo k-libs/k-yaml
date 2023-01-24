@@ -379,5 +379,54 @@ Not indented:
     scanner.expectStreamEnd(SourcePosition(27u, 2u, 7u))
   }
 
+  @Test
+  fun example_6_4_line_prefixes() {
+    //language=yaml
+    val input = """plain: text
+  lines
+quoted: "text
+  	lines"
+block: |
+  text
+   	lines"""
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectPlainScalar("plain", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(5u, 0u, 5u))
+    scanner.expectMappingValue(0u, SourcePosition(5u, 0u, 5u))
+    scanner.expectPlainScalar("text lines", 0u, SourcePosition(7u, 0u, 7u), SourcePosition(19u, 1u, 7u))
+    scanner.expectPlainScalar("quoted", 0u, SourcePosition(20u, 2u, 0u), SourcePosition(26u, 2u, 6u))
+    scanner.expectMappingValue(0u, SourcePosition(26u, 2u, 6u))
+    scanner.expectDoubleQuotedScalar("text lines", 0u, SourcePosition(28u, 2u, 8u), SourcePosition(43u, 3u, 9u))
+    scanner.expectPlainScalar("block", 0u, SourcePosition(44u, 4u, 0u), SourcePosition(49u, 4u, 5u))
+    scanner.expectMappingValue(0u, SourcePosition(49u, 4u, 5u))
+    scanner.expectLiteralScalar("text\n \tlines\n", 0u, SourcePosition(51u, 4u, 7u), SourcePosition(69u, 6u, 9u))
+    scanner.expectStreamEnd(SourcePosition(69u, 6u, 9u))
+  }
+
+  @Test
+  fun example_6_5_empty_lines() {
+    //language=yaml
+    val input = """Folding:
+  "Empty line
+   	
+  as a line feed"
+Chomping: |
+  Clipped empty lines
+ """
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectPlainScalar("Folding", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(7u, 0u, 7u))
+    scanner.expectMappingValue(0u, SourcePosition(7u, 0u, 7u))
+    scanner.expectDoubleQuotedScalar("Empty line\nas a line feed", 2u, SourcePosition(11u, 1u, 2u), SourcePosition(45u, 3u, 17u))
+    scanner.expectPlainScalar("Chomping", 0u, SourcePosition(46u, 4u, 0u), SourcePosition(54u, 4u, 8u))
+    scanner.expectMappingValue(0u, SourcePosition(54u, 4u, 8u))
+    scanner.expectLiteralScalar("Clipped empty lines\n", 0u, SourcePosition(56u, 4u, 10u), SourcePosition(80u, 6u, 0u))
+    scanner.expectStreamEnd(SourcePosition(81u, 6u, 1u))
+  }
+
   
 }

@@ -83,6 +83,7 @@ internal inline fun UByteBuffer.skipNewLine(position: SourcePositionTracker) {
     when {
       uIsLineFeed() || uIsCarriageReturn() -> {
         skip(1)
+        position.incLine()
         return
       }
     }

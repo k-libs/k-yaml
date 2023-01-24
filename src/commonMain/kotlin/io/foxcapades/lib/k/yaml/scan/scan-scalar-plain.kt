@@ -163,6 +163,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
   val bTailWS     = this.trailingWSBuffer
   val bTailNL     = this.trailingNLBuffer
   val endPosition = this.position.copy()
+  var leadWSCount = 0u
 
   bConfirmed.clear()
   bAmbiguous.clear()
@@ -173,16 +174,17 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
     this.reader.cache(1)
 
     if (this.reader.isSpace()) {
-      if (lineContentIndicator == LineContentIndicatorContent) {
+      if (lineContentIndicator.haveAnyContent) {
         bTailWS.claimASCII(this.reader, this.position)
       } else {
         skipASCII(this.reader, this.position)
         this.indent++
+        leadWSCount++
       }
     }
 
     else if (this.reader.isTab()) {
-      if (lineContentIndicator == LineContentIndicatorContent)
+      if (lineContentIndicator.haveAnyContent)
         bTailWS.claimASCII(this.reader, this.position)
       else
         skipASCII(this.reader, this.position)
@@ -200,6 +202,8 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
 
         // Then collapse any new lines into the confirmed buffer
         collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
+        endPosition.incPosition(leadWSCount)
+        leadWSCount = 0u
       }
 
       // Consume the newline character
@@ -312,7 +316,7 @@ private fun collapseBuffers(
   if (from.size > 0) {
     if (newLines.size == 1) {
       into.push(A_SPACE)
-      pos.incPosition()
+      pos.incLine()
     } else if (newLines.size > 1) {
       newLines.skipNewLine(pos)
       while (newLines.isNotEmpty)
@@ -326,7 +330,7 @@ private fun collapseBuffers(
 
 @Suppress("NOTHING_TO_INLINE")
 private fun collapseNewLinesInto(into: UByteBuffer, newLines: UByteBuffer, pos: SourcePositionTracker) {
-  if (newLines.isCRLF() || newLines.isNextLine()) {
+  if (newLines.isCRLF()) {
     if (newLines.size == 2) {
       into.push(A_SPACE)
       newLines.clear()
@@ -340,6 +344,18 @@ private fun collapseNewLinesInto(into: UByteBuffer, newLines: UByteBuffer, pos: 
 
   else if (newLines.isLineFeedOrCarriageReturn()) {
     if (newLines.size == 1) {
+      into.push(A_SPACE)
+      newLines.clear()
+      pos.incLine()
+    } else {
+      newLines.skipNewLine(pos)
+      while (newLines.size > 0)
+        into.claimNewLine(newLines, pos)
+    }
+  }
+
+  else if (newLines.isNextLine()) {
+    if (newLines.size == 2) {
       into.push(A_SPACE)
       newLines.clear()
       pos.incLine()
