@@ -26,7 +26,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
   bTailWS.clear()
   bTailNL.clear()
 
-  this.haveContentOnThisLine = true
+  lineContentIndicator = LineContentIndicatorContent
 
   while (true) {
     this.reader.cache(1)
@@ -34,7 +34,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
     when {
       this.reader.isBlank() -> {
         // If we already have content on this line
-        if (this.haveContentOnThisLine) {
+        if (lineContentIndicator == LineContentIndicatorContent) {
           // Then we want to keep it in case we encounter another content
           // character, at which point we will need to insert the whitespaces
           // in between the content characters.
@@ -58,7 +58,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
         bTailNL.claimNewLine(this.reader, this.position)
 
         // Now we are starting a new line, which has no content yet.
-        this.haveContentOnThisLine = false
+        lineContentIndicator = LineContentIndicatorBlanksOnly
       }
 
          this.reader.isColon()
@@ -67,7 +67,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
       || this.reader.isEOF()
       -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
-        haveContentOnThisLine = true
+        lineContentIndicator = LineContentIndicatorContent
         return
       }
 
@@ -79,7 +79,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowMapping() {
 
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
-        haveContentOnThisLine = true
+        lineContentIndicator = LineContentIndicatorContent
       }
     }
   }
@@ -99,14 +99,14 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
   bTailWS.clear()
   bTailNL.clear()
 
-  this.haveContentOnThisLine = true
+  this.lineContentIndicator = LineContentIndicatorContent
 
   while (true) {
     this.reader.cache(1)
 
     when {
       this.reader.isBlank()                     -> {
-        if (this.haveContentOnThisLine)
+        if (lineContentIndicator == LineContentIndicatorContent)
           bTailWS.claimASCII(this.reader, this.position)
         else
           skipASCII(this.reader, this.position)
@@ -117,7 +117,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
       this.reader.isAnyBreak()                  -> {
         bTailWS.clear()
         bTailNL.claimNewLine(this.reader)
-        this.haveContentOnThisLine = false
+        lineContentIndicator = LineContentIndicatorBlanksOnly
         lastWasBlankOrNewLine = true
       }
 
@@ -126,14 +126,14 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
       || this.reader.isEOF()
                                                 -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
-        haveContentOnThisLine = true
+        lineContentIndicator = LineContentIndicatorContent
         lastWasBlankOrNewLine = false
         return
       }
 
       lastWasBlankOrNewLine && reader.isPound() ->{
         emitPlainScalar(bContent, indent, start, endPosition.mark())
-        haveContentOnThisLine = true
+        lineContentIndicator = LineContentIndicatorContent
         lastWasBlankOrNewLine = false
         return
       }
@@ -146,7 +146,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInFlowSequence() {
 
         bContent.claimUTF8(this.reader, this.position)
         endPosition.become(this.position)
-        this.haveContentOnThisLine = true
+        this.lineContentIndicator = LineContentIndicatorContent
         lastWasBlankOrNewLine = false
       }
     }
@@ -173,7 +173,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
     this.reader.cache(1)
 
     if (this.reader.isSpace()) {
-      if (this.haveContentOnThisLine) {
+      if (lineContentIndicator == LineContentIndicatorContent) {
         bTailWS.claimASCII(this.reader, this.position)
       } else {
         skipASCII(this.reader, this.position)
@@ -182,7 +182,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
     }
 
     else if (this.reader.isTab()) {
-      if (this.haveContentOnThisLine)
+      if (lineContentIndicator == LineContentIndicatorContent)
         bTailWS.claimASCII(this.reader, this.position)
       else
         skipASCII(this.reader, this.position)
@@ -193,7 +193,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       bTailWS.clear()
 
       // If we have content on this line
-      if (this.haveContentOnThisLine) {
+      if (lineContentIndicator == LineContentIndicatorContent) {
         // If this is the first new line character after the start of the plain
         // scalar, then both the bTailNL buffer and the bConfirmed buffer will
         // be empty.  This is fine.
@@ -206,7 +206,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       bTailNL.claimNewLine(this.reader, this.position)
 
       // We don't have any content on this new line yet
-      this.haveContentOnThisLine = false
+      lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
@@ -247,7 +247,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
         }
       } else {
         bAmbiguous.claimASCII(this.reader, this.position)
-        haveContentOnThisLine = true
+        lineContentIndicator = LineContentIndicatorContent
       }
     }
 
@@ -264,7 +264,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       }
 
       bAmbiguous.claimASCII(this.reader, this.position)
-      haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
     }
 
     else if (this.reader.isPeriod() && this.atStartOfLine) {
@@ -277,7 +277,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
       }
 
       bAmbiguous.claimASCII(this.reader, this.position)
-      this.haveContentOnThisLine = true
+      this.lineContentIndicator = LineContentIndicatorContent
     }
 
     else if (
@@ -298,7 +298,7 @@ private fun YAMLScannerImpl.fetchPlainScalarInBlock() {
         bAmbiguous.claimASCII(bTailWS)
 
       bAmbiguous.claimUTF8(this.reader, this.position)
-      this.haveContentOnThisLine = true
+      this.lineContentIndicator = LineContentIndicatorContent
     }
   }
 }

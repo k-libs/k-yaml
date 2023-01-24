@@ -70,14 +70,14 @@ internal fun YAMLScannerImpl.skipToNextToken() {
     when {
       reader.isSpace() -> {
         skipASCII(reader, position)
-        if (!haveContentOnThisLine)
+        if (lineContentIndicator != LineContentIndicatorContent)
           indent++
       }
 
       reader.isTab() -> {
-        if (haveContentOnThisLine) {
+        if (lineContentIndicator.haveHardContent) {
           skipASCII(reader, position)
-        } else if (inFlow) {
+        } else if (inFlow || lineContentIndicator == LineContentIndicatorBlanksAndIndicators) {
           skipASCII(reader, position)
           indent++
         } else {
@@ -87,7 +87,7 @@ internal fun YAMLScannerImpl.skipToNextToken() {
 
       reader.isAnyBreak() -> {
         skipNewLine(this.reader, this.position)
-        haveContentOnThisLine = false
+        lineContentIndicator = LineContentIndicatorBlanksOnly
         indent = 0u
       }
 

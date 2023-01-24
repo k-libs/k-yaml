@@ -26,7 +26,7 @@ internal fun YAMLScannerImpl.fetchFoldedScalar(
     this.reader.cache(1)
 
     if (this.reader.isSpace()) {
-      if (this.haveContentOnThisLine) {
+      if (lineContentIndicator == LineContentIndicatorContent) {
         scalarContent.claimASCII(this.reader, this.position)
         endPosition.become(this.position)
       }
@@ -42,12 +42,12 @@ internal fun YAMLScannerImpl.fetchFoldedScalar(
     }
 
     else if (this.reader.isAnyBreak()) {
-      if (!this.haveContentOnThisLine) {
+      if (lineContentIndicator != LineContentIndicatorContent) {
         leadingSpaceCount = 0u
       }
 
       trailingNewLines.claimNewLine(this.reader, this.position)
-      this.haveContentOnThisLine = false
+      lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
@@ -62,7 +62,7 @@ internal fun YAMLScannerImpl.fetchFoldedScalar(
     }
 
     else {
-      this.haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
 
       if (leadingSpaceCount > indentHint) {
         while (trailingNewLines.isNotEmpty)

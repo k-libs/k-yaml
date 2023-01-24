@@ -6,7 +6,7 @@ import io.foxcapades.lib.k.yaml.util.*
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {
   // We have content on this line.
-  this.haveContentOnThisLine = true
+  this.lineContentIndicator = LineContentIndicatorContent
 
   // At this point we've already skipped over `%TAG<WS>`.
   //

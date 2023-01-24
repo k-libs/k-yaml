@@ -16,12 +16,14 @@ import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
  */
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchAliasToken() {
-  val bContent = this.contentBuffer1; bContent.clear()
+  val anchorName = this.contentBuffer1;
+  val start      = this.position.mark()
 
-  val start = this.position.mark()
+  anchorName.clear()
 
   skipASCII(this.reader, this.position)
   this.reader.cache(1)
+  this.lineContentIndicator = LineContentIndicatorContent
 
   if (reader.isBlankAnyBreakOrEOF()) {
     return this.emitInvalidToken(start, this.warn("incomplete alias token", start))
@@ -34,7 +36,7 @@ internal fun YAMLScannerImpl.fetchAliasToken() {
     }
 
     else if (this.reader.isNsAnchorChar()) {
-      bContent.claimUTF8(this.reader, this.position)
+      anchorName.claimUTF8(this.reader, this.position)
     }
 
     else {
@@ -45,7 +47,7 @@ internal fun YAMLScannerImpl.fetchAliasToken() {
     this.reader.cache(1)
   }
 
-  return emitAlias(bContent.popToArray(), start, this.position.mark())
+  return emitAlias(anchorName.popToArray(), start, this.position.mark())
 }
 
 @Suppress("NOTHING_TO_INLINE")

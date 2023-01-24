@@ -12,11 +12,16 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 internal fun YAMLScannerImpl.fetchSequenceEntryIndicator() {
-  this.haveContentOnThisLine = true
-
   val start = this.position.mark()
+
   skipASCII(this.reader, this.position)
+
   this.emitSequenceEntryIndicator(this.indent, start)
+
+  if (!lineContentIndicator.haveHardContent) {
+    lineContentIndicator = LineContentIndicatorBlanksAndIndicators
+    indent++
+  }
 }
 
 @Suppress("NOTHING_TO_INLINE")

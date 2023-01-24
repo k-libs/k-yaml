@@ -23,7 +23,7 @@ internal fun YAMLScannerImpl.fetchLiteralScalar(
     this.reader.cache(1)
 
     if (this.reader.isSpace()) {
-      if (this.haveContentOnThisLine) {
+      if (lineContentIndicator == LineContentIndicatorContent) {
         scalarContent.claimASCII(this.reader, this.position)
         endPosition.become(this.position)
       }
@@ -45,7 +45,7 @@ internal fun YAMLScannerImpl.fetchLiteralScalar(
 
     else if (this.reader.isAnyBreak()) {
       trailingNewLines.claimNewLine(this.reader, this.position)
-      this.haveContentOnThisLine = false
+      lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
@@ -73,7 +73,7 @@ internal fun YAMLScannerImpl.fetchLiteralScalar(
       while (trailingNewLines.isNotEmpty)
         scalarContent.claimNewLine(trailingNewLines)
 
-      this.haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
 
       scalarContent.claimUTF8(this.reader, this.position)
       endPosition.become(this.position)

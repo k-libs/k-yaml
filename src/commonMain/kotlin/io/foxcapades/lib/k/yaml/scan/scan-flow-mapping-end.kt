@@ -5,14 +5,9 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 
 internal fun YAMLScannerImpl.fetchFlowMappingEndToken() {
-  // We have content on this line.
-  this.haveContentOnThisLine = true
-
   val start = position.mark()
-
-  reader.skip(1)
-  position.incPosition()
-
+  skipASCII(reader, position)
+  lineContentIndicator = LineContentIndicatorContent
   emitFlowMappingEndToken(start, position.mark())
 }
 

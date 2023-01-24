@@ -14,15 +14,13 @@ import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
  */
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLScannerImpl.fetchAnchorToken() {
-  // We have content on this line.
-  this.haveContentOnThisLine = true
-
-  val bContent = this.contentBuffer1
+  val anchorName = this.contentBuffer1
   val start    = this.position.mark()
 
-  bContent.clear()
+  anchorName.clear()
 
   skipASCII(this.reader, this.position)
+  this.lineContentIndicator = LineContentIndicatorContent
   this.reader.cache(1)
 
   if (this.reader.isBlankAnyBreakOrEOF()) {
@@ -36,7 +34,7 @@ internal fun YAMLScannerImpl.fetchAnchorToken() {
     }
 
     else if (this.reader.isNsAnchorChar()) {
-      bContent.claimUTF8(this.reader, this.position)
+      anchorName.claimUTF8(this.reader, this.position)
     }
 
     else {
@@ -48,5 +46,5 @@ internal fun YAMLScannerImpl.fetchAnchorToken() {
     this.reader.cache(1)
   }
 
-  this.tokens.push(YAMLTokenAnchor(UByteString(bContent.popToArray()), start, this.position.mark(), this.indent, this.getWarnings()))
+  this.tokens.push(YAMLTokenAnchor(UByteString(anchorName.popToArray()), start, this.position.mark(), this.indent, this.getWarnings()))
 }

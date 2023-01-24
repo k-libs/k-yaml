@@ -20,7 +20,7 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
   internal val tokens = Queue<YAMLToken>(4)
   internal lateinit var lastToken: YAMLToken
 
-  internal var haveContentOnThisLine = false
+  internal var lineContentIndicator = LineContentIndicatorBlanksOnly
 
   internal var indent = 0u
 

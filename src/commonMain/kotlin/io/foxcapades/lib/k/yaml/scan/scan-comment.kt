@@ -16,14 +16,14 @@ import io.foxcapades.lib.k.yaml.util.isBlank
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 internal fun YAMLScannerImpl.fetchCommentToken() {
-  val trailing = this.haveContentOnThisLine
+  val trailing = this.lineContentIndicator.isTrailingIfAfter
   val indent   = this.indent
   val bContent = this.contentBuffer1
   val bTailWS  = this.trailingWSBuffer
   val start    = this.position.mark()
 
   // We have content on this line.
-  this.haveContentOnThisLine = true
+  this.lineContentIndicator = LineContentIndicatorContent
 
   bContent.clear()
   bTailWS.clear()

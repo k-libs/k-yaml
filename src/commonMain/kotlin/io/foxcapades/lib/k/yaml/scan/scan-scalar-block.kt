@@ -20,7 +20,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
 
   trailingNewLines.clear()
 
-  this.haveContentOnThisLine = true
+  lineContentIndicator = LineContentIndicatorContent
   skipASCII(this.reader, this.position)
 
   this.reader.cache(1)
@@ -119,7 +119,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
   }
 
   skipNewLine(this.reader, this.position)
-  this.haveContentOnThisLine = false
+  lineContentIndicator = LineContentIndicatorBlanksOnly
 
   // Determine the scalar block's indent level
   while (true) {
@@ -132,7 +132,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
 
     else if (this.reader.isAnyBreak()) {
       trailingNewLines.claimNewLine(this.reader, this.position)
-      this.haveContentOnThisLine = false
+      lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
@@ -153,7 +153,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
     }
 
     else {
-      this.haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
       this.indent = this.position.column
 
       if (this.indent < minIndent) {

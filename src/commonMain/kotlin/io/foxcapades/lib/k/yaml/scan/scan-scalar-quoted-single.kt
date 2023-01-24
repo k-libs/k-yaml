@@ -13,7 +13,7 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
   val indent = this.indent
   val start = position.mark()
 
-  haveContentOnThisLine = true
+  lineContentIndicator = LineContentIndicatorContent
 
   // Skip the leading `'` character.
   skipASCII(this.reader, this.position)
@@ -59,7 +59,7 @@ internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
   }
 }
 
-private fun YAMLScannerImpl.collapseTrailingWhitespaceAndNewlinesIntoBuffer(
+private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
   target:   UByteBuffer,
   newlines: UByteBuffer,
   blanks:   UByteBuffer,

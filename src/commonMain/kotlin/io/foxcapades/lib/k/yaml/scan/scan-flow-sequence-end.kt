@@ -4,12 +4,11 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowSequenceEnd
 
 
 internal fun YAMLScannerImpl.fetchFlowSequenceEndToken() {
-  // We have content on this line.
-  this.haveContentOnThisLine = true
-
   val start = this.position.mark()
 
   skipASCII(this.reader, this.position)
+
+  lineContentIndicator = LineContentIndicatorContent
 
   if (this.inFlowSequence)
     this.flows.pop()

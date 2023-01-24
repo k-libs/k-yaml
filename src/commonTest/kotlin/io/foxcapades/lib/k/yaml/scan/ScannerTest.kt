@@ -117,7 +117,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLTokenScanner.testFlowMappingStart(
+  protected fun YAMLTokenScanner.expectFlowMappingStart(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
     expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
@@ -132,7 +132,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLTokenScanner.testFlowMappingEnd(
+  protected fun YAMLTokenScanner.expectFlowMappingEnd(
     expectedStart:  SourcePosition,
     expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
@@ -157,7 +157,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLTokenScanner.testAnchor(
+  protected fun YAMLTokenScanner.expectAnchor(
     expectedAnchor: String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,

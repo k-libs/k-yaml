@@ -14,6 +14,8 @@ internal fun YAMLScannerImpl.fetchTagToken() {
   // Skip the first `!`
   skipASCII(this.reader, this.position)
 
+  lineContentIndicator = LineContentIndicatorContent
+
   // Queue up the next character to read
   reader.cache(1)
 

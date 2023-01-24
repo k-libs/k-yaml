@@ -21,7 +21,7 @@ import io.foxcapades.lib.k.yaml.util.*
  */
 internal fun YAMLScannerImpl.fetchYAMLDirectiveToken(startMark: SourcePosition) {
   // We have content on this line.
-  this.haveContentOnThisLine = true
+  this.lineContentIndicator = LineContentIndicatorContent
 
   // We have already skipped over `%YAML<WS>`.  Eat any extra whitespaces
   // until we encounter something else, which will hopefully be a decimal

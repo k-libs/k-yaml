@@ -12,6 +12,7 @@ class TestSpecExamples : ScannerTest() {
 
   @Test
   fun example_5_3_block_structure_indicators() {
+    //language=yaml
     val input = "sequence:\n" +
       "- one\n" +
       "- two\n" +
@@ -30,11 +31,11 @@ class TestSpecExamples : ScannerTest() {
 
     // - one
     scanner.expectSequenceEntry(0u, SourcePosition(10u, 1u, 0u))
-    scanner.expectPlainScalar("one", 0u, SourcePosition(12u, 1u, 2u))
+    scanner.expectPlainScalar("one", 2u, SourcePosition(12u, 1u, 2u))
 
     // - two
     scanner.expectSequenceEntry(0u, SourcePosition(16u, 2u, 0u))
-    scanner.expectPlainScalar("two", 0u, SourcePosition(18u, 2u, 2u))
+    scanner.expectPlainScalar("two", 2u, SourcePosition(18u, 2u, 2u))
 
     // mapping:
     scanner.expectPlainScalar("mapping", 0u, SourcePosition(22u, 3u, 0u))
@@ -43,9 +44,9 @@ class TestSpecExamples : ScannerTest() {
     //   ? sky
     //   : blue
     scanner.expectMappingKey(2u, SourcePosition(33u, 4u, 2u))
-    scanner.expectPlainScalar("sky", 2u, SourcePosition(35u, 4u, 4u))
+    scanner.expectPlainScalar("sky", 4u, SourcePosition(35u, 4u, 4u))
     scanner.expectMappingValue(2u, SourcePosition(41u, 5u, 2u))
-    scanner.expectPlainScalar("blue", 2u, SourcePosition(43u, 5u, 4u))
+    scanner.expectPlainScalar("blue", 4u, SourcePosition(43u, 5u, 4u))
 
     //   sea : green
     scanner.expectPlainScalar("sea", 2u, SourcePosition(50u, 6u, 2u))
@@ -73,7 +74,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectFlowSequenceEnd(SourcePosition(22u, 0u, 22u))
     scanner.expectPlainScalar("mapping", 0u, SourcePosition(24u, 1u, 0u))
     scanner.expectMappingValue(0u, SourcePosition(31u, 1u, 7u))
-    scanner.testFlowMappingStart(0u, SourcePosition(33u, 1u, 9u))
+    scanner.expectFlowMappingStart(0u, SourcePosition(33u, 1u, 9u))
     scanner.expectPlainScalar("sky", 0u, SourcePosition(35u, 1u, 11u))
     scanner.expectMappingValue(0u, SourcePosition(38u, 1u, 14u))
     scanner.expectPlainScalar("blue", 0u, SourcePosition(40u, 1u, 16u))
@@ -81,7 +82,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectPlainScalar("sea", 0u, SourcePosition(46u, 1u, 22u))
     scanner.expectMappingValue(0u, SourcePosition(49u, 1u, 25u))
     scanner.expectPlainScalar("green", 0u, SourcePosition(51u, 1u, 27u))
-    scanner.testFlowMappingEnd(SourcePosition(57u, 1u, 33u))
+    scanner.expectFlowMappingEnd(SourcePosition(57u, 1u, 33u))
     scanner.expectStreamEnd(SourcePosition(58u, 1u, 34u))
   }
 
@@ -106,7 +107,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectPlainScalar("anchored", 0u, SourcePosition(0u, 0u, 0u))
     scanner.expectMappingValue(0u, SourcePosition(8u, 0u, 8u))
     scanner.testTag("!", "local", SourcePosition(10u, 0u, 10u))
-    scanner.testAnchor("anchor", 0u, SourcePosition(17u, 0u, 17u))
+    scanner.expectAnchor("anchor", 0u, SourcePosition(17u, 0u, 17u))
     scanner.expectPlainScalar("value", 0u, SourcePosition(25u, 0u, 25u))
     scanner.expectPlainScalar("alias", 0u, SourcePosition(31u, 1u, 0u))
     scanner.expectMappingValue(0u, SourcePosition(36u, 1u, 5u))
@@ -244,13 +245,13 @@ class TestSpecExamples : ScannerTest() {
 
     scanner.expectStreamStart()
     scanner.expectSequenceEntry(0u, SourcePosition(0u, 0u, 0u))
-    scanner.expectDoubleQuotedScalar("Fun with \\", 0u, SourcePosition(2u, 0u, 2u), SourcePosition(15u, 0u, 15u))
+    scanner.expectDoubleQuotedScalar("Fun with \\", 2u, SourcePosition(2u, 0u, 2u), SourcePosition(15u, 0u, 15u))
     scanner.expectSequenceEntry(0u, SourcePosition(16u, 1u, 0u))
-    scanner.expectDoubleQuotedScalar("\" \u0007 \u0008 \u001b \u000c", 0u, SourcePosition(18u, 1u, 2u), SourcePosition(34u, 1u, 18u))
+    scanner.expectDoubleQuotedScalar("\" \u0007 \u0008 \u001b \u000c", 2u, SourcePosition(18u, 1u, 2u), SourcePosition(34u, 1u, 18u))
     scanner.expectSequenceEntry(0u, SourcePosition(35u, 2u, 0u))
-    scanner.expectDoubleQuotedScalar("\n \r \t \u000b \u0000", 0u, SourcePosition(37u, 2u, 2u), SourcePosition(53u, 2u, 18u))
+    scanner.expectDoubleQuotedScalar("\n \r \t \u000b \u0000", 2u, SourcePosition(37u, 2u, 2u), SourcePosition(53u, 2u, 18u))
     scanner.expectSequenceEntry(0u, SourcePosition(54u, 3u, 0u))
-    scanner.expectDoubleQuotedScalar("\u0020 \u00a0 \u0085 \u2028 \u2029 A A A", 0u, SourcePosition(56u, 3u, 2u), SourcePosition(99u, 4u, 25u))
+    scanner.expectDoubleQuotedScalar("\u0020 \u00a0 \u0085 \u2028 \u2029 A A A", 2u, SourcePosition(56u, 3u, 2u), SourcePosition(99u, 4u, 25u))
     scanner.expectStreamEnd(SourcePosition(99u, 4u, 25u))
   }
 
@@ -330,7 +331,7 @@ Not indented:
     //language=yaml
     val input = """? a
 : -	b
-  -  -	tc
+  -  -	c
      - d"""
 
     val scanner = makeScanner(input)
@@ -338,20 +339,20 @@ Not indented:
     scanner.expectStreamStart()
 
     scanner.expectMappingKey(0u, SourcePosition(0u, 0u, 0u))
-    scanner.expectPlainScalar("a", 0u, SourcePosition(2u, 0u, 2u), SourcePosition(3u, 0u, 3u))
+    scanner.expectPlainScalar("a", 2u, SourcePosition(2u, 0u, 2u), SourcePosition(3u, 0u, 3u))
 
     scanner.expectMappingValue(0u, SourcePosition(4u, 1u, 0u))
 
-    scanner.expectSequenceEntry(2u, SourcePosition(6u, 1u, 0u))
-    scanner.expectPlainScalar("b", 2u, SourcePosition(8u, 1u, 4u), SourcePosition(9u, 1u, 5u))
+    scanner.expectSequenceEntry(2u, SourcePosition(6u, 1u, 2u))
+    scanner.expectPlainScalar("b", 4u, SourcePosition(8u, 1u, 4u), SourcePosition(9u, 1u, 5u))
 
     scanner.expectSequenceEntry(2u, SourcePosition(12u, 2u, 2u))
 
     scanner.expectSequenceEntry(5u, SourcePosition(15u, 2u, 5u))
-    scanner.expectPlainScalar("c", 5u, SourcePosition(17u, 2u, 7u), SourcePosition(18u, 2u, 8u))
+    scanner.expectPlainScalar("c", 7u, SourcePosition(17u, 2u, 7u), SourcePosition(18u, 2u, 8u))
 
     scanner.expectSequenceEntry(5u, SourcePosition(24u, 3u, 5u))
-    scanner.expectPlainScalar("d", 5u, SourcePosition(26u, 3u, 7u), SourcePosition(27u, 3u, 8u))
+    scanner.expectPlainScalar("d", 7u, SourcePosition(26u, 3u, 7u), SourcePosition(27u, 3u, 8u))
 
     scanner.expectStreamEnd(SourcePosition(27u, 3u, 8u))
   }

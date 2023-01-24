@@ -22,12 +22,12 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     reader.cache(1)
 
     if (reader.isBackslash()) {
-      this.haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
       readPossibleEscapeSequence(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
     }
 
     else if (reader.isDoubleQuote()) {
-      this.haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
       skipASCII(this.reader, this.position)
       collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
       tokens.push(newDoubleQuotedStringToken(contentBuffer1.popToArray(), indent, start, position.mark()))
@@ -35,7 +35,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     }
 
     else if (reader.isBlank()) {
-      if (this.haveContentOnThisLine) {
+      if (lineContentIndicator.haveAnyContent) {
         trailingWSBuffer.claimASCII(this.reader, this.position)
       } else {
         skipASCII(this.reader, this.position)
@@ -46,7 +46,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     else if (reader.isAnyBreak()) {
       trailingWSBuffer.clear()
       trailingNLBuffer.claimNewLine(this.reader, this.position)
-      this.haveContentOnThisLine = false
+      lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
@@ -56,7 +56,7 @@ internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
     }
 
     else {
-      this.haveContentOnThisLine = true
+      lineContentIndicator = LineContentIndicatorContent
       collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
       contentBuffer1.claimUTF8(this.reader, this.position)
     }
