@@ -356,4 +356,28 @@ Not indented:
 
     scanner.expectStreamEnd(SourcePosition(27u, 3u, 8u))
   }
+
+  @Test
+  fun example_6_3_separation_spaces() {
+    //language=yaml
+    val input = """- foo:	 bar
+- - baz
+  -	baz"""
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectSequenceEntry(0u, SourcePosition(0u, 0u, 0u))
+    scanner.expectPlainScalar("foo", 2u, SourcePosition(2u, 0u, 2u), SourcePosition(5u, 0u, 5u))
+    scanner.expectMappingValue(2u, SourcePosition(5u, 0u, 5u))
+    scanner.expectPlainScalar("bar", 2u, SourcePosition(8u, 0u, 8u), SourcePosition(11u, 0u, 11u))
+    scanner.expectSequenceEntry(0u, SourcePosition(12u, 1u, 0u))
+    scanner.expectSequenceEntry(2u, SourcePosition(14u, 1u, 2u))
+    scanner.expectPlainScalar("baz", 4u, SourcePosition(16u, 1u, 4u), SourcePosition(19u, 1u, 7u))
+    scanner.expectSequenceEntry(2u, SourcePosition(22u, 2u, 2u))
+    scanner.expectPlainScalar("baz", 4u, SourcePosition(24u, 2u, 4u), SourcePosition(27u, 2u, 7u))
+    scanner.expectStreamEnd(SourcePosition(27u, 2u, 7u))
+  }
+
+  
 }
