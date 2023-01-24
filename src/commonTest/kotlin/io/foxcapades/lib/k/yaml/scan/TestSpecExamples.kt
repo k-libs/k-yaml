@@ -604,4 +604,22 @@ Chomping: |
     scanner.expectDoubleQuotedScalar("foo", 0u, SourcePosition(60u, 3u, 0u), SourcePosition(65u, 3u, 5u))
     scanner.expectStreamEnd(SourcePosition(65u, 3u, 5u))
   }
+
+  @Test
+  fun example_6_15_invalid_repeated_yaml_directive() {
+    //language=yaml
+    val input = """
+      %YAML 1.2
+      %YAML 1.1
+      foo
+    """.trimIndent()
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectYAMLDirective(1u, 2u, SourcePosition(0u, 0u, 0u), SourcePosition(9u, 0u, 9u))
+    scanner.expectYAMLDirective(1u, 1u, SourcePosition(10u, 1u, 0u), SourcePosition(19u, 1u, 9u))
+    scanner.expectPlainScalar("foo", 0u, SourcePosition(20u, 2u, 0u), SourcePosition(23u, 2u, 3u))
+    scanner.expectStreamEnd(SourcePosition(23u, 2u, 3u))
+  }
 }
