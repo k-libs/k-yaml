@@ -5,7 +5,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedSingle
 import io.foxcapades.lib.k.yaml.util.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.fetchSingleQuotedStringToken() {
+internal fun YAMLScannerImpl.parseSingleQuotedStringToken() {
   contentBuffer1.clear()
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()

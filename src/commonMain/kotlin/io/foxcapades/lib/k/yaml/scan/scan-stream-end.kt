@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenStreamEnd
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 
-internal fun YAMLScannerImpl.fetchStreamEndToken() {
+internal fun YAMLScannerImpl.parseStreamEndToken() {
   val mark = position.mark()
   tokens.push(newStreamEndToken(mark, mark))
 }

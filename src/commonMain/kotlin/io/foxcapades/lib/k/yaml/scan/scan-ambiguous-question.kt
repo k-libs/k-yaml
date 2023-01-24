@@ -20,7 +20,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
  * @since 0.1.0
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
-internal fun YAMLScannerImpl.fetchAmbiguousQuestionToken() {
+internal fun YAMLScannerImpl.parseAmbiguousQuestionToken() {
   // TODO:
   //   | This behavior does not take into account whether we are in a flow
   //   | context or not when making the following determinations.  Determine if
@@ -32,5 +32,5 @@ internal fun YAMLScannerImpl.fetchAmbiguousQuestionToken() {
   return if (this.reader.isBlankAnyBreakOrEOF(1))
     this.fetchMappingKeyIndicatorToken()
   else
-    this.fetchPlainScalar()
+    this.parsePlainScalar()
 }

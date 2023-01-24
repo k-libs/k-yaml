@@ -21,7 +21,7 @@ import io.foxcapades.lib.k.yaml.util.isPeriod
  * @since 0.1.0
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
-internal fun YAMLScannerImpl.fetchAmbiguousPeriodToken() {
+internal fun YAMLScannerImpl.parseAmbiguousPeriodToken() {
   this.reader.cache(4)
   return if (
     this.atStartOfLine
@@ -31,5 +31,5 @@ internal fun YAMLScannerImpl.fetchAmbiguousPeriodToken() {
   )
     this.fetchDocumentEndToken()
   else
-    this.fetchPlainScalar()
+    this.parsePlainScalar()
 }

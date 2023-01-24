@@ -8,7 +8,7 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenTag
 import io.foxcapades.lib.k.yaml.util.*
 
 
-internal fun YAMLScannerImpl.fetchTagToken() {
+internal fun YAMLScannerImpl.parseTagToken() {
   val startMark = position.mark()
 
   // Skip the first `!`

@@ -3,7 +3,7 @@ package io.foxcapades.lib.k.yaml.scan
 import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowSequenceEnd
 
 
-internal fun YAMLScannerImpl.fetchFlowSequenceEndToken() {
+internal fun YAMLScannerImpl.parseFlowSequenceEndToken() {
   val start = this.position.mark()
 
   skipASCII(this.reader, this.position)

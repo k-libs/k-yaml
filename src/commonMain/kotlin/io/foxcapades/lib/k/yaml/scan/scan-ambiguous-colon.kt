@@ -25,11 +25,11 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
  * @since 0.1.0
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
-internal fun YAMLScannerImpl.fetchAmbiguousColonToken() {
+internal fun YAMLScannerImpl.parseAmbiguousColonToken() {
   this.reader.cache(2)
 
   if (!(this.inFlowMapping || this.reader.isBlankAnyBreakOrEOF(1)))
-    return this.fetchPlainScalar()
+    return this.parsePlainScalar()
 
   this.fetchMappingValueIndicatorToken()
 }

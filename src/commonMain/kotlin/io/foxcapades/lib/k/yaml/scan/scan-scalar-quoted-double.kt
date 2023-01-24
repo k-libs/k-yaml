@@ -6,7 +6,7 @@ import io.foxcapades.lib.k.yaml.util.*
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.fetchDoubleQuotedStringToken() {
+internal fun YAMLScannerImpl.parseDoubleQuotedStringToken() {
   contentBuffer1.clear()
   trailingWSBuffer.clear()
   trailingNLBuffer.clear()

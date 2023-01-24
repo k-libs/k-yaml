@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
 import io.foxcapades.lib.k.yaml.util.*
 
-internal fun YAMLScannerImpl.fetchPlainScalar() {
+internal fun YAMLScannerImpl.parsePlainScalar() {
   // TODO: catch the case where the first character in the plain scalar is a tab
   //       because that may be illegal
   when {

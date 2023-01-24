@@ -64,7 +64,7 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
       throw IllegalStateException("nextToken called on a YAML scanner that has already produced the end of the input YAML stream")
 
     while (tokens.isEmpty) {
-      fetchNextToken()
+      parseNextToken()
     }
 
     lastToken = tokens.pop()
@@ -76,48 +76,6 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
   }
 
   // endregion Public Methods
-
-  internal fun fetchNextToken() {
-    if (!streamStartProduced)
-      return fetchStreamStartToken()
-
-    // TODO: SKIP TO NEXT TOKEN NEEDS TO HANDLE INDENT TAB DETECTION
-    skipToNextToken()
-
-    reader.cache(1)
-
-    if (!haveMoreCharactersAvailable)
-      return fetchStreamEndToken()
-
-    when {
-      reader.uIsDash()        -> fetchAmbiguousDashToken()
-      reader.uIsColon()       -> fetchAmbiguousColonToken()
-      reader.uIsComma()       -> fetchFlowItemSeparatorToken()
-      reader.uIsPound()       -> fetchCommentToken()
-      reader.uIsApostrophe()  -> fetchSingleQuotedStringToken()
-      reader.uIsDoubleQuote() -> fetchDoubleQuotedStringToken()
-      reader.uIsSquareOpen()  -> fetchFlowSequenceStartToken()
-      reader.uIsCurlyOpen()   -> fetchFlowMappingStartToken()
-      reader.uIsPipe()        -> fetchBlockScalar(true)
-      reader.uIsGreaterThan() -> fetchBlockScalar(false)
-      reader.uIsSquareClose() -> fetchFlowSequenceEndToken()
-      reader.uIsCurlyClose()  -> fetchFlowMappingEndToken()
-      reader.uIsExclamation() -> fetchTagToken()
-      reader.uIsPercent()     -> fetchAmbiguousPercent()
-      reader.uIsPeriod()      -> fetchAmbiguousPeriodToken()
-      reader.uIsAmpersand()   -> fetchAnchorToken()
-      reader.uIsAsterisk()    -> fetchAliasToken()
-      reader.uIsQuestion()    -> fetchAmbiguousQuestionToken()
-
-      // BAD NONO CHARACTERS: @ `
-      reader.uIsAt()          -> fetchAmbiguousAtToken()
-      reader.uIsGrave()       -> fetchAmbiguousGraveToken()
-
-      // Meh characters: ~ $ ^ ( ) _ + = \ ; < /
-      // And everything else...
-      else                    -> fetchPlainScalar()
-    }
-  }
 
   // region Warning Helpers
 
@@ -133,4 +91,46 @@ internal class YAMLScannerImpl : YAMLStreamTokenizer {
   internal fun popWarnings(): Array<SourceWarning> = warnings.popToArray { arrayOfNulls(it) }
 
   // endregion Warning Helpers
+
+  private fun parseNextToken() {
+    if (!streamStartProduced)
+      return parseStreamStartToken()
+
+    // TODO: SKIP TO NEXT TOKEN NEEDS TO HANDLE INDENT TAB DETECTION
+    skipToNextToken()
+
+    reader.cache(1)
+
+    if (!haveMoreCharactersAvailable)
+      return parseStreamEndToken()
+
+    when {
+      reader.uIsDash()        -> parseAmbiguousDashToken()
+      reader.uIsColon()       -> parseAmbiguousColonToken()
+      reader.uIsComma()       -> parseFlowItemSeparatorToken()
+      reader.uIsPound()       -> parseCommentToken()
+      reader.uIsApostrophe()  -> parseSingleQuotedStringToken()
+      reader.uIsDoubleQuote() -> parseDoubleQuotedStringToken()
+      reader.uIsSquareOpen()  -> parseFlowSequenceStartToken()
+      reader.uIsCurlyOpen()   -> parseFlowMappingStartToken()
+      reader.uIsPipe()        -> parseBlockScalar(true)
+      reader.uIsGreaterThan() -> parseBlockScalar(false)
+      reader.uIsSquareClose() -> parseFlowSequenceEndToken()
+      reader.uIsCurlyClose()  -> parseFlowMappingEndToken()
+      reader.uIsExclamation() -> parseTagToken()
+      reader.uIsPercent()     -> parseAmbiguousPercent()
+      reader.uIsPeriod()      -> parseAmbiguousPeriodToken()
+      reader.uIsAmpersand()   -> parseAnchorToken()
+      reader.uIsAsterisk()    -> parseAliasToken()
+      reader.uIsQuestion()    -> parseAmbiguousQuestionToken()
+
+      // BAD NONO CHARACTERS: @ `
+      reader.uIsAt()          -> parseAmbiguousAtToken()
+      reader.uIsGrave()       -> parseAmbiguousGraveToken()
+
+      // Meh characters: ~ $ ^ ( ) _ + = \ ; < /
+      // And everything else...
+      else                    -> parsePlainScalar()
+    }
+  }
 }

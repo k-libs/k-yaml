@@ -15,7 +15,7 @@ import io.foxcapades.lib.k.yaml.util.isNsAnchorChar
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 @OptIn(ExperimentalUnsignedTypes::class)
-internal fun YAMLScannerImpl.fetchAliasToken() {
+internal fun YAMLScannerImpl.parseAliasToken() {
   val anchorName = this.contentBuffer1;
   val start      = this.position.mark()
 
