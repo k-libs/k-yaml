@@ -1,1 +1,70 @@
 = YAML (De)Serializer
+:icon-heavy-check: ✓
+
+
+ifdef::env-github[]
+:icon-heavy-check: :heavy_check_mark:
+endif::[]
+
+This project is a work in progress YAML serialization and deserialization
+library.
+
+== Roadmap
+
+=== v0.1.0
+
+[%header, cols="3,6,1"]
+|===
+| Feature | Description | Complete
+
+| Stream Encoding Detection
+| The ability to detect the unicode encoding format for the source input stream.
+| {icon-heavy-check}
+
+| Any Unicode to UTF-8
+| The ability to translate from arbitrary Unicode input encodings to UTF-8.
+| {icon-heavy-check}
+
+| UTF-8 Input Stream
+| An input stream of UTF-8 encoded character bytes.
+| {icon-heavy-check}
+
+| Buffered Input Stream
+| A UTF-8 encoded character stream with buffering
+| {icon-heavy-check}
+
+| Input Stream Tokenizer
+| Tokenizer that produces a stream of tokens as they appear in the input byte
+  stream.
+| {icon-heavy-check}
+
+| YAML Token Scanner
+| Token scanner that produces a valid stream of tokens representing the contents
+  of a YAML input stream.  The YAML Token Scanner differs from the Input Stream
+  Tokenizer in that the token scanner emits all the necessary explicit or
+  implicit tokens necessary to construct a clear picture of the YAML document,
+  while the Input Stream Tokenizer simply produces a stream of the literal
+  tokens that appear in the input stream without regard for correctness or
+  implied necessary leading or trailing tokens.
+|
+
+| YAML Document Loader
+| ??? Loads and returns full yaml documents
+|
+|===
+
+=== v0.2.0
+
+[%header, cols="3,6,1"]
+|===
+| Feature | Description | Complete
+
+| UTF-8 to Any Unicode
+| The ability to translate from a UTF-8 encoded byte stream to any arbitrary
+  Unicode encoded byte stream.
+|
+
+| YAML Document Writer
+| ??? Writes a given YAML document to a target output stream
+|
+|===
