@@ -95,5 +95,6 @@ internal fun YAMLScannerImpl.fetchAmbiguousPercent() {
   }
 
   // If it's not YAML or TAG then it's invalid
+  lineContentIndicator = LineContentIndicatorContent
   emitInvalidToken("invalid token: unrecognized directive token", start, skipUntilCommentBreakOrEOF())
 }

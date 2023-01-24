@@ -171,7 +171,7 @@ class TestSpecExamples : ScannerTest() {
 
     scanner.expectStreamStart()
     scanner.testYAMLDirective(1u, 2u, SourcePosition(0u, 0u, 0u), SourcePosition(9u, 0u, 9u))
-    scanner.testDocumentStart(SourcePosition(10u, 1u, 0u))
+    scanner.expectDocumentStart(SourcePosition(10u, 1u, 0u))
     scanner.expectPlainScalar("text", 0u, SourcePosition(14u, 1u, 4u), SourcePosition(18u, 1u, 8u))
     scanner.expectStreamEnd(SourcePosition(18u, 1u, 8u))
   }
@@ -560,5 +560,25 @@ Chomping: |
     scanner.expectComment("Average", 2u, true, SourcePosition(78u, 4u, 7u), SourcePosition(87u, 4u, 16u))
     scanner.expectPlainScalar("0.278", 3u, SourcePosition(91u, 5u, 3u), SourcePosition(96u, 5u, 8u))
     scanner.expectStreamEnd(SourcePosition(96u, 5u, 8u))
+  }
+
+  @Test
+  fun example_6_13_reserved_directives() {
+    //language=yaml
+    val input = """%FOO  bar baz # Should be ignored
+               # with a warning.
+--- "foo""""
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectInvalid(0u, SourcePosition(0u, 0u, 0u), SourcePosition(13u, 0u, 13u)) {
+      assertEquals(1, it.size)
+    }
+    scanner.expectComment("Should be ignored", 0u, true, SourcePosition(14u, 0u, 14u), SourcePosition(33u, 0u, 33u))
+    scanner.expectComment("with a warning.", 15u, false, SourcePosition(49u, 1u, 15u), SourcePosition(66u, 1u, 32u))
+    scanner.expectDocumentStart(SourcePosition(67u, 2u, 0u))
+    scanner.expectDoubleQuotedScalar("foo", 0u, SourcePosition(71u, 2u, 4u), SourcePosition(76u, 2u, 9u))
+    scanner.expectStreamEnd(SourcePosition(76u, 2u, 9u))
   }
 }

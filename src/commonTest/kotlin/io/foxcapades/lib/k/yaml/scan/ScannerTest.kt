@@ -48,6 +48,21 @@ open class ScannerTest {
     }
   }
 
+  protected fun YAMLTokenScanner.expectInvalid(
+    expectedIndent: UInt,
+    expectedStart: SourcePosition,
+    expectedEnd: SourcePosition,
+    warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
+  ) {
+    assertTrue(this.hasNextToken)
+    assertIs<YAMLTokenInvalid>(this.nextToken()).also {
+      assertEquals(expectedIndent, it.indent)
+      assertEquals(expectedStart, it.start)
+      assertEquals(expectedEnd, it.end)
+      warningChecker(it.warnings)
+    }
+  }
+
   protected fun YAMLTokenScanner.expectMappingKey(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
@@ -339,7 +354,7 @@ open class ScannerTest {
   }
 
 
-  protected fun YAMLTokenScanner.testDocumentStart(
+  protected fun YAMLTokenScanner.expectDocumentStart(
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
