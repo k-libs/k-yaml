@@ -197,4 +197,4 @@ private inline fun YAMLStreamTokenizerImpl.emitTagToken(
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()
 ) =
-  this.tokens.push(YAMLTokenTag(UByteString(handle), UByteString(suffix), start, end, this.popWarnings()))
+  this.tokens.push(YAMLTokenTag(UByteString(handle), UByteString(suffix), this.indent, start, end, this.popWarnings()))

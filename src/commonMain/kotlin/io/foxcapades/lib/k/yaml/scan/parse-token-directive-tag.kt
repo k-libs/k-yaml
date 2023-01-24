@@ -64,7 +64,10 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
       )
     }
 
-    if (reader.isBlankAnyBreakOrEOF())
+    if (reader.isBlank())
+      break
+
+    if (reader.isAnyBreakOrEOF())
       return fetchIncompleteTagDirectiveToken(startMark, position.mark())
 
     // TODO: should we recover by converting the invalid character into a hex

@@ -5,20 +5,21 @@ import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
-// TODO: Tag should probably have indent as well since it can start a line
 data class YAMLTokenTag(
            val handle:   UByteString,
            val suffix:   UByteString,
+           val indent:   UInt,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>,
 ) : YAMLToken {
   override fun toString() =
-    "Tag(handle=$handle, suffix=$suffix, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
+    "Tag(handle=$handle, suffix=$suffix, indent=$indent, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
     handle.contentHashCode() +
     suffix.contentHashCode() +
+    indent.hashCode() +
     start.hashCode() +
     end.hashCode() +
     warnings.contentHashCode()
@@ -29,6 +30,7 @@ data class YAMLTokenTag(
       other is YAMLTokenTag
       && this.handle.contentEquals(other.handle)
       && this.suffix.contentEquals(other.suffix)
+      && this.indent == other.indent
       && this.start == other.start
       && this.end == other.end
       && this.warnings.contentEquals(other.warnings)

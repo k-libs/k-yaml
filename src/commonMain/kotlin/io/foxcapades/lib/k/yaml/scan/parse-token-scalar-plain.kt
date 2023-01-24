@@ -255,7 +255,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       }
     }
 
-    else if (this.reader.isDash()) {
+    else if (this.reader.isDash() && !lineContentIndicator.haveAnyContent) {
       this.reader.cache(4)
 
       if (

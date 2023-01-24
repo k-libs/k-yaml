@@ -132,9 +132,6 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
         return
       }
 
-      println(scalarContent.toArray().decodeToString())
-      println(lastLineHadLeadingWhitespace)
-
       if (lastLineHadLeadingWhitespace) {
         while (trailingNewLines.isNotEmpty)
           scalarContent.claimNewLine(trailingNewLines)
