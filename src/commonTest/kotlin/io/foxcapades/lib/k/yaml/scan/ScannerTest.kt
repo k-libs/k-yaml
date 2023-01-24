@@ -336,7 +336,7 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLTokenScanner.testYAMLDirective(
+  protected fun YAMLTokenScanner.expectYAMLDirective(
     expectedMajor:  UInt,
     expectedMinor:  UInt,
     expectedStart:  SourcePosition,

@@ -170,7 +170,7 @@ class TestSpecExamples : ScannerTest() {
     val scanner = makeScanner(input)
 
     scanner.expectStreamStart()
-    scanner.testYAMLDirective(1u, 2u, SourcePosition(0u, 0u, 0u), SourcePosition(9u, 0u, 9u))
+    scanner.expectYAMLDirective(1u, 2u, SourcePosition(0u, 0u, 0u), SourcePosition(9u, 0u, 9u))
     scanner.expectDocumentStart(SourcePosition(10u, 1u, 0u))
     scanner.expectPlainScalar("text", 0u, SourcePosition(14u, 1u, 4u), SourcePosition(18u, 1u, 8u))
     scanner.expectStreamEnd(SourcePosition(18u, 1u, 8u))
@@ -580,5 +580,28 @@ Chomping: |
     scanner.expectDocumentStart(SourcePosition(67u, 2u, 0u))
     scanner.expectDoubleQuotedScalar("foo", 0u, SourcePosition(71u, 2u, 4u), SourcePosition(76u, 2u, 9u))
     scanner.expectStreamEnd(SourcePosition(76u, 2u, 9u))
+  }
+
+  @Test
+  fun example_6_14_yaml_directive() {
+    //language=yaml
+    val input = """
+      %YAML 1.3 # Attempt parsing
+                 # with a warning
+      ---
+      "foo"
+    """.trimIndent()
+
+    val scanner = makeScanner(input)
+
+    scanner.expectStreamStart()
+    scanner.expectYAMLDirective(1u, 3u, SourcePosition(0u, 0u, 0u), SourcePosition(9u, 0u, 9u)) {
+      assertEquals(1, it.size)
+    }
+    scanner.expectComment("Attempt parsing", 0u, true, SourcePosition(10u, 0u, 10u), SourcePosition(27u, 0u, 27u))
+    scanner.expectComment("with a warning", 11u, false, SourcePosition(39u, 1u, 11u), SourcePosition(55u, 1u, 27u))
+    scanner.expectDocumentStart(SourcePosition(56u, 2u, 0u))
+    scanner.expectDoubleQuotedScalar("foo", 0u, SourcePosition(60u, 3u, 0u), SourcePosition(65u, 3u, 5u))
+    scanner.expectStreamEnd(SourcePosition(65u, 3u, 5u))
   }
 }
