@@ -106,7 +106,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectStreamStart()
     scanner.expectPlainScalar("anchored", 0u, SourcePosition(0u, 0u, 0u))
     scanner.expectMappingValue(0u, SourcePosition(8u, 0u, 8u))
-    scanner.testTag("!", "local", SourcePosition(10u, 0u, 10u))
+    scanner.expectTag("!", "local", SourcePosition(10u, 0u, 10u))
     scanner.expectAnchor("anchor", 0u, SourcePosition(17u, 0u, 17u))
     scanner.expectPlainScalar("value", 0u, SourcePosition(25u, 0u, 25u))
     scanner.expectPlainScalar("alias", 0u, SourcePosition(31u, 1u, 0u))
@@ -160,7 +160,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.testSingleQuotedScalar("text", 0u, SourcePosition(8u, 0u, 8u), SourcePosition(14u, 0u, 14u))
     scanner.expectPlainScalar("double", 0u, SourcePosition(15u, 1u, 0u), SourcePosition(21u, 1u, 6u))
     scanner.expectMappingValue(0u, SourcePosition(21u, 1u, 6u))
-    scanner.requireDoubleQuotedScalar("text", 0u, SourcePosition(23u, 1u, 8u), SourcePosition(29u, 1u, 14u))
+    scanner.expectDoubleQuotedScalar("text", 0u, SourcePosition(23u, 1u, 8u), SourcePosition(29u, 1u, 14u))
     scanner.expectStreamEnd(SourcePosition(29u, 1u, 14u))
   }
 
@@ -226,7 +226,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.requireComment("Tabs and spaces", 0u, false, SourcePosition(0u, 0u, 0u), SourcePosition(17u, 0u, 17u))
     scanner.expectPlainScalar("quoted", 0u, SourcePosition(18u, 1u, 0u), SourcePosition(24u, 1u, 6u))
     scanner.expectMappingValue(0u, SourcePosition(24u, 1u, 6u))
-    scanner.requireDoubleQuotedScalar("Quoted \t", 0u, SourcePosition(26u, 1u, 8u), SourcePosition(36u, 1u, 18u))
+    scanner.expectDoubleQuotedScalar("Quoted \t", 0u, SourcePosition(26u, 1u, 8u), SourcePosition(36u, 1u, 18u))
     scanner.expectPlainScalar("block", 0u, SourcePosition(37u, 2u, 0u), SourcePosition(42u, 2u, 5u))
     scanner.expectMappingValue(0u, SourcePosition(42u, 2u, 5u))
     scanner.expectLiteralScalar("void main() {\n\tprintf(\"Hello, world!\\n\");\n}\n", 0u, SourcePosition(44u, 2u, 7u), SourcePosition(96u, 6u, 0u))
@@ -245,13 +245,13 @@ class TestSpecExamples : ScannerTest() {
 
     scanner.expectStreamStart()
     scanner.expectSequenceEntry(0u, SourcePosition(0u, 0u, 0u))
-    scanner.requireDoubleQuotedScalar("Fun with \\", 2u, SourcePosition(2u, 0u, 2u), SourcePosition(15u, 0u, 15u))
+    scanner.expectDoubleQuotedScalar("Fun with \\", 2u, SourcePosition(2u, 0u, 2u), SourcePosition(15u, 0u, 15u))
     scanner.expectSequenceEntry(0u, SourcePosition(16u, 1u, 0u))
-    scanner.requireDoubleQuotedScalar("\" \u0007 \u0008 \u001b \u000c", 2u, SourcePosition(18u, 1u, 2u), SourcePosition(34u, 1u, 18u))
+    scanner.expectDoubleQuotedScalar("\" \u0007 \u0008 \u001b \u000c", 2u, SourcePosition(18u, 1u, 2u), SourcePosition(34u, 1u, 18u))
     scanner.expectSequenceEntry(0u, SourcePosition(35u, 2u, 0u))
-    scanner.requireDoubleQuotedScalar("\n \r \t \u000b \u0000", 2u, SourcePosition(37u, 2u, 2u), SourcePosition(53u, 2u, 18u))
+    scanner.expectDoubleQuotedScalar("\n \r \t \u000b \u0000", 2u, SourcePosition(37u, 2u, 2u), SourcePosition(53u, 2u, 18u))
     scanner.expectSequenceEntry(0u, SourcePosition(54u, 3u, 0u))
-    scanner.requireDoubleQuotedScalar("\u0020 \u00a0 \u0085 \u2028 \u2029 A A A", 2u, SourcePosition(56u, 3u, 2u), SourcePosition(99u, 4u, 25u))
+    scanner.expectDoubleQuotedScalar("\u0020 \u00a0 \u0085 \u2028 \u2029 A A A", 2u, SourcePosition(56u, 3u, 2u), SourcePosition(99u, 4u, 25u))
     scanner.expectStreamEnd(SourcePosition(99u, 4u, 25u))
   }
 
@@ -266,7 +266,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectStreamStart()
     scanner.expectPlainScalar("Bad escapes", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(11u, 0u, 11u))
     scanner.expectMappingValue(0u, SourcePosition(11u, 0u, 11u))
-    scanner.requireDoubleQuotedScalar("\\c \\xq-", 2u, SourcePosition(15u, 1u, 2u), SourcePosition(26u, 2u, 7u)) {
+    scanner.expectDoubleQuotedScalar("\\c \\xq-", 2u, SourcePosition(15u, 1u, 2u), SourcePosition(26u, 2u, 7u)) {
       assertEquals(2, it.size)
     }
     scanner.expectStreamEnd(SourcePosition(26u, 2u, 7u))
@@ -398,7 +398,7 @@ block: |
     scanner.expectPlainScalar("text lines", 0u, SourcePosition(7u, 0u, 7u), SourcePosition(19u, 1u, 7u))
     scanner.expectPlainScalar("quoted", 0u, SourcePosition(20u, 2u, 0u), SourcePosition(26u, 2u, 6u))
     scanner.expectMappingValue(0u, SourcePosition(26u, 2u, 6u))
-    scanner.requireDoubleQuotedScalar("text lines", 0u, SourcePosition(28u, 2u, 8u), SourcePosition(43u, 3u, 9u))
+    scanner.expectDoubleQuotedScalar("text lines", 0u, SourcePosition(28u, 2u, 8u), SourcePosition(43u, 3u, 9u))
     scanner.expectPlainScalar("block", 0u, SourcePosition(44u, 4u, 0u), SourcePosition(49u, 4u, 5u))
     scanner.expectMappingValue(0u, SourcePosition(49u, 4u, 5u))
     scanner.expectLiteralScalar("text\n \tlines\n", 0u, SourcePosition(51u, 4u, 7u), SourcePosition(69u, 6u, 9u))
@@ -421,7 +421,7 @@ Chomping: |
     scanner.expectStreamStart()
     scanner.expectPlainScalar("Folding", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(7u, 0u, 7u))
     scanner.expectMappingValue(0u, SourcePosition(7u, 0u, 7u))
-    scanner.requireDoubleQuotedScalar("Empty line\nas a line feed", 2u, SourcePosition(11u, 1u, 2u), SourcePosition(45u, 3u, 17u))
+    scanner.expectDoubleQuotedScalar("Empty line\nas a line feed", 2u, SourcePosition(11u, 1u, 2u), SourcePosition(45u, 3u, 17u))
     scanner.expectPlainScalar("Chomping", 0u, SourcePosition(46u, 4u, 0u), SourcePosition(54u, 4u, 8u))
     scanner.expectMappingValue(0u, SourcePosition(54u, 4u, 8u))
     scanner.expectLiteralScalar("Clipped empty lines\n", 0u, SourcePosition(56u, 4u, 10u), SourcePosition(80u, 6u, 0u))
@@ -476,7 +476,7 @@ Chomping: |
     val scanner = makeScanner(input)
 
     scanner.expectStreamStart()
-    scanner.requireDoubleQuotedScalar(" foo\nbar\nbaz ", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(28u, 6u, 2u))
+    scanner.expectDoubleQuotedScalar(" foo\nbar\nbaz ", 0u, SourcePosition(0u, 0u, 0u), SourcePosition(28u, 6u, 2u))
     scanner.expectStreamEnd(SourcePosition(28u, 6u, 2u))
   }
 
@@ -578,7 +578,7 @@ Chomping: |
     scanner.requireComment("Should be ignored", 0u, true, SourcePosition(14u, 0u, 14u), SourcePosition(33u, 0u, 33u))
     scanner.requireComment("with a warning.", 15u, false, SourcePosition(49u, 1u, 15u), SourcePosition(66u, 1u, 32u))
     scanner.expectDocumentStart(SourcePosition(67u, 2u, 0u))
-    scanner.requireDoubleQuotedScalar("foo", 0u, SourcePosition(71u, 2u, 4u), SourcePosition(76u, 2u, 9u))
+    scanner.expectDoubleQuotedScalar("foo", 0u, SourcePosition(71u, 2u, 4u), SourcePosition(76u, 2u, 9u))
     scanner.expectStreamEnd(SourcePosition(76u, 2u, 9u))
   }
 
@@ -601,7 +601,7 @@ Chomping: |
     scanner.requireComment("Attempt parsing", 0u, true, SourcePosition(10u, 0u, 10u), SourcePosition(27u, 0u, 27u))
     scanner.requireComment("with a warning", 11u, false, SourcePosition(39u, 1u, 11u), SourcePosition(55u, 1u, 27u))
     scanner.expectDocumentStart(SourcePosition(56u, 2u, 0u))
-    scanner.requireDoubleQuotedScalar("foo", 0u, SourcePosition(60u, 3u, 0u), SourcePosition(65u, 3u, 5u))
+    scanner.expectDoubleQuotedScalar("foo", 0u, SourcePosition(60u, 3u, 0u), SourcePosition(65u, 3u, 5u))
     scanner.expectStreamEnd(SourcePosition(65u, 3u, 5u))
   }
 
@@ -627,6 +627,29 @@ Chomping: |
     cursor = scanner.expectPlainScalar("foo", 0u, cursor)
 
     // [STREAM-END]
+    scanner.expectStreamEnd(cursor)
+  }
+
+  @Test
+  fun example_6_16_tag_directive() {
+    //language=yaml
+    val input = """
+      %TAG !yaml! tag:yaml.org,2002:
+      ---
+      !yaml!str "foo"
+    """.trimIndent()
+
+    val scanner = makeScanner(input)
+    var cursor: SourcePosition
+
+    cursor = scanner.expectStreamStart()
+    cursor = scanner.expectTagDirective("!yaml!", "tag:yaml.org,2002:", cursor)
+      .skipLine()
+    cursor = scanner.expectDocumentStart(cursor)
+      .skipLine()
+    cursor = scanner.expectTag("!yaml!", "str", cursor)
+      .skipSpace()
+    cursor = scanner.expectDoubleQuotedScalar("foo", 0u, cursor)
     scanner.expectStreamEnd(cursor)
   }
 
@@ -669,7 +692,7 @@ Chomping: |
     cursor = scanner.expectPlainScalar("Not a null", 0u, cursor)
     cursor = scanner.expectMappingValue(0u, cursor)
       .skipSpace()
-    cursor = scanner.requireDoubleQuotedScalar("", 0u, cursor)
+    cursor = scanner.expectDoubleQuotedScalar("", 0u, cursor)
       .skipLine()
 
     // Booleans:·[·true,·True,·false,·FALSE·]↓
