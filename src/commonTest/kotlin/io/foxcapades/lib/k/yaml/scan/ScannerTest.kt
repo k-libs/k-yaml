@@ -25,7 +25,7 @@ open class ScannerTest {
     expectedStart:    SourcePosition = SourcePosition(0u, 0u, 0u),
     expectedEnd:      SourcePosition = expectedStart,
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenStreamStart>(this.nextToken()).also {
       assertEquals(expectedEncoding, it.encoding)
@@ -33,19 +33,22 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectStreamEnd(
     expectedStart:    SourcePosition,
-    expectedEnd:      SourcePosition = expectedStart,
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenStreamEnd>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedEnd, it.end)
+      assertEquals(expectedStart, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedStart
   }
 
   protected fun YAMLTokenScanner.expectInvalid(
@@ -53,7 +56,7 @@ open class ScannerTest {
     expectedStart: SourcePosition,
     expectedEnd: SourcePosition,
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenInvalid>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
@@ -61,6 +64,8 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectMappingKey(
@@ -72,7 +77,7 @@ open class ScannerTest {
     assertIs<YAMLTokenMappingKey>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(1, 0, 1), it.end)
+      assertEquals(expectedStart.resolve(1, 0, 1), it.end)
       warningChecker(it.warnings)
     }
   }
@@ -81,14 +86,18 @@ open class ScannerTest {
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(modIndex = 1, modColumn = 1)
+
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenMappingValue>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(1, 0, 1), it.end)
+      assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectSequenceEntry(
@@ -100,7 +109,7 @@ open class ScannerTest {
     assertIs<YAMLTokenSequenceEntry>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(1, 0, 1), it.end)
+      assertEquals(expectedStart.resolve(1, 0, 1), it.end)
       warningChecker(it.warnings)
     }
   }
@@ -108,9 +117,9 @@ open class ScannerTest {
   protected fun YAMLTokenScanner.expectFlowSequenceStart(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(1, 0, 1)
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenFlowSequenceStart>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
@@ -118,24 +127,30 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectFlowSequenceEnd(
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(1, 0, 1)
+
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenFlowSequenceEnd>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(1, 0, 1), it.end)
+      assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectFlowMappingStart(
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
+    expectedEnd:    SourcePosition = expectedStart.resolve(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
     assertTrue(this.hasNextToken)
@@ -149,7 +164,7 @@ open class ScannerTest {
 
   protected fun YAMLTokenScanner.expectFlowMappingEnd(
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(1, 0, 1),
+    expectedEnd:    SourcePosition = expectedStart.resolve(1, 0, 1),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ) {
     assertTrue(this.hasNextToken)
@@ -163,20 +178,24 @@ open class ScannerTest {
   protected fun YAMLTokenScanner.expectFlowItemSeparator(
     expectedStart:  SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(1, 0, 1)
+
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenFlowItemSeparator>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(1, 0, 1), it.end)
+      assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectAnchor(
     expectedAnchor: String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(
+    expectedEnd:    SourcePosition = expectedStart.resolve(
       modIndex  = expectedAnchor.length + 1,
       modColumn = expectedAnchor.length + 1
     ),
@@ -196,7 +215,7 @@ open class ScannerTest {
     expectedAlias:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(
+    expectedEnd:    SourcePosition = expectedStart.resolve(
       modIndex  = expectedAlias.length + 1,
       modColumn = expectedAlias.length + 1,
     ),
@@ -216,7 +235,7 @@ open class ScannerTest {
     expectedHandle: String,
     expectedSuffix: String,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(
+    expectedEnd:    SourcePosition = expectedStart.resolve(
       modIndex  = expectedHandle.length + expectedSuffix.length,
       modColumn = expectedHandle.length + expectedSuffix.length,
     ),
@@ -236,9 +255,9 @@ open class ScannerTest {
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.copy(expectedValue.length, 0, expectedValue.length),
+    expectedEnd:    SourcePosition = expectedStart.resolve(expectedValue.length, 0, expectedValue.length),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenScalarPlain>(this.nextToken()).also {
       assertEquals(expectedValue, it.value.toString())
@@ -247,6 +266,8 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectLiteralScalar(
@@ -300,13 +321,16 @@ open class ScannerTest {
     }
   }
 
-  protected fun YAMLTokenScanner.expectDoubleQuotedScalar(
+  protected fun YAMLTokenScanner.requireDoubleQuotedScalar(
     expectedValue:  String,
     expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition,
+    expectedEnd:    SourcePosition = expectedStart.resolve(
+      modIndex  = expectedValue.length + 2,
+      modColumn = expectedValue.length + 2,
+    ),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenScalarQuotedDouble>(this.nextToken()).also {
       assertEquals(expectedValue, it.value.toString())
@@ -315,16 +339,21 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
-  protected fun YAMLTokenScanner.expectComment(
+  protected fun YAMLTokenScanner.requireComment(
     expectedValue:    String,
     expectedIndent:   UInt,
     expectedTrailing: Boolean,
     expectedStart:    SourcePosition,
-    expectedEnd:      SourcePosition,
+    expectedEnd:      SourcePosition = expectedStart.resolve(
+      modIndex  = expectedValue.length + 2,
+      modColumn = expectedValue.length + 2,
+    ),
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenComment>(this.nextToken()).also {
       assertEquals(expectedValue, it.value.toString())
@@ -334,15 +363,17 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLTokenScanner.expectYAMLDirective(
     expectedMajor:  UInt,
     expectedMinor:  UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition,
+    expectedEnd:    SourcePosition = expectedStart.resolve(9, 0, 9),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenDirectiveYAML>(this.nextToken()).also {
       assertEquals(expectedMajor, it.majorVersion)
@@ -351,6 +382,8 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
 
@@ -361,7 +394,7 @@ open class ScannerTest {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenDocumentStart>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(3, 0, 3), it.end)
+      assertEquals(expectedStart.resolve(3, 0, 3), it.end)
       warningChecker(it.warnings)
     }
   }
@@ -373,10 +406,16 @@ open class ScannerTest {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenDocumentEnd>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.copy(3, 0, 3), it.end)
+      assertEquals(expectedStart.resolve(3, 0, 3), it.end)
       warningChecker(it.warnings)
     }
   }
+
+  protected fun SourcePosition.skipSpace(count: Int = 1): SourcePosition =
+     resolve(count, 0, count)
+
+  protected fun SourcePosition.skipLine(indentNext: Int = 0): SourcePosition =
+    SourcePosition(index + indentNext.toUInt() + 1u, line + 1u, indentNext.toUInt())
 
   protected fun defaultWarningChecker(warnings: Array<SourceWarning>) {
     assertTrue(warnings.isEmpty())

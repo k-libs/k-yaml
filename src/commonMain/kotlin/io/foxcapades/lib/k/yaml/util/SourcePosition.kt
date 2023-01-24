@@ -12,7 +12,7 @@ class SourcePosition {
     this.column = column
   }
 
-  fun copy(modIndex: Int = 0, modLine: Int = 0, modColumn: Int = 0) =
+  fun resolve(modIndex: Int = 0, modLine: Int = 0, modColumn: Int = 0) =
     SourcePosition(
       if (modIndex  < 0) index  - (-modIndex).toUInt()  else index  + modIndex.toUInt(),
       if (modLine   < 0) line   - (-modLine).toUInt()   else line   + modLine.toUInt(),

@@ -33,7 +33,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
     indentHint = if (this.reader.isDecimalDigit())
       try { this.parseUInt() }
       catch (e: UIntOverflowException) {
-        throw YAMLScannerException("block scalar indent hint value overflows type uint32", startMark.copy(2, 0, 2))
+        throw YAMLScannerException("block scalar indent hint value overflows type uint32", startMark.resolve(2, 0, 2))
       }
     else
       0u
@@ -42,7 +42,7 @@ internal fun YAMLScannerImpl.fetchBlockScalar(isLiteral: Boolean) {
   else if (this.reader.isDecimalDigit()) {
     indentHint = try { this.parseUInt() }
     catch (e: UIntOverflowException) {
-      throw YAMLScannerException("block scalar indent hint value overflows type uint32", startMark.copy(2, 0, 2))
+      throw YAMLScannerException("block scalar indent hint value overflows type uint32", startMark.resolve(2, 0, 2))
     }
 
     this.reader.cache(1)

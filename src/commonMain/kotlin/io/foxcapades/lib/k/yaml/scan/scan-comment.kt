@@ -33,7 +33,7 @@ internal fun YAMLScannerImpl.fetchCommentToken() {
 
   // The comment line may be empty
   if (this.reader.isAnyBreakOrEOF())
-    return this.emitCommentToken(bContent, indent, trailing, start, start.copy(modIndex = 1, modColumn = 1))
+    return this.emitCommentToken(bContent, indent, trailing, start, start.resolve(modIndex = 1, modColumn = 1))
 
   // Iterate through the characters in the stream.
   while (true) {
