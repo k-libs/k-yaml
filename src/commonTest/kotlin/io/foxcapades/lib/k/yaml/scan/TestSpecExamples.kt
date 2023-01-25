@@ -869,6 +869,27 @@ Chomping: |
   }
 
   @Test
+  fun example_6_25_invalid_verbatim_tags() {
+    val input = """
+      - !<!> foo
+      - !<$:?> bar
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor =  test.expectStreamStart()
+
+    cursor = test.expectSequenceEntry(cursor)
+    cursor = test.expectTag("!<!>", "", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("foo", cursor.skipSpace(), 2u)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!<\$:?>", "", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 2u)
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
