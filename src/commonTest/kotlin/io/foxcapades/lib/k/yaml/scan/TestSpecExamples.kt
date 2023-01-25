@@ -889,6 +889,59 @@ Chomping: |
   }
 
   @Test
+  fun example_8_11_more_indented_lines() = example_8_10_folded_lines()
+
+  @Test
+  fun example_8_12_empty_separation_lines() = example_8_10_folded_lines()
+
+  @Test
+  fun examples_8_13_final_empty_lines() = example_8_10_folded_lines()
+
+  @Test
+  fun examples_8_14_block_sequence() {
+    val input = """
+      block sequence:
+        - one
+        - two : three
+      
+    """.trimIndent()
+
+    val test = makeScanner(input)
+    var cursor: SourcePosition
+
+    cursor = test.expectStreamStart()
+    cursor = test.expectPlainScalar("block sequence", cursor)
+    cursor = test.expectSequenceEntry(cursor.skipLine(2), 2u)
+    cursor = test.expectPlainScalar("one", cursor.skipSpace(), 4u)
+    cursor = test.expectSequenceEntry(cursor.skipLine(2), 2u)
+    cursor = test.expectPlainScalar("two", cursor.skipSpace(), 4u)
+    cursor = test.expectMappingValue(cursor.skipSpace(), 4u)
+    cursor = test.expectPlainScalar("three", cursor.skipSpace(), 4u)
+    test.expectStreamEnd(cursor.skipLine())
+  }
+
+  @Test
+  fun examples_8_15_block_sequence_entry_type() {
+    val input = """
+      - # Empty
+      - |
+       block node
+      - - one # Compact
+        - two # sequence
+      - one: two # Compact mapping
+    """.trimIndent()
+
+    val test = makeScanner(input)
+    var cursor: SourcePosition
+
+    cursor = test.expectStreamStart()
+    cursor = test.expectSequenceEntry(cursor)
+    cursor = test.expectComment("Empty", 2u, true, cursor.skipSpace())
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectLiteralScalar("block node\n", 2u, cursor.skipSpace(), SourcePosition(26u, ))
+  }
+
+  @Test
   fun example_10_9_core_tag_resolution() {
     //language=yaml
     val input = """
