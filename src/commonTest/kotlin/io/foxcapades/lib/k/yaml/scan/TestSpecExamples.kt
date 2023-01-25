@@ -847,6 +847,28 @@ Chomping: |
   }
 
   @Test
+  fun example_6_24_verbatim_tags() {
+    //language=yaml
+    val input = """
+      !<tag:yaml.org,2002:str> foo :
+        !<!bar> baz
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectTag("!<tag:yaml.org,2002:str>", "", cursor)
+    cursor = test.expectPlainScalar("foo", cursor.skipSpace())
+    cursor = test.expectMappingValue(cursor.skipSpace())
+    cursor = test.expectTag("!<!bar>", "", cursor.skipLine(2), 2u)
+    cursor = test.expectPlainScalar("baz", cursor.skipSpace(), 2u)
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
