@@ -9,9 +9,14 @@ import io.foxcapades.lib.k.yaml.util.*
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
   val startMark        = this.position.mark()
-  var minIndent        = if (this.atStartOfLine) 0u else this.indent + 1u
   val trailingNewLines = this.trailingNLBuffer
   val actualIndent     = this.indent
+
+  var minIndent = when {
+    this.atStartOfLine                                                   -> 0u
+    this.lineContentIndicator == LineContentIndicatorBlanksAndIndicators -> this.indent - 1u
+    else                                                                 -> this.indent + 1u
+  }
 
   var tailComment: YAMLTokenComment? = null
 
@@ -157,6 +162,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       this.indent = this.position.column
 
       if (this.indent < minIndent) {
+        println(minIndent)
         TODO("we have an empty scalar that may have newlines that need to be appended to the literal content")
       }
 

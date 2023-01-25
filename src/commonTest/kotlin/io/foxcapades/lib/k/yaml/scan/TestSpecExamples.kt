@@ -880,7 +880,7 @@ Chomping: |
       "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n",
       0u,
       cursor,
-      cursor.resolve(79, 14, 0)
+      cursor.resolve(77, 14, 0)
     )
 
     cursor = test.expectComment("Comment", 0u, false, cursor.skipLine())
@@ -911,6 +911,7 @@ Chomping: |
 
     cursor = test.expectStreamStart()
     cursor = test.expectPlainScalar("block sequence", cursor)
+    cursor = test.expectMappingValue(cursor)
     cursor = test.expectSequenceEntry(cursor.skipLine(2), 2u)
     cursor = test.expectPlainScalar("one", cursor.skipSpace(), 4u)
     cursor = test.expectSequenceEntry(cursor.skipLine(2), 2u)
@@ -938,7 +939,21 @@ Chomping: |
     cursor = test.expectSequenceEntry(cursor)
     cursor = test.expectComment("Empty", 2u, true, cursor.skipSpace())
     cursor = test.expectSequenceEntry(cursor.skipLine())
-    cursor = test.expectLiteralScalar("block node\n", 2u, cursor.skipSpace(), SourcePosition(26u, ))
+    cursor = test.expectLiteralScalar("block node\n", 2u, cursor.skipSpace(), SourcePosition(26u, 3u, 0u))
+    cursor = test.expectSequenceEntry(cursor)
+    cursor = test.expectSequenceEntry(cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("one", cursor.skipSpace(), 4u)
+    cursor = test.expectComment("Compact", 4u, true, cursor.skipSpace())
+    cursor = test.expectSequenceEntry(cursor.skipLine(2), 2u)
+    cursor = test.expectPlainScalar("two", cursor.skipSpace(), 4u)
+    cursor = test.expectComment("sequence", 4u, true, cursor.skipSpace())
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectPlainScalar("one", cursor.skipSpace(), 2u)
+    cursor = test.expectMappingValue(cursor, 2u)
+    cursor = test.expectPlainScalar("two", cursor.skipSpace(), 2u)
+    cursor = test.expectComment("Compact mapping", 2u, true, cursor.skipSpace())
+
+    test.expectStreamEnd(cursor)
   }
 
   @Test
