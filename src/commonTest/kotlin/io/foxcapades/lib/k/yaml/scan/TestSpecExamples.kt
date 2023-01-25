@@ -847,6 +847,44 @@ Chomping: |
   }
 
   @Test
+  fun example_8_10_folded_lines() {
+    //language=yaml
+    val input = """
+      >
+
+       folded
+       line
+      
+       next
+       line
+         * bullet
+      
+         * list
+         * lines
+
+       last
+       line
+
+      # Comment
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectFoldedScalar(
+      "\nfolded line\nnext line\n  * bullet\n \n  * list\n  * lines\n\nlast line\n",
+      0u,
+      cursor,
+      cursor.resolve(79, 14, 0)
+    )
+
+    cursor = test.expectComment("Comment", 0u, false, cursor.skipLine())
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_10_9_core_tag_resolution() {
     //language=yaml
     val input = """

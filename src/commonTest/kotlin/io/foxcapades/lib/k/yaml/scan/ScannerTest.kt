@@ -305,7 +305,7 @@ open class ScannerTest {
     expectedStart:  SourcePosition,
     expectedEnd:    SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenScalarFolded>(this.nextToken()).also {
       assertEquals(expectedValue, it.value.toString())
@@ -314,6 +314,8 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLStreamTokenizer.testSingleQuotedScalar(
