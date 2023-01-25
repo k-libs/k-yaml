@@ -872,8 +872,12 @@ Chomping: |
 
     var cursor = test.expectStreamStart()
 
+    // Official 1.2.2 spec has this example output as being
+    // "\nfolded line\nnext line\n  * bullet\n \n  * list\n  * lines\n\nlast line\n"
+    // The "\n \n" after "bullet" in this doesn't make any sense as the input
+    // did not contain a space between those line breaks.
     cursor = test.expectFoldedScalar(
-      "\nfolded line\nnext line\n  * bullet\n \n  * list\n  * lines\n\nlast line\n",
+      "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n",
       0u,
       cursor,
       cursor.resolve(79, 14, 0)
