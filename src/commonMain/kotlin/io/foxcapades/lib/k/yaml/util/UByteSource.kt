@@ -191,6 +191,9 @@ internal inline fun UByteSource.isHexDigit(offset: Int = 0): Boolean {
   return false
 }
 
+internal inline fun UByteSource.isPercentEscape(offset: Int = 0) =
+  size > offset + 2 && uIsPercent(0) && uIsHexDigit(1) && uIsHexDigit(2)
+
 // endregion Safe Byte Class Tests
 
 // region Unsafe Byte Class Tests
@@ -203,6 +206,17 @@ internal inline fun UByteSource.uIsFlowIndicator(offset: Int) =
   || uTest(A_SQUARE_BRACKET_CLOSE, offset)
   || uTest(A_CURLY_BRACKET_OPEN, offset)
   || uTest(A_CURLY_BRACKET_CLOSE, offset)
+
+internal inline fun UByteSource.uIsHexDigit(offset: Int = 0): Boolean {
+  val v = get(offset)
+
+  // `0`..`9`
+  return (v > A_SLASH && v < A_COLON)
+    // `A`..`F`
+    || (v > A_AT && v < A_UPPER_G)
+    // `a`..`f`
+    || (v > A_GRAVE && v < A_CURLY_BRACKET_OPEN)
+}
 
 // endregion Unsafe Byte Class Tests
 

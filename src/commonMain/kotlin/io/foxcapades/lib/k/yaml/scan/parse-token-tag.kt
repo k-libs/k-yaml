@@ -11,6 +11,8 @@ internal fun YAMLStreamTokenizerImpl.parseTagToken() {
   val start  = position.mark()
   val handle = contentBuffer1
 
+  lineContentIndicator = LineContentIndicatorContent
+
   handle.clear()
 
   /*
@@ -59,7 +61,6 @@ internal fun YAMLStreamTokenizerImpl.parseTagToken() {
   should have a local secondary tag.
   */
   if (buffer.uIsExclamation()) {
-    handle.claimASCII(buffer, position)
     parseLocalTag(start, handle)
     return
   }
@@ -69,7 +70,7 @@ internal fun YAMLStreamTokenizerImpl.parseTagToken() {
   percent escape character that is part of either a primary local tag suffix or
   a named tag handle.
   */
-  parseAmbiguousTag()
+  parseAmbiguousTag(start, handle)
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -107,6 +108,7 @@ private fun YAMLStreamTokenizerImpl.parseVerbatimTag(start: SourcePosition, hand
     }
 
     else if (buffer.isGreaterThan()) {
+      handle.claimASCII(buffer, position)
       break
     }
 
@@ -126,14 +128,103 @@ private fun YAMLStreamTokenizerImpl.parseVerbatimTag(start: SourcePosition, hand
   */
   if (handle.size == 3) {
     warn("empty verbatim tag", start)
-    tokens.push(YAMLTokenTag(
-      UByteString(handle.toArray()),
-      UByteString(ubyteArrayOf()),
-      indent,
-      start,
-      position.mark(),
-      popWarnings()
-    ))
+  }
+
+  tokens.push(YAMLTokenTag(
+    UByteString(handle.toArray()),
+    UByteString(ubyteArrayOf()),
+    indent,
+    start,
+    position.mark(),
+    popWarnings()
+  ))
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private fun YAMLStreamTokenizerImpl.parseLocalTag(start: SourcePosition, handle: UByteBuffer) {
+  handle.claimASCII(buffer, position)
+
+  val suffix = contentBuffer2
+  suffix.clear()
+
+  while (true) {
+    buffer.cache(1)
+
+    if (buffer.isNsTagChar()) {
+      suffix.claimASCII(buffer, position)
+    }
+
+    else if (buffer.isPercent()) {
+      eatPercentEscape(suffix, false)
+    }
+
+    else if (buffer.isBlankAnyBreakOrEOF()) {
+      break
+    }
+
+    else {
+      warn("non URI safe character in local tag", position.mark(), position.mark(1, 0, 1))
+      suffix.claimUTF8(buffer, position)
+    }
+  }
+
+  if (suffix.isEmpty) {
+    warn("local tag with no suffix value", start)
+  }
+
+  tokens.push(YAMLTokenTag(
+    UByteString(handle.toArray()),
+    UByteString(suffix.toArray()),
+    indent,
+    start,
+    position.mark(),
+    popWarnings()
+  ))
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private fun YAMLStreamTokenizerImpl.parseAmbiguousTag(start: SourcePosition, handle: UByteBuffer) {
+  val suffix = contentBuffer2
+
+  suffix.clear()
+
+  // look for end of tag, or the ! character that marks the end of the handle
+  // and start of the suffix
+  while (true) {
+    buffer.cache(1)
+
+    if (buffer.isBlankAnyBreakOrEOF()) {
+      tokens.push(YAMLTokenTag(
+        UByteString(handle.toArray()),
+        UByteString(suffix.toArray()),
+        indent,
+        start,
+        position.mark(),
+        popWarnings()
+      ))
+      return
+    }
+
+    else if (buffer.uIsNsTagChar()) {
+      suffix.claimASCII(buffer, position)
+    }
+
+    else if (buffer.isPercent()) {
+      eatPercentEscape(suffix, true)
+    }
+
+    else if (buffer.isExclamation()) {
+      while (suffix.isNotEmpty)
+        handle.push(suffix.pop())
+
+      parseLocalTag(start, handle)
+      return
+    }
+
+    else {
+      warn("non URI safe character in local tag", position.mark(), position.mark(1, 0, 1))
+      suffix.claimUTF8(buffer, position)
+    }
   }
 }
 
@@ -166,3 +257,6 @@ private fun YAMLStreamTokenizerImpl.eatPercentEscape(content: UByteBuffer, inVer
     content.claimUTF8(buffer, position)
   }
 }
+
+private fun YAMLStreamTokenizerImpl.escapeToUByte() =
+  ((buffer.asHexDigit(1) shl 4) and buffer.asHexDigit(2)).toUByte()

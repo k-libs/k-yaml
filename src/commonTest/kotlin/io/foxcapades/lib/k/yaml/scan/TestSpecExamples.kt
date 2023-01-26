@@ -912,7 +912,7 @@ Chomping: |
     cursor = test.expectTag("!!", "str", cursor.skipSpace(), 2u)
     cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 2u)
     cursor = test.expectSequenceEntry(cursor.skipLine())
-    cursor = test.expectTag("!e!", "tag!", cursor.skipSpace(), 2u)
+    cursor = test.expectTag("!e!", "tag%21", cursor.skipSpace(), 2u)
     cursor = test.expectPlainScalar("baz", cursor.skipSpace(), 2u)
 
     test.expectStreamEnd(cursor)
