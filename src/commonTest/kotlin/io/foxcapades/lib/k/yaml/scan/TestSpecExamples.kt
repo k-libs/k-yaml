@@ -870,6 +870,7 @@ Chomping: |
 
   @Test
   fun example_6_25_invalid_verbatim_tags() {
+    //language=yaml
     val input = """
       - !<!> foo
       - !<$:?> bar
@@ -891,6 +892,7 @@ Chomping: |
 
   @Test
   fun example_6_26_tag_shorthands() {
+    //language=yaml
     val input = """
       %TAG !e! tag:example.com,2000:app/
       ---
@@ -913,6 +915,34 @@ Chomping: |
     cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 2u)
     cursor = test.expectSequenceEntry(cursor.skipLine())
     cursor = test.expectTag("!e!", "tag%21", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("baz", cursor.skipSpace(), 2u)
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
+  fun example_6_27_invalid_tag_shorthands() {
+    //language=yaml
+    val input = """
+      %TAG !e! tag:example,2000:app/
+      ---
+      - !e! foo
+      - !h!bar baz
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectTagDirective("!e!", "tag:example,2000:app/", cursor)
+    cursor = test.expectDocumentStart(cursor.skipLine())
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!e!", "", cursor.skipSpace(), 2u) {
+      assertEquals(1, it.size)
+    }
+    cursor = test.expectPlainScalar("foo", cursor.skipSpace(), 2u)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!h!", "bar", cursor.skipSpace(), 2u)
     cursor = test.expectPlainScalar("baz", cursor.skipSpace(), 2u)
 
     test.expectStreamEnd(cursor)
