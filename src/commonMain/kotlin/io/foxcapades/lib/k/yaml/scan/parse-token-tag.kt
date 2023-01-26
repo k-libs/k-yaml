@@ -257,6 +257,3 @@ private fun YAMLStreamTokenizerImpl.eatPercentEscape(content: UByteBuffer, inVer
     content.claimUTF8(buffer, position)
   }
 }
-
-private fun YAMLStreamTokenizerImpl.escapeToUByte() =
-  ((buffer.asHexDigit(1) shl 4) and buffer.asHexDigit(2)).toUByte()
