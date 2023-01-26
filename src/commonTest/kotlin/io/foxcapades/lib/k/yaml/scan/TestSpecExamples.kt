@@ -949,6 +949,32 @@ Chomping: |
   }
 
   @Test
+  fun example_6_28_non_specific_tags() {
+    //language=yaml
+    val input = """
+      # Assuming conventional resolution:
+      - "12"
+      - 12
+      - ! 12
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectComment("Assuming conventional resolution:", 0u, false, cursor)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectDoubleQuotedScalar("12", cursor.skipSpace(), 2u)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectPlainScalar("12", cursor.skipSpace(), 2u)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!", "", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("12", cursor.skipSpace(), 2u)
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
