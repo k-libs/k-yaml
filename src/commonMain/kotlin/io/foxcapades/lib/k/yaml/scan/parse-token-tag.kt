@@ -31,6 +31,8 @@ internal fun YAMLStreamTokenizerImpl.parseTagToken() {
   if (reader.isNsTagChar())
     return fetchHandleOrPrimaryTagToken(startMark)
 
+  // TODO: handle percent character followed by hex escape????
+
 
   warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
   skipUntilBlankBreakOrEOF()

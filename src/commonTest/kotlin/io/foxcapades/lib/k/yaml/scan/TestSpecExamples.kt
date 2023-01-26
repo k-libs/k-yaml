@@ -890,6 +890,35 @@ Chomping: |
   }
 
   @Test
+  fun example_6_26_tag_shorthands() {
+    val input = """
+      %TAG !e! tag:example.com,2000:app/
+      ---
+      - !local foo
+      - !!str bar
+      - !e!tag%21 baz
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectTagDirective("!e!", "tag:example.com,2000:app/", cursor)
+    cursor = test.expectDocumentStart(cursor.skipLine())
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!", "local", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("foo", cursor.skipSpace(), 2u)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!!", "str", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 2u)
+    cursor = test.expectSequenceEntry(cursor.skipLine())
+    cursor = test.expectTag("!e!", "tag!", cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("baz", cursor.skipSpace(), 2u)
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

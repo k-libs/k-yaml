@@ -251,7 +251,9 @@ open class ScannerTest {
     val expectedEnd = expectedStart.resolve(tokenLength, 0, tokenLength)
 
     assertTrue(this.hasNextToken)
-    assertIs<YAMLTokenTag>(this.nextToken()).also {
+    val token = this.nextToken()
+    println(token)
+    assertIs<YAMLTokenTag>(token).also {
       assertEquals(expectedHandle, it.handle.toString())
       assertEquals(expectedSuffix, it.suffix.toString())
       assertEquals(expectedIndent, it.indent)
