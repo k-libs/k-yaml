@@ -975,6 +975,29 @@ Chomping: |
   }
 
   @Test
+  fun example_6_29_node_anchors() {
+    //language=yaml
+    val input = """
+      First occurrence: &anchor Value
+      Second occurrence: *anchor
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectPlainScalar("First occurrence", cursor)
+    cursor = test.expectMappingValue(cursor)
+    cursor = test.expectAnchor("anchor", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Value", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Second occurrence", cursor.skipLine())
+    cursor = test.expectMappingValue(cursor)
+    cursor = test.expectAlias("anchor", cursor.skipSpace())
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
