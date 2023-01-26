@@ -8,7 +8,7 @@ internal fun skipASCII(from: UByteSource, position: SourcePositionTracker, count
 }
 
 internal fun YAMLStreamTokenizerImpl.skipUTF8(count: Int = 1) {
-  reader.skipCodepoints(count)
+  buffer.skipCodepoints(count)
   position.incPosition(count.toUInt())
 }
 
@@ -21,10 +21,10 @@ internal fun YAMLStreamTokenizerImpl.skipUTF8(count: Int = 1) {
 internal fun YAMLStreamTokenizerImpl.skipBlanks(): Int {
   var out = 0
 
-  reader.cache(1)
-  while (reader.isBlank()) {
-    skipASCII(this.reader, this.position)
-    reader.cache(1)
+  buffer.cache(1)
+  while (buffer.isBlank()) {
+    skipASCII(this.buffer, this.position)
+    buffer.cache(1)
     out++
   }
 
@@ -65,33 +65,33 @@ internal fun skipNewLine(from: UByteSource, position: SourcePositionTracker) {
 
 internal fun YAMLStreamTokenizerImpl.skipToNextToken() {
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
     when {
-      reader.isSpace() -> {
-        skipASCII(reader, position)
+      buffer.isSpace()    -> {
+        skipASCII(buffer, position)
         if (lineContentIndicator != LineContentIndicatorContent)
           indent++
       }
 
-      reader.isTab() -> {
+      buffer.isTab()      -> {
         if (lineContentIndicator.haveHardContent) {
-          skipASCII(reader, position)
+          skipASCII(buffer, position)
         } else if (inFlow || lineContentIndicator == LineContentIndicatorBlanksAndIndicators) {
-          skipASCII(reader, position)
+          skipASCII(buffer, position)
           indent++
         } else {
           break
         }
       }
 
-      reader.isAnyBreak() -> {
-        skipNewLine(this.reader, this.position)
+      buffer.isAnyBreak() -> {
+        skipNewLine(this.buffer, this.position)
         lineContentIndicator = LineContentIndicatorBlanksOnly
         indent = 0u
       }
 
-      reader.isEOF()      -> {
+      buffer.isEOF()      -> {
         break
       }
 
@@ -104,9 +104,9 @@ internal fun YAMLStreamTokenizerImpl.skipToNextToken() {
 
 internal fun YAMLStreamTokenizerImpl.skipUntilBlankBreakOrEOF() {
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
-    if (reader.isBlankAnyBreakOrEOF())
+    if (buffer.isBlankAnyBreakOrEOF())
       return
     else
       skipUTF8()
@@ -175,7 +175,7 @@ internal fun YAMLStreamTokenizerImpl.skipUntilCommentBreakOrEOF(): SourcePositio
   val endMark: SourcePosition
 
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
     when {
       // If we've encountered `<WS>#` then we can end because we've found the
@@ -183,16 +183,16 @@ internal fun YAMLStreamTokenizerImpl.skipUntilCommentBreakOrEOF(): SourcePositio
       //
       // If we've encountered a line break or the EOF, then we can end because
       // it's the end of the junk token.
-      reader.isPound() && trailingWhitespaceCount > 0 || reader.isAnyBreakOrEOF() -> {
+      buffer.isPound() && trailingWhitespaceCount > 0 || buffer.isAnyBreakOrEOF() -> {
         endMark = position.mark(modIndex = -trailingWhitespaceCount, modColumn = -trailingWhitespaceCount)
         break
       }
 
       // If we've encountered a whitespace character, just keep a counter of it
       // because it may be trailing whitespace (which we want to "ignore").
-      reader.isBlank() -> {
+      buffer.isBlank()                                                            -> {
         trailingWhitespaceCount++
-        skipASCII(this.reader, this.position)
+        skipASCII(this.buffer, this.position)
       }
 
       // Else, it's a junk "content" character

@@ -26,9 +26,9 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 internal fun YAMLStreamTokenizerImpl.parseAmbiguousColonToken() {
-  this.reader.cache(2)
+  this.buffer.cache(2)
 
-  if (!(this.inFlowMapping || this.reader.isBlankAnyBreakOrEOF(1)))
+  if (!(this.inFlowMapping || this.buffer.isBlankAnyBreakOrEOF(1)))
     return this.parsePlainScalar()
 
   this.fetchMappingValueIndicatorToken()

@@ -1,202 +1,168 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.bytes.A_EXCLAIM
-import io.foxcapades.lib.k.yaml.bytes.StrEmpty
-import io.foxcapades.lib.k.yaml.bytes.StrPrimaryTagPrefix
-import io.foxcapades.lib.k.yaml.bytes.StrSecondaryTagPrefix
 import io.foxcapades.lib.k.yaml.token.YAMLTokenTag
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.UByteBuffer
+import io.foxcapades.lib.k.yaml.util.uIsExclamation
+import io.foxcapades.lib.k.yaml.util.uIsLessThan
 
 
 internal fun YAMLStreamTokenizerImpl.parseTagToken() {
-  val startMark = position.mark()
+  val start  = position.mark()
+  val handle = contentBuffer1
 
-  // Skip the first `!`
-  skipASCII(this.reader, this.position)
+  handle.clear()
 
-  lineContentIndicator = LineContentIndicatorContent
+  /*
+  At this point, the current character in the reader buffer is the leading `!`
+  character.
 
-  // Queue up the next character to read
-  reader.cache(1)
+  Eat it into our handle buffer.
+  */
+  handle.claimASCII(buffer, position)
 
-  if (reader.isBlankAnyBreakOrEOF())
-    return fetchNonSpecificTagToken(startMark)
+  /*
+  The next character in the buffer (or whether we have such a character)
+  determines what kind of tag we are going to attempt to parse.
 
-  if (reader.isLessThan())
-    return fetchVerbatimTagToken(startMark)
+  Attempt to ensure another character is cached in the reader buffer for us to
+  test.
+  */
+  buffer.cache(1)
 
-  if (reader.isExclamation())
-    return fetchSecondaryTagToken(startMark)
-
-  if (reader.isNsTagChar())
-    return fetchHandleOrPrimaryTagToken(startMark)
-
-  // TODO: handle percent character followed by hex escape????
-
-
-  warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
-  skipUntilBlankBreakOrEOF()
-  emitInvalidToken(startMark, position.mark())
-  return
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLStreamTokenizerImpl.fetchNonSpecificTagToken(startMark: SourcePosition) {
-  emitTagToken(StrPrimaryTagPrefix, StrEmpty, startMark)
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLStreamTokenizerImpl.fetchHandleOrPrimaryTagToken(startMark: SourcePosition) {
-  // Clear our reusable buffer just in case some goober left something in it.
-  contentBuffer1.clear()
-
-  // Push our prefix `!` character.
-  contentBuffer1.push(A_EXCLAIM)
-
-  // Claim the URI character the cursor is currently on.
-  contentBuffer1.claimUTF8(this.reader, this.position)
-
-  while (true) {
-    reader.cache(1)
-
-    // If we hit a blank, new line, or the EOF
-    if (reader.isBlankAnyBreakOrEOF()) {
-      // Pop the exclamation mark off because what we have is a suffix on the
-      // primary tag handle and a suffix should not have a leading exclamation
-      // mark.
-      contentBuffer1.pop()
-
-      // Generate the primary tag token.
-      return fetchPrimaryTagToken(startMark, contentBuffer1.popToArray())
-    }
-
-    // If we hit an exclamation mark
-    else if (reader.isExclamation()) {
-      // Then what we have is the handle for a local tag.
-
-      // Eat the exclamation mark to finish off our handle
-      contentBuffer1.claimASCII(this.reader, this.position)
-
-      // Generate a local tag token
-      return fetchLocalTagToken(startMark, contentBuffer1.popToArray())
-    }
-
-    // If we hit a URI character
-    else if (reader.isNsURIChar()) {
-      // append it to the buffer
-      contentBuffer1.claimUTF8(this.reader, this.position)
-    }
-
-    // If we hit any other character
-    else {
-      warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
-      skipUntilBlankBreakOrEOF()
-      emitInvalidToken(startMark, position.mark())
-      return
-    }
-  }
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLStreamTokenizerImpl.fetchPrimaryTagToken(startMark: SourcePosition, suffix: UByteArray) {
-  emitTagToken(StrPrimaryTagPrefix, suffix, startMark)
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLStreamTokenizerImpl.fetchLocalTagToken(startMark: SourcePosition, handle: UByteArray) {
-  // !foo!bar
-  // we've seen `!foo!`
-
-  contentBuffer1.clear()
-
-  reader.cache(1)
-
-  if (reader.isBlankAnyBreakOrEOF()) {
-    emitInvalidToken("incomplete tag; tag had no suffix", startMark, position.mark())
+  /*
+  If there is no more characters in the stream, or if the next character in the
+  stream is a blank or a line break, then all we have is the `!` character,
+  which is the "non-specific" tag.
+  */
+  if (buffer.isBlankAnyBreakOrEOF()) {
+    parseNonSpecificTag(start, handle)
     return
   }
 
+  /*
+  From here on out we can use unsafe character single character checks because
+  we know that there is at least one more character before the EOF.
+  */
+
+  /*
+  If the next character in the reader buffer is a `<` character, then we should
+  have a verbatim tag.
+  */
+  if (buffer.uIsLessThan()) {
+    parseVerbatimTag(start, handle)
+    return
+  }
+
+  /*
+  If the next character in the reader buffer is another `!` character, then we
+  should have a local secondary tag.
+  */
+  if (buffer.uIsExclamation()) {
+    handle.claimASCII(buffer, position)
+    parseLocalTag(start, handle)
+    return
+  }
+
+  /*
+  If the next character is not one of the above, then it should be a URI or
+  percent escape character that is part of either a primary local tag suffix or
+  a named tag handle.
+  */
+  parseAmbiguousTag()
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private fun YAMLStreamTokenizerImpl.parseNonSpecificTag(start: SourcePosition, handle: UByteBuffer) {
+  tokens.push(YAMLTokenTag(
+    UByteString(handle.toArray()),
+    UByteString(ubyteArrayOf()),
+    indent,
+    start,
+    position.mark(),
+    popWarnings()
+  ))
+}
+
+@OptIn(ExperimentalUnsignedTypes::class)
+private fun YAMLStreamTokenizerImpl.parseVerbatimTag(start: SourcePosition, handle: UByteBuffer) {
+  // eat the `<` character
+  handle.claimASCII(buffer, position)
+
+  // eat the rest of the tag until we see a `>` character
   while (true) {
-    if (reader.isNsURIChar()) {
-      contentBuffer1.claimUTF8(this.reader, this.position)
+    buffer.cache(1)
+
+    if (buffer.isNsURIChar()) {
+      handle.claimASCII(buffer, position)
     }
 
-    else if (reader.isBlankAnyBreakOrEOF()) {
+    else if (buffer.isPercent()) {
+      eatPercentEscape(handle, true)
+    }
+
+    else if (buffer.isBlankAnyBreakOrEOF()) {
+      emitInvalidToken("incomplete verbatim tag due to reaching the end of the input stream", start)
+      return
+    }
+
+    else if (buffer.isGreaterThan()) {
       break
     }
 
     else {
-      warn("unexpected or invalid character while parsing a tag", position.mark(), position.mark(1, 0, 1))
-      skipUntilBlankBreakOrEOF()
-      emitInvalidToken(startMark, position.mark())
+      warn("non URI safe character in verbatim tag", position.mark(), position.mark(1, 0, 1))
+      handle.claimUTF8(buffer, position)
+    }
+  }
+
+  /*
+  If we made it here then we have eaten the whole verbatim tag from opening `!<`
+  to closing `>`.
+
+  Now make sure there was actually something in there.  If the handle size is
+  equal to `3` then we know it just contains the verbatim tag leader and suffix
+  characters and no actual value. ("!<>")
+  */
+  if (handle.size == 3) {
+    warn("empty verbatim tag", start)
+    tokens.push(YAMLTokenTag(
+      UByteString(handle.toArray()),
+      UByteString(ubyteArrayOf()),
+      indent,
+      start,
+      position.mark(),
+      popWarnings()
+    ))
+  }
+}
+
+private fun YAMLStreamTokenizerImpl.eatPercentEscape(content: UByteBuffer, inVerbatim: Boolean) {
+  val start = position.mark()
+
+  // eat the percent character
+  content.claimASCII(buffer, position)
+
+  buffer.cache(2)
+
+  // verify that the next 2 characters are hex digits
+  if (buffer.isHexDigit(0) && buffer.isHexDigit(1)) {
+    content.claimASCII(buffer, position, 2)
+    return
+  }
+
+  var i = 0
+  while (i++ < 2) {
+    if (buffer.isBlankAnyBreakOrEOF()) {
+      warn("incomplete URI escape sequence due to reaching the end of the input stream", start, position.mark())
       return
     }
 
-    reader.cache(1)
-  }
-
-  emitTagToken(handle, contentBuffer1.popToArray(), startMark)
-}
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLStreamTokenizerImpl.fetchSecondaryTagToken(startMark: SourcePosition) {
-  contentBuffer1.clear()
-
-  skipASCII(this.reader, this.position)
-  reader.cache(1)
-
-  if (reader.isBlankAnyBreakOrEOF())
-    TODO("secondary token with no suffix")
-
-  while (true) {
-    if (reader.isNsTagChar()) {
-      contentBuffer1.claimUTF8(this.reader, this.position)
-    } else if (reader.isBlankAnyBreakOrEOF()) {
-      break
-    } else {
-      warn("invalid character in secondary tag token", position.mark(), position.mark(1, 0, 1))
-      skipUntilBlankBreakOrEOF()
-      emitInvalidToken(startMark, position.mark())
+    if (inVerbatim && buffer.isGreaterThan()) {
+      warn("incomplete URI escape sequence due to reaching the end of the verbatim tag", start, position.mark())
       return
     }
 
-    reader.cache(1)
+    content.claimUTF8(buffer, position)
   }
-
-  emitTagToken(StrSecondaryTagPrefix, contentBuffer1.popToArray(), startMark)
 }
-
-@OptIn(ExperimentalUnsignedTypes::class)
-private fun YAMLStreamTokenizerImpl.fetchVerbatimTagToken(startMark: SourcePosition) {
-  contentBuffer1.clear()
-
-  contentBuffer1.push(A_EXCLAIM)
-  contentBuffer1.claimASCII(this.reader, this.position)
-
-  while (true) {
-    reader.cache(1)
-
-    if (reader.isGreaterThan()) {
-      contentBuffer1.claimASCII(this.reader, this.position)
-      break
-    } else if (reader.isNsURIChar()) {
-      contentBuffer1.claimASCII(this.reader, this.position)
-    } else if (reader.isBlankAnyBreakOrEOF()) {
-      TODO("incomplete verbatim tag")
-    } else {
-      TODO("unexpected character in verbatim tag")
-    }
-  }
-
-  emitTagToken(contentBuffer1.popToArray(), StrEmpty, startMark)
-}
-
-@Suppress("NOTHING_TO_INLINE")
-@OptIn(ExperimentalUnsignedTypes::class)
-private inline fun YAMLStreamTokenizerImpl.emitTagToken(
-  handle: UByteArray,
-  suffix: UByteArray,
-  start:  SourcePosition,
-  end:    SourcePosition = this.position.mark()
-) =
-  this.tokens.push(YAMLTokenTag(UByteString(handle), UByteString(suffix), this.indent, start, end, this.popWarnings()))

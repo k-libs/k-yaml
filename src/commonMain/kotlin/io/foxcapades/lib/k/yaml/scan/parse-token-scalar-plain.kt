@@ -29,55 +29,55 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowMapping() {
   lineContentIndicator = LineContentIndicatorContent
 
   while (true) {
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
     when {
-      this.reader.isBlank() -> {
+      this.buffer.isBlank()    -> {
         // If we already have content on this line
         if (lineContentIndicator == LineContentIndicatorContent) {
           // Then we want to keep it in case we encounter another content
           // character, at which point we will need to insert the whitespaces
           // in between the content characters.
-          bTailWS.claimASCII(this.reader, this.position)
+          bTailWS.claimASCII(this.buffer, this.position)
         }
 
         // else, if we don't have any content on this line yet,
         else {
           // Discard the whitespace because we won't use it for anything whether
           // this line is empty or not.
-          skipASCII(this.reader, this.position)
+          skipASCII(this.buffer, this.position)
         }
       }
 
-      this.reader.isAnyBreak() -> {
+      this.buffer.isAnyBreak() -> {
         // We can go ahead and clear out the trailing space buffer because we
         // won't be using it.
         bTailWS.clear()
 
         // Eat the newline and append it to our trailing newline buffer.
-        bTailNL.claimNewLine(this.reader, this.position)
+        bTailNL.claimNewLine(this.buffer, this.position)
 
         // Now we are starting a new line, which has no content yet.
         lineContentIndicator = LineContentIndicatorBlanksOnly
       }
 
-         this.reader.isColon()
-      || this.reader.isComma()
-      || this.reader.isCurlyClose()
-      || this.reader.isEOF()
-      -> {
+         this.buffer.isColon()
+      || this.buffer.isComma()
+      || this.buffer.isCurlyClose()
+      || this.buffer.isEOF()
+                               -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
         lineContentIndicator = LineContentIndicatorContent
         return
       }
 
-      else -> {
+      else                     -> {
         while (bTailWS.isNotEmpty)
           bContent.claimASCII(bTailWS)
 
         collapseNewLinesInto(bContent, bTailNL, endPosition)
 
-        bContent.claimUTF8(this.reader, this.position)
+        bContent.claimUTF8(this.buffer, this.position)
         endPosition.become(this.position)
         lineContentIndicator = LineContentIndicatorContent
       }
@@ -102,28 +102,28 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowSequence() {
   this.lineContentIndicator = LineContentIndicatorContent
 
   while (true) {
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
     when {
-      this.reader.isBlank()                     -> {
+      this.buffer.isBlank()                     -> {
         if (lineContentIndicator == LineContentIndicatorContent)
-          bTailWS.claimASCII(this.reader, this.position)
+          bTailWS.claimASCII(this.buffer, this.position)
         else
-          skipASCII(this.reader, this.position)
+          skipASCII(this.buffer, this.position)
 
         lastWasBlankOrNewLine = true
       }
 
-      this.reader.isAnyBreak()                  -> {
+      this.buffer.isAnyBreak()                  -> {
         bTailWS.clear()
-        bTailNL.claimNewLine(this.reader)
+        bTailNL.claimNewLine(this.buffer)
         lineContentIndicator = LineContentIndicatorBlanksOnly
         lastWasBlankOrNewLine = true
       }
 
-         this.reader.isComma()
-      || this.reader.isSquareClose()
-      || this.reader.isEOF()
+         this.buffer.isComma()
+      || this.buffer.isSquareClose()
+      || this.buffer.isEOF()
                                                 -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
         lineContentIndicator = LineContentIndicatorContent
@@ -131,7 +131,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowSequence() {
         return
       }
 
-      lastWasBlankOrNewLine && reader.isPound() ->{
+      lastWasBlankOrNewLine && buffer.isPound() ->{
         emitPlainScalar(bContent, indent, start, endPosition.mark())
         lineContentIndicator = LineContentIndicatorContent
         lastWasBlankOrNewLine = false
@@ -144,7 +144,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowSequence() {
 
         collapseNewLinesInto(bContent, bTailNL, endPosition)
 
-        bContent.claimUTF8(this.reader, this.position)
+        bContent.claimUTF8(this.buffer, this.position)
         endPosition.become(this.position)
         this.lineContentIndicator = LineContentIndicatorContent
         lastWasBlankOrNewLine = false
@@ -171,26 +171,26 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
   bTailNL.clear()
 
   while (true) {
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
-    if (this.reader.isSpace()) {
+    if (this.buffer.isSpace()) {
       if (lineContentIndicator.haveAnyContent) {
-        bTailWS.claimASCII(this.reader, this.position)
+        bTailWS.claimASCII(this.buffer, this.position)
       } else {
-        skipASCII(this.reader, this.position)
+        skipASCII(this.buffer, this.position)
         this.indent++
         leadWSCount++
       }
     }
 
-    else if (this.reader.isTab()) {
+    else if (this.buffer.isTab()) {
       if (lineContentIndicator.haveAnyContent)
-        bTailWS.claimASCII(this.reader, this.position)
+        bTailWS.claimASCII(this.buffer, this.position)
       else
-        skipASCII(this.reader, this.position)
+        skipASCII(this.buffer, this.position)
     }
 
-    else if (this.reader.isAnyBreak()) {
+    else if (this.buffer.isAnyBreak()) {
       // Clear out any trailing blanks since we don't need them
       bTailWS.clear()
 
@@ -207,7 +207,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       }
 
       // Consume the newline character
-      bTailNL.claimNewLine(this.reader, this.position)
+      bTailNL.claimNewLine(this.buffer, this.position)
 
       // We don't have any content on this new line yet
       lineContentIndicator = LineContentIndicatorBlanksOnly
@@ -220,10 +220,10 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       return
     }
 
-    else if (reader.isColon()) {
-      reader.cache(2)
+    else if (buffer.isColon()) {
+      buffer.cache(2)
 
-      if (reader.isBlankAnyBreakOrEOF(1)) {
+      if (buffer.isBlankAnyBreakOrEOF(1)) {
         // If the confirmed buffer is not empty, then we are not on the same
         // line we were when we started parsing this plain scalar.  There is a
         // special case here, where if the indent level for this line is 0, then
@@ -250,47 +250,47 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
           return
         }
       } else {
-        bAmbiguous.claimASCII(this.reader, this.position)
+        bAmbiguous.claimASCII(this.buffer, this.position)
         lineContentIndicator = LineContentIndicatorContent
       }
     }
 
-    else if (this.reader.isDash() && !lineContentIndicator.haveAnyContent) {
-      this.reader.cache(4)
+    else if (this.buffer.isDash() && !lineContentIndicator.haveAnyContent) {
+      this.buffer.cache(4)
 
       if (
-        (atStartOfLine && reader.isDash(1) && reader.isDash(2) && reader.isBlankAnyBreakOrEOF(3))
-        || (this.indent <= tokenIndent && reader.isBlankAnyBreakOrEOF(1))
+        (atStartOfLine && buffer.isDash(1) && buffer.isDash(2) && buffer.isBlankAnyBreakOrEOF(3))
+        || (this.indent <= tokenIndent && buffer.isBlankAnyBreakOrEOF(1))
       ) {
         collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
         emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
         return
       }
 
-      bAmbiguous.claimASCII(this.reader, this.position)
+      bAmbiguous.claimASCII(this.buffer, this.position)
       lineContentIndicator = LineContentIndicatorContent
     }
 
-    else if (this.reader.isPeriod() && this.atStartOfLine) {
-      this.reader.cache(4)
+    else if (this.buffer.isPeriod() && this.atStartOfLine) {
+      this.buffer.cache(4)
 
-      if (this.reader.isPeriod(1) && this.reader.isPeriod(2) && this.reader.isBlankAnyBreakOrEOF(3)) {
+      if (this.buffer.isPeriod(1) && this.buffer.isPeriod(2) && this.buffer.isBlankAnyBreakOrEOF(3)) {
         collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
         emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
         return
       }
 
-      bAmbiguous.claimASCII(this.reader, this.position)
+      bAmbiguous.claimASCII(this.buffer, this.position)
       this.lineContentIndicator = LineContentIndicatorContent
     }
 
     else if (
-      this.reader.isPound()
+      this.buffer.isPound()
       || (
         this.atStartOfLine
-        && (this.reader.isSquareOpen() || this.reader.isCurlyOpen())
+        && (this.buffer.isSquareOpen() || this.buffer.isCurlyOpen())
       )
-      || this.reader.isEOF()
+      || this.buffer.isEOF()
     ) {
       collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
       emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
@@ -301,7 +301,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       while (bTailWS.isNotEmpty)
         bAmbiguous.claimASCII(bTailWS)
 
-      bAmbiguous.claimUTF8(this.reader, this.position)
+      bAmbiguous.claimUTF8(this.buffer, this.position)
       this.lineContentIndicator = LineContentIndicatorContent
     }
   }

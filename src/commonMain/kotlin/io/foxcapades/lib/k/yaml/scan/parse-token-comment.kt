@@ -28,31 +28,31 @@ internal fun YAMLStreamTokenizerImpl.parseCommentToken() {
   bContent.clear()
   bTailWS.clear()
 
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
   skipBlanks()
 
   // The comment line may be empty
-  if (this.reader.isAnyBreakOrEOF())
+  if (this.buffer.isAnyBreakOrEOF())
     return this.emitCommentToken(bContent, indent, trailing, start, start.resolve(modIndex = 1, modColumn = 1))
 
   // Iterate through the characters in the stream.
   while (true) {
     // Try and make sure there is a character in our reader buffer for us to
     // test.
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
     // If the next character in the buffer is a blank character, then append it
     // to our trailing whitespace buffer because we may or may not need it later
     // depending on whether there are more non-blank characters on this line or
     // not.
-    if (this.reader.isBlank()) {
-      bTailWS.claimASCII(this.reader, this.position)
+    if (this.buffer.isBlank()) {
+      bTailWS.claimASCII(this.buffer, this.position)
     }
 
     // If the next thing in the buffer is a line break, or the end of the input
     // stream, then break out of our loop because we are done parsing the
     // comment content.
-    else if (reader.isAnyBreakOrEOF()) {
+    else if (buffer.isAnyBreakOrEOF()) {
       // Note: we intentionally discard the trailing whitespace here.
       break
     }
@@ -67,7 +67,7 @@ internal fun YAMLStreamTokenizerImpl.parseCommentToken() {
         bContent.claimASCII(bTailWS)
 
       // Now claim the unknown character as part of the comment content.
-      bContent.claimUTF8(this.reader, this.position)
+      bContent.claimUTF8(this.buffer, this.position)
     }
   }
 

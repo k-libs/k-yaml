@@ -22,12 +22,12 @@ import io.foxcapades.lib.k.yaml.util.isPeriod
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 internal fun YAMLStreamTokenizerImpl.parseAmbiguousPeriodToken() {
-  this.reader.cache(4)
+  this.buffer.cache(4)
   return if (
     this.atStartOfLine
-    && this.reader.isPeriod(1)
-    && this.reader.isPeriod(2)
-    && this.reader.isBlankAnyBreakOrEOF(3)
+    && this.buffer.isPeriod(1)
+    && this.buffer.isPeriod(2)
+    && this.buffer.isBlankAnyBreakOrEOF(3)
   )
     this.fetchDocumentEndToken()
   else

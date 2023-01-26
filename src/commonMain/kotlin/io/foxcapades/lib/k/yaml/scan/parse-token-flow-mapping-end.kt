@@ -6,7 +6,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 
 internal fun YAMLStreamTokenizerImpl.parseFlowMappingEndToken() {
   val start = position.mark()
-  skipASCII(reader, position)
+  skipASCII(buffer, position)
   lineContentIndicator = LineContentIndicatorContent
   emitFlowMappingEndToken(start, position.mark())
 }

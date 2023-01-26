@@ -5,14 +5,14 @@ import io.foxcapades.lib.k.yaml.util.asDecimalDigit
 import io.foxcapades.lib.k.yaml.util.isDecimalDigit
 
 internal fun YAMLStreamTokenizerImpl.parseUByte(isNewLine: Boolean = false): UByte {
-  reader.cache(1)
+  buffer.cache(1)
 
   if (isNewLine)
     position.incLine()
   else
     position.incPosition()
 
-  return reader.pop()
+  return buffer.pop()
 }
 
 internal fun YAMLStreamTokenizerImpl.parseUInt(): UInt {
@@ -21,21 +21,21 @@ internal fun YAMLStreamTokenizerImpl.parseUInt(): UInt {
   var addValue: UInt
 
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
-    if (reader.isDecimalDigit()) {
+    if (buffer.isDecimalDigit()) {
       if (intValue > UInt.MAX_VALUE / 10u)
         throw UIntOverflowException(intStart)
 
       intValue *= 10u
-      addValue = reader.asDecimalDigit()
+      addValue = buffer.asDecimalDigit()
 
       if (intValue > UInt.MAX_VALUE - addValue)
         throw UIntOverflowException(intStart)
 
       intValue += addValue
 
-      skipASCII(this.reader, this.position)
+      skipASCII(this.buffer, this.position)
     } else {
       break
     }

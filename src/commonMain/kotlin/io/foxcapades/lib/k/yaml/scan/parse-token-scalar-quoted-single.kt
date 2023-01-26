@@ -16,44 +16,44 @@ internal fun YAMLStreamTokenizerImpl.parseSingleQuotedStringToken() {
   lineContentIndicator = LineContentIndicatorContent
 
   // Skip the leading `'` character.
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
 
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
     when {
-      reader.isApostrophe() -> {
-        skipASCII(this.reader, this.position)
+      buffer.isApostrophe() -> {
+        skipASCII(this.buffer, this.position)
 
         collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
 
-        reader.cache(1)
+        buffer.cache(1)
 
         // If we have 2 apostrophe characters in a row, then we have an escape
         // sequence, and we should not stop reading the string here.
         //
         // Instead, append a single apostrophe to the content buffer and move
         // on.
-        if (reader.isApostrophe()) {
-          contentBuffer1.claimASCII(this.reader, this.position)
+        if (buffer.isApostrophe()) {
+          contentBuffer1.claimASCII(this.buffer, this.position)
           continue
         }
 
         tokens.push(newSingleQuotedStringToken(contentBuffer1.popToArray(), indent, start))
         return
       }
-      reader.isBlank()      -> trailingWSBuffer.claimASCII(this.reader, this.position)
-      reader.isAnyBreak()   -> {
+      buffer.isBlank()      -> trailingWSBuffer.claimASCII(this.buffer, this.position)
+      buffer.isAnyBreak()   -> {
         trailingWSBuffer.clear()
-        trailingNLBuffer.claimNewLine(this.reader, this.position)
+        trailingNLBuffer.claimNewLine(this.buffer, this.position)
       }
-      reader.isEOF()        -> {
+      buffer.isEOF()        -> {
         emitInvalidToken("incomplete string token; unexpected stream end", start)
         return
       }
       else                  -> {
         collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
-        contentBuffer1.claimUTF8(this.reader, this.position)
+        contentBuffer1.claimUTF8(this.buffer, this.position)
       }
     }
   }

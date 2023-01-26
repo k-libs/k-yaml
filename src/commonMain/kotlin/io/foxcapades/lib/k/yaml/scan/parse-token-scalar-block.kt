@@ -26,16 +26,16 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
   trailingNewLines.clear()
 
   lineContentIndicator = LineContentIndicatorContent
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
 
-  this.reader.cache(1)
+  this.buffer.cache(1)
 
-  if (this.reader.isPlus() || this.reader.isDash()) {
+  if (this.buffer.isPlus() || this.buffer.isDash()) {
     chompMode = this.parseUByte()
 
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
-    indentHint = if (this.reader.isDecimalDigit())
+    indentHint = if (this.buffer.isDecimalDigit())
       try { this.parseUInt() }
       catch (e: UIntOverflowException) {
         throw YAMLScannerException("block scalar indent hint value overflows type uint32", startMark.resolve(2, 0, 2))
@@ -44,15 +44,15 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       0u
   }
 
-  else if (this.reader.isDecimalDigit()) {
+  else if (this.buffer.isDecimalDigit()) {
     indentHint = try { this.parseUInt() }
     catch (e: UIntOverflowException) {
       throw YAMLScannerException("block scalar indent hint value overflows type uint32", startMark.resolve(2, 0, 2))
     }
 
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
-    chompMode = if (this.reader.isPlus() || this.reader.isDash())
+    chompMode = if (this.buffer.isPlus() || this.buffer.isDash())
       this.parseUByte()
     else
       BlockScalarChompModeClip
@@ -64,10 +64,10 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
   }
 
   val haveBlanks = this.skipBlanks() > 0
-  this.reader.cache(1)
+  this.buffer.cache(1)
 
   when {
-    haveBlanks && this.reader.isPound() -> {
+    haveBlanks && this.buffer.isPound() -> {
       val commentContent = contentBuffer1
       val trailingBlanks = trailingWSBuffer
       val commentStart   = position.mark()
@@ -76,18 +76,18 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       trailingBlanks.clear()
 
       // Skip over the `#` character.
-      skipASCII(this.reader, this.position)
+      skipASCII(this.buffer, this.position)
       // Skip over any blank characters
       skipBlanks()
 
       while (true) {
-        this.reader.cache(1)
+        this.buffer.cache(1)
 
-        if (this.reader.isBlank()) {
-          trailingBlanks.claimASCII(this.reader, this.position)
+        if (this.buffer.isBlank()) {
+          trailingBlanks.claimASCII(this.buffer, this.position)
         }
 
-        else if (this.reader.isAnyBreakOrEOF()) {
+        else if (this.buffer.isAnyBreakOrEOF()) {
           tailComment = YAMLTokenComment(
             UByteString(commentContent.toArray()),
             this.indent,
@@ -104,14 +104,14 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
           while (trailingBlanks.isNotEmpty)
             commentContent.push(trailingBlanks.pop())
 
-          commentContent.claimUTF8(this.reader, this.position)
+          commentContent.claimUTF8(this.buffer, this.position)
         }
       }
     }
 
-    this.reader.isAnyBreak() -> { /* Do nothing. */ }
+    this.buffer.isAnyBreak()            -> { /* Do nothing. */ }
 
-    this.reader.isEOF() -> {
+    this.buffer.isEOF()                 -> {
       if (isLiteral)
         emitEmptyLiteralScalar(this.indent, startMark)
       else
@@ -123,25 +123,25 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
     else -> TODO("handle invalid/unexpected character on the same line as the folding scalar start indicator")
   }
 
-  trailingNewLines.claimNewLine(this.reader, this.position)
+  trailingNewLines.claimNewLine(this.buffer, this.position)
   lineContentIndicator = LineContentIndicatorBlanksOnly
 
   // Determine the scalar block's indent level
   while (true) {
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
-    if (this.reader.isSpace()) {
-      skipASCII(this.reader, this.position)
+    if (this.buffer.isSpace()) {
+      skipASCII(this.buffer, this.position)
       this.indent++
     }
 
-    else if (this.reader.isAnyBreak()) {
-      trailingNewLines.claimNewLine(this.reader, this.position)
+    else if (this.buffer.isAnyBreak()) {
+      trailingNewLines.claimNewLine(this.buffer, this.position)
       lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
-    else if (this.reader.isEOF()) {
+    else if (this.buffer.isEOF()) {
       val content     = this.contentBuffer1
       val endPosition = this.position.copy()
 

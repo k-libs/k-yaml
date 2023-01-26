@@ -33,18 +33,18 @@ internal fun YAMLStreamTokenizerImpl.parseAmbiguousDashToken() {
 
   // Cache the next 3 characters in the buffer to accommodate the size of the
   // document start token `^---(?:\s|$)`
-  this.reader.cache(4)
+  this.buffer.cache(4)
 
   // If we have `-(?:\s|$)`
-  if (this.reader.isBlankAnyBreakOrEOF(1))
+  if (this.buffer.isBlankAnyBreakOrEOF(1))
     return this.fetchSequenceEntryIndicator()
 
   // See if we are at the start of the line and next up is `---(?:\s|$)`
   if (
     this.atStartOfLine
-    && this.reader.isDash(1)
-    && this.reader.isDash(2)
-    && this.reader.isBlankAnyBreakOrEOF(3)
+    && this.buffer.isDash(1)
+    && this.buffer.isDash(2)
+    && this.buffer.isBlankAnyBreakOrEOF(3)
   )
     return this.fetchDocumentStartToken()
 

@@ -20,11 +20,11 @@ internal fun YAMLStreamTokenizerImpl.fetchLiteralScalar(
   scalarContent.clear()
 
   while (true) {
-    this.reader.cache(1)
+    this.buffer.cache(1)
 
-    if (this.reader.isSpace()) {
+    if (this.buffer.isSpace()) {
       if (lineContentIndicator == LineContentIndicatorContent) {
-        scalarContent.claimASCII(this.reader, this.position)
+        scalarContent.claimASCII(this.buffer, this.position)
         endPosition.become(this.position)
       }
 
@@ -33,23 +33,23 @@ internal fun YAMLStreamTokenizerImpl.fetchLiteralScalar(
           while (trailingNewLines.isNotEmpty)
             scalarContent.claimNewLine(trailingNewLines)
 
-          scalarContent.claimASCII(this.reader, this.position)
+          scalarContent.claimASCII(this.buffer, this.position)
           endPosition.become(this.position)
         } else {
-          skipASCII(this.reader, this.position)
+          skipASCII(this.buffer, this.position)
         }
 
         this.indent++
       }
     }
 
-    else if (this.reader.isAnyBreak()) {
-      trailingNewLines.claimNewLine(this.reader, this.position)
+    else if (this.buffer.isAnyBreak()) {
+      trailingNewLines.claimNewLine(this.buffer, this.position)
       lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
     }
 
-    else if (this.reader.isEOF()) {
+    else if (this.buffer.isEOF()) {
       applyChomping(scalarContent, trailingNewLines, chompMode, endPosition)
       finishLiteralScalar(scalarContent, actualIndent, start, endPosition)
 
@@ -75,7 +75,7 @@ internal fun YAMLStreamTokenizerImpl.fetchLiteralScalar(
 
       lineContentIndicator = LineContentIndicatorContent
 
-      scalarContent.claimUTF8(this.reader, this.position)
+      scalarContent.claimUTF8(this.buffer, this.position)
       endPosition.become(this.position)
     }
   }

@@ -19,22 +19,22 @@ internal fun YAMLStreamTokenizerImpl.parseAnchorToken() {
 
   anchorName.clear()
 
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
   this.lineContentIndicator = LineContentIndicatorContent
-  this.reader.cache(1)
+  this.buffer.cache(1)
 
-  if (this.reader.isBlankAnyBreakOrEOF()) {
+  if (this.buffer.isBlankAnyBreakOrEOF()) {
     emitInvalidToken("incomplete anchor token", start)
     return
   }
 
   while (true) {
-    if (this.reader.isBlankAnyBreakOrEOF()) {
+    if (this.buffer.isBlankAnyBreakOrEOF()) {
       break
     }
 
-    else if (this.reader.isNsAnchorChar()) {
-      anchorName.claimUTF8(this.reader, this.position)
+    else if (this.buffer.isNsAnchorChar()) {
+      anchorName.claimUTF8(this.buffer, this.position)
     }
 
     else {
@@ -43,7 +43,7 @@ internal fun YAMLStreamTokenizerImpl.parseAnchorToken() {
       return
     }
 
-    this.reader.cache(1)
+    this.buffer.cache(1)
   }
 
   this.tokens.push(YAMLTokenAnchor(UByteString(anchorName.popToArray()), start, this.position.mark(), this.indent, this.popWarnings()))

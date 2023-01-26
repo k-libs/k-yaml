@@ -27,9 +27,9 @@ internal fun YAMLStreamTokenizerImpl.parseAmbiguousQuestionToken() {
   //   | handling needs to be different for flow contexts and update if
   //   | necessary
 
-  this.reader.cache(2)
+  this.buffer.cache(2)
 
-  return if (this.reader.isBlankAnyBreakOrEOF(1))
+  return if (this.buffer.isBlankAnyBreakOrEOF(1))
     this.fetchMappingKeyIndicatorToken()
   else
     this.parsePlainScalar()

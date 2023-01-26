@@ -19,12 +19,12 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
 
   // If, after skipping over the empty spaces, we hit a `#`, line break, or the
   // EOF, then we have an incomplete token.
-  if (reader.isPound() || reader.isAnyBreakOrEOF())
+  if (buffer.isPound() || buffer.isAnyBreakOrEOF())
     return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex = -infixSpace, modColumn = -infixSpace))
 
   // If the next character is not an exclamation mark, then we have a malformed
   // Tag Directive.
-  if (!reader.isExclamation())
+  if (!buffer.isExclamation())
     return fetchInvalidTagDirectiveToken("unexpected character that cannot start a tag handle", startMark)
 
   // So at this point, we have seen `%TAG !`.  Now we have to determine whether
@@ -35,24 +35,24 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
   val handleBuffer = UByteBuffer(16)
 
   // Claim the first `!` character from the reader into our buffer.
-  handleBuffer.claimASCII(reader, position)
+  handleBuffer.claimASCII(buffer, position)
 
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
     // If we have our ending exclamation mark:
-    if (reader.isExclamation()) {
+    if (buffer.isExclamation()) {
       // eat it
-      handleBuffer.claimASCII(reader, position)
+      handleBuffer.claimASCII(buffer, position)
       // break out of the loop because we are done with the handle
       break
     }
 
-    if (reader.isPercent()) {
-      reader.cache(3)
+    if (buffer.isPercent()) {
+      buffer.cache(3)
 
-      if (reader.isHexDigit(1) && reader.isHexDigit(2)) {
-        handleBuffer.claimASCII(reader, position, 3)
+      if (buffer.isHexDigit(1) && buffer.isHexDigit(2)) {
+        handleBuffer.claimASCII(buffer, position, 3)
         continue
       }
 
@@ -64,20 +64,20 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
       )
     }
 
-    if (reader.isBlank())
+    if (buffer.isBlank())
       break
 
-    if (reader.isAnyBreakOrEOF())
+    if (buffer.isAnyBreakOrEOF())
       return fetchIncompleteTagDirectiveToken(startMark, position.mark())
 
     // TODO: should we recover by converting the invalid character into a hex
     //       escape sequence and tossing up a warning?
-    if (!reader.uIsNsWordChar())
+    if (!buffer.uIsNsWordChar())
       return fetchInvalidTagDirectiveToken("tag handle contained an invalid character", startMark)
 
     // If it _is_ an `ns-word-char` then it is in the ASCII range and is a
     // single byte.
-    handleBuffer.claimASCII(reader, position)
+    handleBuffer.claimASCII(buffer, position)
   }
 
   // Okay, so if we've made it this far, we've seen at least `%TAG !` and at
@@ -85,7 +85,7 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
   // or more blank characters followed by the prefix value.
 
   // If we _don't_ have a blank character then the directive is junk.
-  if (!reader.isBlank())
+  if (!buffer.isBlank())
     return fetchInvalidTagDirectiveToken("unexpected character after tag handle", startMark)
 
   // Skip the whitespaces until we encounter something else.
@@ -93,7 +93,7 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
 
   // If the next thing after the blanks was a linebreak or EOF then we have an
   // incomplete directive.
-  if (reader.isAnyBreakOrEOF() || reader.isPound())
+  if (buffer.isAnyBreakOrEOF() || buffer.isPound())
     return fetchIncompleteTagDirectiveToken(startMark, position.mark(modIndex =  -infixSpace, modColumn = -infixSpace))
 
   // Okay so we have another character in the buffer.  It _should_ be either an
@@ -103,7 +103,7 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
 
   // If we hit something else, other than an exclamation mark or an
   // `<ns-tag-char>` character, then we have an invalid tag directive.
-  if (!(reader.isExclamation() || reader.isNsTagChar()))
+  if (!(buffer.isExclamation() || buffer.isNsTagChar()))
     return fetchInvalidTagDirectiveToken("unexpected first character of tag prefix", startMark)
 
   // So we have a valid starting character for our prefix, lets create a buffer
@@ -111,12 +111,12 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
   val prefixBuffer = UByteBuffer(16)
 
   // Claim the starting character that we already inspected.
-  prefixBuffer.claimASCII(reader, position)
+  prefixBuffer.claimASCII(buffer, position)
 
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
-    if (reader.isBlankAnyBreakOrEOF())
+    if (buffer.isBlankAnyBreakOrEOF())
       break
 
     // If we encounter a non-URI character than we have an invalid tag
@@ -124,10 +124,10 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
     //
     // Unsafe call because we know based on the previous check that there is at
     // least one byte in the buffer.
-    if (!reader.uIsNsURIChar())
+    if (!buffer.uIsNsURIChar())
       return fetchInvalidTagDirectiveToken("unexpected non-URI safe character in tag prefix", startMark)
 
-    prefixBuffer.claimASCII(reader, position)
+    prefixBuffer.claimASCII(buffer, position)
   }
 
   infixSpace = 0
@@ -135,7 +135,7 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
   // Okay so we've successfully read our tag handle and our tag prefix.  Trouble
   // is, the line isn't over yet.  There could be a heap of junk waiting for us,
   // causing this directive line to be invalid.
-  if (reader.isBlank()) {
+  if (buffer.isBlank()) {
     // We have more spaces after the prefix value.  This could be valid if the
     // spaces are followed by a line break (useless trailing spaces) or if the
     // spaces are followed by a comment line.
@@ -144,7 +144,7 @@ internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePos
     // comment or a newline, then we have an invalid tag directive.
     infixSpace = skipBlanks()
 
-    if (!(reader.isAnyBreakOrEOF() || reader.isPound()))
+    if (!(buffer.isAnyBreakOrEOF() || buffer.isPound()))
       return fetchInvalidTagDirectiveToken("unexpected character after prefix value", startMark)
   }
 

@@ -14,7 +14,7 @@ import io.foxcapades.lib.k.yaml.util.SourcePosition
 internal fun YAMLStreamTokenizerImpl.fetchSequenceEntryIndicator() {
   val start = this.position.mark()
 
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
 
   this.emitSequenceEntryIndicator(this.indent, start)
 

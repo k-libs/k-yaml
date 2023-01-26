@@ -21,22 +21,22 @@ internal fun YAMLStreamTokenizerImpl.parseAliasToken() {
 
   anchorName.clear()
 
-  skipASCII(this.reader, this.position)
-  this.reader.cache(1)
+  skipASCII(this.buffer, this.position)
+  this.buffer.cache(1)
   this.lineContentIndicator = LineContentIndicatorContent
 
-  if (reader.isBlankAnyBreakOrEOF()) {
+  if (buffer.isBlankAnyBreakOrEOF()) {
     return this.emitInvalidToken(start, this.warn("incomplete alias token", start))
   }
 
   while (true) {
 
-    if (this.reader.isBlankAnyBreakOrEOF()) {
+    if (this.buffer.isBlankAnyBreakOrEOF()) {
       break
     }
 
-    else if (this.reader.isNsAnchorChar()) {
-      anchorName.claimUTF8(this.reader, this.position)
+    else if (this.buffer.isNsAnchorChar()) {
+      anchorName.claimUTF8(this.buffer, this.position)
     }
 
     else {
@@ -44,7 +44,7 @@ internal fun YAMLStreamTokenizerImpl.parseAliasToken() {
       return this.emitInvalidToken(start, this.warn("invalid or unexpected character while parsing an alias token", start))
     }
 
-    this.reader.cache(1)
+    this.buffer.cache(1)
   }
 
   return emitAlias(anchorName.popToArray(), start, this.position.mark())

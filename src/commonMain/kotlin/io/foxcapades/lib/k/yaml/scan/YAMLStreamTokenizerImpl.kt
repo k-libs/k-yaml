@@ -48,7 +48,7 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
 
   internal var version = YAMLVersion.VERSION_1_2
 
-  internal val reader: BufferedUTFStreamReader
+  internal val buffer: BufferedUTFStreamReader
 
   internal val contentBuffer1   = UByteBuffer(1024)
   internal val contentBuffer2   = UByteBuffer(1024)
@@ -68,10 +68,10 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
     get() = position.column == 0u
 
   internal inline val haveMoreCharactersAvailable
-    get() = !reader.atEOF || reader.isNotEmpty
+    get() = !buffer.atEOF || buffer.isNotEmpty
 
   constructor(reader: BufferedUTFStreamReader) {
-    this.reader = reader
+    this.buffer = reader
   }
 
   // region Public Methods
@@ -119,34 +119,34 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
     // TODO: SKIP TO NEXT TOKEN NEEDS TO HANDLE INDENT TAB DETECTION
     skipToNextToken()
 
-    reader.cache(1)
+    buffer.cache(1)
 
     if (!haveMoreCharactersAvailable)
       return parseStreamEndToken()
 
     when {
-      reader.uIsDash()        -> parseAmbiguousDashToken()
-      reader.uIsColon()       -> parseAmbiguousColonToken()
-      reader.uIsComma()       -> parseFlowItemSeparatorToken()
-      reader.uIsPound()       -> parseCommentToken()
-      reader.uIsApostrophe()  -> parseSingleQuotedStringToken()
-      reader.uIsDoubleQuote() -> parseDoubleQuotedStringToken()
-      reader.uIsSquareOpen()  -> parseFlowSequenceStartToken()
-      reader.uIsCurlyOpen()   -> parseFlowMappingStartToken()
-      reader.uIsPipe()        -> parseBlockScalar(true)
-      reader.uIsGreaterThan() -> parseBlockScalar(false)
-      reader.uIsSquareClose() -> parseFlowSequenceEndToken()
-      reader.uIsCurlyClose()  -> parseFlowMappingEndToken()
-      reader.uIsExclamation() -> parseTagToken()
-      reader.uIsPercent()     -> parseAmbiguousPercent()
-      reader.uIsPeriod()      -> parseAmbiguousPeriodToken()
-      reader.uIsAmpersand()   -> parseAnchorToken()
-      reader.uIsAsterisk()    -> parseAliasToken()
-      reader.uIsQuestion()    -> parseAmbiguousQuestionToken()
+      buffer.uIsDash()        -> parseAmbiguousDashToken()
+      buffer.uIsColon()       -> parseAmbiguousColonToken()
+      buffer.uIsComma()       -> parseFlowItemSeparatorToken()
+      buffer.uIsPound()       -> parseCommentToken()
+      buffer.uIsApostrophe()  -> parseSingleQuotedStringToken()
+      buffer.uIsDoubleQuote() -> parseDoubleQuotedStringToken()
+      buffer.uIsSquareOpen()  -> parseFlowSequenceStartToken()
+      buffer.uIsCurlyOpen()   -> parseFlowMappingStartToken()
+      buffer.uIsPipe()        -> parseBlockScalar(true)
+      buffer.uIsGreaterThan() -> parseBlockScalar(false)
+      buffer.uIsSquareClose() -> parseFlowSequenceEndToken()
+      buffer.uIsCurlyClose()  -> parseFlowMappingEndToken()
+      buffer.uIsExclamation() -> parseTagToken()
+      buffer.uIsPercent()     -> parseAmbiguousPercent()
+      buffer.uIsPeriod()      -> parseAmbiguousPeriodToken()
+      buffer.uIsAmpersand()   -> parseAnchorToken()
+      buffer.uIsAsterisk()    -> parseAliasToken()
+      buffer.uIsQuestion()    -> parseAmbiguousQuestionToken()
 
       // BAD NONO CHARACTERS: @ `
-      reader.uIsAt()          -> parseAmbiguousAtToken()
-      reader.uIsGrave()       -> parseAmbiguousGraveToken()
+      buffer.uIsAt()          -> parseAmbiguousAtToken()
+      buffer.uIsGrave()       -> parseAmbiguousGraveToken()
 
       // Meh characters: ~ $ ^ ( ) _ + = \ ; < /
       // And everything else...

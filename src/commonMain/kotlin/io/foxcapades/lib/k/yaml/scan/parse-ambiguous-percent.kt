@@ -54,11 +54,11 @@ internal fun YAMLStreamTokenizerImpl.parseAmbiguousPercent() {
   }
 
   // Skip the `%` character.
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
 
   // Attempt to load 5 codepoints into the reader buffer so that we can do the
   // following tests.
-  this.reader.cache(5)
+  this.buffer.cache(5)
 
   // Nothing more in the buffer?  That means the stream ended on a `%`
   // character which means an invalid token directive.
@@ -73,24 +73,24 @@ internal fun YAMLStreamTokenizerImpl.parseAmbiguousPercent() {
 
   // See if the next 5 characters are "YAML<WS>"
   if (
-       this.reader.test(A_UPPER_Y, 0)
-    && this.reader.test(A_UPPER_A, 1)
-    && this.reader.test(A_UPPER_M, 2)
-    && this.reader.test(A_UPPER_L, 3)
-    && this.reader.isBlank(4)
+       this.buffer.test(A_UPPER_Y, 0)
+    && this.buffer.test(A_UPPER_A, 1)
+    && this.buffer.test(A_UPPER_M, 2)
+    && this.buffer.test(A_UPPER_L, 3)
+    && this.buffer.isBlank(4)
   ) {
-    skipASCII(this.reader, this.position, 5)
+    skipASCII(this.buffer, this.position, 5)
     return this.fetchYAMLDirectiveToken(start)
   }
 
   // See if the next 4 characters are "TAG<WS>"
   if (
-       this.reader.test(A_UPPER_T, 0)
-    && this.reader.test(A_UPPER_A, 1)
-    && this.reader.test(A_UPPER_G, 2)
-    && this.reader.isBlank(3)
+       this.buffer.test(A_UPPER_T, 0)
+    && this.buffer.test(A_UPPER_A, 1)
+    && this.buffer.test(A_UPPER_G, 2)
+    && this.buffer.isBlank(3)
   ) {
-    skipASCII(this.reader, this.position, 4)
+    skipASCII(this.buffer, this.position, 4)
     return fetchTagDirectiveToken(start)
   }
 

@@ -22,14 +22,14 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
   scalarContent.clear()
 
   while (true) {
-    reader.cache(1)
+    buffer.cache(1)
 
-    if (reader.isSpace()) {
+    if (buffer.isSpace()) {
       // If the space character appears after any form of content in the line,
       // then consider it trailing whitespace and claim it into the scalar
       // content buffer.
       if (lineContentIndicator.haveAnyContent) {
-        scalarContent.claimASCII(reader, position)
+        scalarContent.claimASCII(buffer, position)
         endPosition.become(position)
       }
 
@@ -43,7 +43,7 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
             scalarContent.claimNewLine(trailingNewLines)
 
           // And claim the space as part of the content as well
-          scalarContent.claimASCII(reader, position)
+          scalarContent.claimASCII(buffer, position)
           endPosition.become(position)
         }
 
@@ -51,7 +51,7 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
         // where we want to start keeping the indent characters
         else if (indent > keepIndentAfter) {
           // then claim the space as part of the content
-          scalarContent.claimASCII(reader, position)
+          scalarContent.claimASCII(buffer, position)
           endPosition.become(position)
         }
 
@@ -59,7 +59,7 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
         // we want to start keeping the indent characters
         else {
           // then just skip the space character
-          skipASCII(reader, position)
+          skipASCII(buffer, position)
         }
 
         // Increment our leading blank character count.
@@ -67,12 +67,12 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
       }
     }
 
-    else if (reader.isTab()) {
+    else if (buffer.isTab()) {
       // If the tab character appears after any form of non-blank content in the
       // line, then consider it trailing whitespace and claim it into the scalar
       // content buffer.
       if (lineContentIndicator.haveAnyContent) {
-        scalarContent.claimASCII(reader, position)
+        scalarContent.claimASCII(buffer, position)
         endPosition.become(position)
       }
 
@@ -87,31 +87,31 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
           while (trailingNewLines.isNotEmpty)
             scalarContent.claimNewLine(trailingNewLines)
 
-          scalarContent.claimASCII(reader, position)
+          scalarContent.claimASCII(buffer, position)
           endPosition.become(position)
         }
 
         else if (indent > keepIndentAfter) {
-          scalarContent.claimASCII(reader, position)
+          scalarContent.claimASCII(buffer, position)
           endPosition.become(position)
         }
 
         else {
-          skipASCII(reader, position)
+          skipASCII(buffer, position)
         }
 
         indent++
       }
     }
 
-    else if (reader.isAnyBreak()) {
-      trailingNewLines.claimNewLine(reader, position)
+    else if (buffer.isAnyBreak()) {
+      trailingNewLines.claimNewLine(buffer, position)
       lineContentIndicator = LineContentIndicatorBlanksOnly
       lastLineHadLeadingWhitespace = lastLineHadLeadingWhitespace || indent > keepIndentAfter
       indent = 0u
     }
 
-    else if (reader.isEOF()) {
+    else if (buffer.isEOF()) {
       applyChomping(scalarContent, trailingNewLines, chompMode, endPosition)
       finishFoldingScalar(scalarContent, actualIndent, start, endPosition)
 
@@ -156,7 +156,7 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
 
       lineContentIndicator = LineContentIndicatorContent
 
-      scalarContent.claimUTF8(reader, position)
+      scalarContent.claimUTF8(buffer, position)
       endPosition.become(position)
     }
   }

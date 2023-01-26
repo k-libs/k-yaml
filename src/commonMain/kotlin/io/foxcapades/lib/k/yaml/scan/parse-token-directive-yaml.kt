@@ -32,7 +32,7 @@ internal fun YAMLStreamTokenizerImpl.fetchYAMLDirectiveToken(startMark: SourcePo
   // the EOF, a line break, or a `#` character (the start of a comment), then
   // we have an incomplete token because there can be no version number
   // following on this line.
-  if (reader.isPound() || reader.isAnyBreakOrEOF())
+  if (buffer.isPound() || buffer.isAnyBreakOrEOF())
     return fetchIncompleteYAMLDirectiveToken(
       startMark,
       position.mark(modIndex = -trailingSpaceCount, modColumn = -trailingSpaceCount)
@@ -40,7 +40,7 @@ internal fun YAMLStreamTokenizerImpl.fetchYAMLDirectiveToken(startMark: SourcePo
 
   // If the next character we see is not a decimal digit, then we've got some
   // junk characters instead of a version number.
-  if (!reader.isDecimalDigit())
+  if (!buffer.isDecimalDigit())
     return fetchMalformedYAMLDirectiveToken(startMark)
 
   // Okay, so we are on a decimal digit, that is _hopefully_ the start of our
@@ -57,19 +57,19 @@ internal fun YAMLStreamTokenizerImpl.fetchYAMLDirectiveToken(startMark: SourcePo
   // Now we have to ensure that the value right after the major version int
   // value is a period character.
 
-  reader.cache(1)
-  if (reader.isAnyBreakOrEOF())
+  buffer.cache(1)
+  if (buffer.isAnyBreakOrEOF())
     return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
-  if (!reader.isPeriod())
+  if (!buffer.isPeriod())
     return fetchMalformedYAMLDirectiveToken(startMark)
 
   // Skip the `.` character.
-  skipASCII(this.reader, this.position)
+  skipASCII(this.buffer, this.position)
 
-  reader.cache(1)
-  if (reader.isAnyBreakOrEOF())
+  buffer.cache(1)
+  if (buffer.isAnyBreakOrEOF())
     return fetchIncompleteYAMLDirectiveToken(startMark, position.mark())
-  if (!reader.isDecimalDigit())
+  if (!buffer.isDecimalDigit())
     return fetchMalformedYAMLDirectiveToken(startMark)
 
   val minor = try {
@@ -86,29 +86,29 @@ internal fun YAMLStreamTokenizerImpl.fetchYAMLDirectiveToken(startMark: SourcePo
   // Now we need to make sure that there is nothing else on this line except
   // for maybe trailing whitespace characters and possibly a comment.
 
-  reader.cache(1)
+  buffer.cache(1)
   trailingSpaceCount = 0
 
   // If the next character after the minor version int is a whitespace
   // character:
-  if (reader.isBlank()) {
+  if (buffer.isBlank()) {
     // Eat the whitespace(s) until we hit something else.
     trailingSpaceCount = skipBlanks()
 
     // Attempt to cache a character in our reader buffer
-    reader.cache(1)
+    buffer.cache(1)
 
     // If the next character after the whitespace(s) is NOT a `#`, is NOT a
     // line break, and is NOT the EOF, then we have some extra junk at the
     // end of our token line and the token is considered malformed.
-    if (!(reader.isPound() || reader.isAnyBreakOrEOF()))
+    if (!(buffer.isPound() || buffer.isAnyBreakOrEOF()))
       return fetchMalformedYAMLDirectiveToken(startMark)
   }
 
   // Else (meaning we're not at a whitespace), if the next thing in the reader
   // buffer is NOT a line break and is NOT the EOF, then we have extra junk
   // right after our minor version number, meaning the token is malformed.
-  else if (!reader.isAnyBreakOrEOF()) {
+  else if (!buffer.isAnyBreakOrEOF()) {
     return fetchMalformedYAMLDirectiveToken(startMark)
   }
 
@@ -170,17 +170,17 @@ private fun YAMLStreamTokenizerImpl.fetchOverflowYAMLDirectiveToken(
   isMajor:        Boolean,
 ) {
   // Ensure that we have a character in the buffer to test against.
-  reader.cache(1)
+  buffer.cache(1)
 
   // Skip over all the decimal digit characters until we hit the end of this
   // absurdly long int value.
-  while (reader.isDecimalDigit()) {
+  while (buffer.isDecimalDigit()) {
     // Skip it as ASCII because if it's a decimal digit then we know it's an
     // ASCII character
-    skipASCII(this.reader, this.position)
+    skipASCII(this.buffer, this.position)
 
     // Cache another character to test on the next pass of the loop
-    reader.cache(1)
+    buffer.cache(1)
   }
 
   // Emit a warning about the overflow, passing in:
