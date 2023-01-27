@@ -156,14 +156,15 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowSequence() {
 
 
 private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
-  val start       = this.position.mark()
-  val tokenIndent = this.indent
-  val bConfirmed  = this.contentBuffer1
-  val bAmbiguous  = this.contentBuffer2
-  val bTailWS     = this.trailingWSBuffer
-  val bTailNL     = this.trailingNLBuffer
-  val endPosition = this.position.copy()
-  var leadWSCount = 0u
+  val start        = this.position.mark()
+  val tokenIndent  = this.indent
+  val bConfirmed   = this.contentBuffer1
+  val bAmbiguous   = this.contentBuffer2
+  val bTailWS      = this.trailingWSBuffer
+  val bTailNL      = this.trailingNLBuffer
+  val endPosition  = this.position.copy()
+  var leadWSCount  = 0u
+  var lastWasBlank = false
 
   bConfirmed.clear()
   bAmbiguous.clear()
@@ -181,6 +182,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         this.indent++
         leadWSCount++
       }
+      lastWasBlank = true
     }
 
     else if (this.buffer.isTab()) {
@@ -188,6 +190,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         bTailWS.claimASCII(this.buffer, this.position)
       else
         skipASCII(this.buffer, this.position)
+      lastWasBlank = true
     }
 
     else if (this.buffer.isAnyBreak()) {
@@ -212,6 +215,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       // We don't have any content on this new line yet
       lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
+      lastWasBlank = true
     }
 
     else if (this.indent < tokenIndent) {
@@ -253,6 +257,8 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         bAmbiguous.claimASCII(this.buffer, this.position)
         lineContentIndicator = LineContentIndicatorContent
       }
+
+      lastWasBlank = false
     }
 
     else if (this.buffer.isDash() && !lineContentIndicator.haveAnyContent) {
@@ -269,6 +275,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
 
       bAmbiguous.claimASCII(this.buffer, this.position)
       lineContentIndicator = LineContentIndicatorContent
+      lastWasBlank = false
     }
 
     else if (this.buffer.isPeriod() && this.atStartOfLine) {
@@ -282,10 +289,11 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
 
       bAmbiguous.claimASCII(this.buffer, this.position)
       this.lineContentIndicator = LineContentIndicatorContent
+      lastWasBlank = false
     }
 
     else if (
-      this.buffer.isPound()
+      (this.buffer.isPound() && lastWasBlank)
       || (
         this.atStartOfLine
         && (this.buffer.isSquareOpen() || this.buffer.isCurlyOpen())
@@ -303,6 +311,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
 
       bAmbiguous.claimUTF8(this.buffer, this.position)
       this.lineContentIndicator = LineContentIndicatorContent
+      lastWasBlank = false
     }
   }
 }

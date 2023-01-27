@@ -1189,6 +1189,70 @@ Chomping: |
   }
 
   @Test
+  fun example_7_10_plain_characters() {
+    //language=yaml
+    val input = """
+      | # Outside flow collection:
+      | - ::vector
+      | - ": - ()"
+      | - Up, up, and away!
+      | - -123
+      | - https://example.com/foo#bar
+      | # Inside flow collection:
+      | - [ ::vector,
+      |   ": - ()",
+      |   "Up, up, and away!",
+      |   -123,
+      |   https://example.com/foo#bar ]
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectComment("Outside flow collection:", 0u, false, pos)
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectPlainScalar("::vector", pos.skipSpace(), 2u)
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectDoubleQuotedScalar(": - ()", pos.skipSpace(), 2u)
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectPlainScalar("Up, up, and away!", pos.skipSpace(), 2u)
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectPlainScalar("-123", pos.skipSpace(), 2u)
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectPlainScalar("https://example.com/foo#bar", pos.skipSpace(), 2u)
+
+    pos = test.expectComment("Inside flow collection:", 0u, false, pos.skipLine())
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+
+    pos = test.expectPlainScalar("::vector", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+
+    pos = test.expectDoubleQuotedScalar(": - ()", pos.skipLine(2), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+
+    pos = test.expectDoubleQuotedScalar("Up, up, and away!", pos.skipLine(2), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+
+    pos = test.expectPlainScalar("-123", pos.skipLine(2), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+
+    pos = test.expectPlainScalar("https://example.com/foo#bar", pos.skipLine(2), 2u)
+
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
