@@ -153,11 +153,12 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectFlowMappingStart(
-    expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.resolve(1, 0, 1),
+    expectedIndent: UInt = 0u,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(1, 0, 1)
+
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenFlowMappingStart>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
@@ -165,19 +166,24 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLStreamTokenizer.expectFlowMappingEnd(
-    expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.resolve(1, 0, 1),
+    expectedStart: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(1, 0, 1)
+
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenFlowMappingEnd>(this.nextToken()).also {
       assertEquals(expectedStart, it.start)
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLStreamTokenizer.expectFlowItemSeparator(

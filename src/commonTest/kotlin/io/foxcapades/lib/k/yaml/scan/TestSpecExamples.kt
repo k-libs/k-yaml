@@ -74,7 +74,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectFlowSequenceEnd(SourcePosition(22u, 0u, 22u))
     scanner.expectPlainScalar("mapping", SourcePosition(24u, 1u, 0u), 0u)
     scanner.expectMappingValue(SourcePosition(31u, 1u, 7u), 0u)
-    scanner.expectFlowMappingStart(0u, SourcePosition(33u, 1u, 9u))
+    scanner.expectFlowMappingStart(SourcePosition(33u, 1u, 9u), 0u)
     scanner.expectPlainScalar("sky", SourcePosition(35u, 1u, 11u), 0u)
     scanner.expectMappingValue(SourcePosition(38u, 1u, 14u), 0u)
     scanner.expectPlainScalar("blue", SourcePosition(40u, 1u, 16u), 0u)
@@ -560,7 +560,7 @@ Chomping: |
     val scanner = makeScanner(input)
 
     scanner.expectStreamStart()
-    scanner.expectFlowMappingStart(0u, SourcePosition(0u, 0u, 0u))
+    scanner.expectFlowMappingStart(SourcePosition(0u, 0u, 0u), 0u)
     scanner.expectPlainScalar("first", SourcePosition(2u, 0u, 2u), 0u, SourcePosition(7u, 0u, 7u))
     scanner.expectMappingValue(SourcePosition(7u, 0u, 7u), 0u)
     scanner.expectPlainScalar("Sammy", SourcePosition(9u, 0u, 9u), 0u, SourcePosition(14u, 0u, 14u))
@@ -1025,6 +1025,34 @@ Chomping: |
     cursor = test.expectPlainScalar("Reuse anchor", cursor.skipLine())
     cursor = test.expectMappingValue(cursor)
     cursor = test.expectAlias("anchor", cursor.skipSpace())
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
+  fun example_7_2_empty_nodes() {
+    //language=yaml
+    val input = """
+      {
+        foo : !!str,
+        !!str : bar,
+      }
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectFlowMappingStart(cursor)
+    cursor = test.expectPlainScalar("foo", cursor.skipLine(2), 2u)
+    cursor = test.expectMappingValue(cursor.skipSpace(), 2u)
+    cursor = test.expectTag("!!", "str", cursor.skipSpace(), 2u)
+    cursor = test.expectFlowItemSeparator(cursor)
+    cursor = test.expectTag("!!", "str", cursor.skipLine(2), 2u)
+    cursor = test.expectMappingValue(cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 2u)
+    cursor = test.expectFlowItemSeparator(cursor)
+    cursor = test.expectFlowMappingEnd(cursor.skipLine())
 
     test.expectStreamEnd(cursor)
   }

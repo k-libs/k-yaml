@@ -37,15 +37,10 @@ internal fun YAMLStreamTokenizerImpl.parseTagToken() {
   stream is a blank or a line break, then all we have is the `!` character,
   which is the "non-specific" tag.
   */
-  if (buffer.isBlankAnyBreakOrEOF()) {
+  if (buffer.isBlankAnyBreakOrEOF() || (buffer.uIsComma() && inFlow)) {
     parseNonSpecificTag(start, handle)
     return
   }
-
-  /*
-  From here on out we can use unsafe character single character checks because
-  we know that there is at least one more character before the EOF.
-  */
 
   /*
   If the next character in the reader buffer is a `<` character, then we should
@@ -150,16 +145,16 @@ private fun YAMLStreamTokenizerImpl.parseLocalTag(start: SourcePosition, handle:
   while (true) {
     buffer.cache(1)
 
-    if (buffer.isNsTagChar()) {
+    if (buffer.isBlankAnyBreakOrEOF() || (buffer.uIsComma() && inFlow)) {
+      break
+    }
+
+    else if (buffer.isNsTagChar()) {
       suffix.claimASCII(buffer, position)
     }
 
     else if (buffer.isPercent()) {
       eatPercentEscape(suffix, false)
-    }
-
-    else if (buffer.isBlankAnyBreakOrEOF()) {
-      break
     }
 
     else {
@@ -193,7 +188,7 @@ private fun YAMLStreamTokenizerImpl.parseAmbiguousTag(start: SourcePosition, han
   while (true) {
     buffer.cache(1)
 
-    if (buffer.isBlankAnyBreakOrEOF()) {
+    if (buffer.isBlankAnyBreakOrEOF() || (buffer.uIsComma() && inFlow)) {
       tokens.push(YAMLTokenTag(
         UByteString(handle.toArray()),
         UByteString(suffix.toArray()),
