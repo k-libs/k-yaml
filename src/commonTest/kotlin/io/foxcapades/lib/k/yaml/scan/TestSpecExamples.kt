@@ -1396,6 +1396,35 @@ Chomping: |
   }
 
   @Test
+  fun example_7_16_flow_mapping_entries() {
+    //language=yaml
+    val input = """
+      | {
+      | ? explicit: entry,
+      | implicit: entry,
+      | ?
+      | }
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+    pos = test.expectFlowMappingStart(pos)
+    pos = test.expectMappingKey(pos.skipLine())
+    pos = test.expectPlainScalar("explicit", pos.skipSpace(), 2u)
+    pos = test.expectMappingValue(pos, 2u)
+    pos = test.expectPlainScalar("entry", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectPlainScalar("implicit", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectPlainScalar("entry", pos.skipSpace())
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectMappingKey(pos.skipLine())
+    pos = test.expectFlowMappingEnd(pos.skipLine())
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
