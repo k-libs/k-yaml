@@ -1509,6 +1509,27 @@ Chomping: |
   }
 
   @Test
+  fun example_7_20_single_pair_explicit_entry() {
+    //language=yaml
+    val input = """
+      | [
+      | ? foo
+      |  bar : baz
+      | ]
+    """.trimMargin("| ")
+    val test = makeScanner(input)
+    var pos = test.expectStreamStart()
+    pos = test.expectFlowSequenceStart(pos)
+    pos = test.expectMappingKey(pos.skipLine())
+    pos = pos.skipSpace()
+    pos = test.expectPlainScalar("foo bar", pos, 2u, pos.resolve(8, 1, 2))
+    pos = test.expectMappingValue(pos.skipSpace())
+    pos = test.expectPlainScalar("baz", pos.skipSpace())
+    pos = test.expectFlowSequenceEnd(pos.skipLine())
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
