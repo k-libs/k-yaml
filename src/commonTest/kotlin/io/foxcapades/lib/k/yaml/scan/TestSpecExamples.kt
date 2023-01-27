@@ -998,6 +998,38 @@ Chomping: |
   }
 
   @Test
+  fun example_7_1_alias_nodes() {
+    //language=yaml
+    val input = """
+      First occurrence: &anchor Foo
+      Second occurrence: *anchor
+      Override anchor: &anchor Bar
+      Reuse anchor: *anchor
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectPlainScalar("First occurrence", cursor)
+    cursor = test.expectMappingValue(cursor)
+    cursor = test.expectAnchor("anchor", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Foo", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Second occurrence", cursor.skipLine())
+    cursor = test.expectMappingValue(cursor)
+    cursor = test.expectAlias("anchor", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Override anchor", cursor.skipLine())
+    cursor = test.expectMappingValue(cursor)
+    cursor = test.expectAnchor("anchor", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Bar", cursor.skipSpace())
+    cursor = test.expectPlainScalar("Reuse anchor", cursor.skipLine())
+    cursor = test.expectMappingValue(cursor)
+    cursor = test.expectAlias("anchor", cursor.skipSpace())
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
