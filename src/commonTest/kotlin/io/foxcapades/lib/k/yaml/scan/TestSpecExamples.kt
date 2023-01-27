@@ -1253,6 +1253,31 @@ Chomping: |
   }
 
   @Test
+  fun example_7_11_plain_implicit_keys() {
+    //language=yaml
+    val input = """
+      | implicit block key : [
+      |   implicit flow key : value,
+      | ]
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectPlainScalar("implicit block key", pos)
+    pos = test.expectMappingValue(pos.skipSpace())
+    pos = test.expectFlowSequenceStart(pos.skipSpace())
+    pos = test.expectPlainScalar("implicit flow key", pos.skipLine(2), 2u)
+    pos = test.expectMappingValue(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("value", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectFlowSequenceEnd(pos.skipLine())
+
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

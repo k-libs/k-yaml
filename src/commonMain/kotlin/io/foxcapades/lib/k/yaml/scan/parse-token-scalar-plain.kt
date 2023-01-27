@@ -1,6 +1,8 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
+import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowItemSeparator
+import io.foxcapades.lib.k.yaml.token.YAMLTokenFlowSequenceStart
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
 import io.foxcapades.lib.k.yaml.util.*
 
@@ -8,19 +10,19 @@ internal fun YAMLStreamTokenizerImpl.parsePlainScalar() {
   // TODO: catch the case where the first character in the plain scalar is a tab
   //       because that may be illegal
   when {
-    this.inFlowMapping  -> this.fetchPlainScalarInFlowMapping()
-    this.inFlowSequence -> this.fetchPlainScalarInFlowSequence()
-    else                -> this.fetchPlainScalarInBlock()
+    this.inFlow  -> this.fetchPlainScalarInFlow()
+    else         -> this.fetchPlainScalarInBlock()
   }
 }
 
-private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowMapping() {
-  val start       = this.position.mark()
-  val indent      = this.indent
-  val bContent    = this.contentBuffer1
-  val bTailWS     = this.trailingWSBuffer
-  val bTailNL     = this.trailingNLBuffer
-  val endPosition = this.position.copy()
+private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlow() {
+  val start        = this.position.mark()
+  val indent       = this.indent
+  val bContent     = this.contentBuffer1
+  val bTailWS      = this.trailingWSBuffer
+  val bTailNL      = this.trailingNLBuffer
+  val endPosition  = this.position.copy()
+  var lastWasBlank = false
 
   bContent.clear()
   bTailWS.clear()
@@ -47,6 +49,8 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowMapping() {
           // this line is empty or not.
           skipASCII(this.buffer, this.position)
         }
+
+        lastWasBlank = true
       }
 
       this.buffer.isAnyBreak() -> {
@@ -59,101 +63,73 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowMapping() {
 
         // Now we are starting a new line, which has no content yet.
         lineContentIndicator = LineContentIndicatorBlanksOnly
+
+        lastWasBlank = true
       }
 
-         this.buffer.isColon()
-      || this.buffer.isComma()
-      || this.buffer.isCurlyClose()
-      || this.buffer.isEOF()
-                               -> {
-        emitPlainScalar(bContent, indent, start, endPosition.mark())
-        lineContentIndicator = LineContentIndicatorContent
-        return
-      }
+      this.buffer.isColon() -> {
+        // If we're in a flow sequence and there is no indication that a mapping
+        // value should be present, then eat the colon as part of the start of
+        // the sequence value.
+        if (inFlowSequence) {
+          buffer.cache(2)
 
-      else                     -> {
-        while (bTailWS.isNotEmpty)
-          bContent.claimASCII(bTailWS)
+          if (
+            (lastToken is YAMLTokenFlowSequenceStart || lastToken is YAMLTokenFlowItemSeparator)
+            && !buffer.isBlankAnyBreakOrEOF(1)
+          ) {
+            claimFlowCharacter(bContent, bTailWS, bTailNL, endPosition)
+          } else {
+            emitPlainScalar(bContent, indent, start, endPosition.mark())
+            lineContentIndicator = LineContentIndicatorContent
+            return
+          }
+        }
 
-        collapseNewLinesInto(bContent, bTailNL, endPosition)
+        // We're in a flow mapping
+        else {
+          emitPlainScalar(bContent, indent, start, endPosition.mark())
+          lineContentIndicator = LineContentIndicatorContent
+          return
+        }
 
-        bContent.claimUTF8(this.buffer, this.position)
-        endPosition.become(this.position)
-        lineContentIndicator = LineContentIndicatorContent
-      }
-    }
-  }
-}
-
-private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlowSequence() {
-  val start       = this.position.mark()
-  val indent      = this.indent
-  val bContent    = this.contentBuffer1
-  val bTailWS     = this.trailingWSBuffer
-  val bTailNL     = this.trailingNLBuffer
-  val endPosition = this.position.copy()
-
-  var lastWasBlankOrNewLine = false
-
-  bContent.clear()
-  bTailWS.clear()
-  bTailNL.clear()
-
-  this.lineContentIndicator = LineContentIndicatorContent
-
-  while (true) {
-    this.buffer.cache(1)
-
-    when {
-      this.buffer.isBlank()                     -> {
-        if (lineContentIndicator == LineContentIndicatorContent)
-          bTailWS.claimASCII(this.buffer, this.position)
-        else
-          skipASCII(this.buffer, this.position)
-
-        lastWasBlankOrNewLine = true
-      }
-
-      this.buffer.isAnyBreak()                  -> {
-        bTailWS.clear()
-        bTailNL.claimNewLine(this.buffer)
-        lineContentIndicator = LineContentIndicatorBlanksOnly
-        lastWasBlankOrNewLine = true
+        lastWasBlank = false
       }
 
          this.buffer.isComma()
+      || this.buffer.isCurlyClose()
       || this.buffer.isSquareClose()
       || this.buffer.isEOF()
-                                                -> {
+      || (lastWasBlank && buffer.isPound())
+      -> {
         emitPlainScalar(bContent, indent, start, endPosition.mark())
         lineContentIndicator = LineContentIndicatorContent
-        lastWasBlankOrNewLine = false
         return
       }
 
-      lastWasBlankOrNewLine && buffer.isPound() ->{
-        emitPlainScalar(bContent, indent, start, endPosition.mark())
-        lineContentIndicator = LineContentIndicatorContent
-        lastWasBlankOrNewLine = false
-        return
-      }
-
-      else                                      -> {
-        while (bTailWS.isNotEmpty)
-          bContent.claimASCII(bTailWS)
-
-        collapseNewLinesInto(bContent, bTailNL, endPosition)
-
-        bContent.claimUTF8(this.buffer, this.position)
-        endPosition.become(this.position)
-        this.lineContentIndicator = LineContentIndicatorContent
-        lastWasBlankOrNewLine = false
+      else -> {
+        claimFlowCharacter(bContent, bTailWS, bTailNL, endPosition)
+        lastWasBlank = false
       }
     }
   }
 }
 
+private fun YAMLStreamTokenizerImpl.claimFlowCharacter(
+  content: UByteBuffer,
+  tailWS:  UByteBuffer,
+  tailNL:  UByteBuffer,
+  endPos:  SourcePositionTracker,
+) {
+  while (tailWS.isNotEmpty)
+    content.claimASCII(tailWS)
 
+  collapseNewLinesInto(content, tailNL, endPos)
+
+  content.claimUTF8(this.buffer, this.position)
+  endPos.become(this.position)
+  lineContentIndicator = LineContentIndicatorContent
+}
 
 private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
   val start        = this.position.mark()
