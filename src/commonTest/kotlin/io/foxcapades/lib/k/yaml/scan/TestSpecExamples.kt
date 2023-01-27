@@ -66,7 +66,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectStreamStart()
     scanner.expectPlainScalar("sequence", SourcePosition(0u, 0u, 0u), 0u)
     scanner.expectMappingValue(SourcePosition(8u, 0u, 8u), 0u)
-    scanner.expectFlowSequenceStart(0u, SourcePosition(10u, 0u, 10u))
+    scanner.expectFlowSequenceStart(SourcePosition(10u, 0u, 10u), 0u)
     scanner.expectPlainScalar("one", SourcePosition(12u, 0u, 12u), 0u)
     scanner.expectFlowItemSeparator(SourcePosition(15u, 0u, 15u))
     scanner.expectPlainScalar("two", SourcePosition(17u, 0u, 17u), 0u)
@@ -321,7 +321,7 @@ Not indented:
     scanner.expectPlainScalar("Flow style", SourcePosition(136u, 7u, 1u), 1u, SourcePosition(146u, 7u, 11u))
     scanner.expectMappingValue(SourcePosition(146u, 7u, 11u), 1u)
 
-    scanner.expectFlowSequenceStart(1u, SourcePosition(148u, 7u, 13u))
+    scanner.expectFlowSequenceStart(SourcePosition(148u, 7u, 13u), 1u)
     scanner.expectComment("Leading spaces", 1u, true, SourcePosition(153u, 7u, 18u), SourcePosition(169u, 7u, 34u))
 
     scanner.expectPlainScalar("By two", SourcePosition(173u, 8u, 3u), 3u, SourcePosition(179u, 8u, 9u))
@@ -1085,6 +1085,36 @@ Chomping: |
   }
 
   @Test
+  fun example_7_4_double_quoted_implicit_keys() {
+    //language=yaml
+    val input = """
+      "implicit block key" : [
+        "implicit flow key" : value,
+      ]
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectDoubleQuotedScalar("implicit block key", cursor)
+    cursor = test.expectMappingValue(cursor.skipSpace())
+    cursor = test.expectFlowSequenceStart(cursor.skipSpace())
+    cursor = test.expectDoubleQuotedScalar("implicit flow key", cursor.skipLine(2), 2u)
+    cursor = test.expectMappingValue(cursor.skipSpace(), 2u)
+    cursor = test.expectPlainScalar("value", cursor.skipSpace(), 2u)
+    cursor = test.expectFlowItemSeparator(cursor)
+    cursor = test.expectFlowSequenceEnd(cursor.skipLine())
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
+  fun example_7_5_double_quoted_line_breaks() {
+
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
@@ -1240,7 +1270,7 @@ Chomping: |
     cursor = scanner.expectPlainScalar("Booleans", cursor, 0u)
     cursor = scanner.expectMappingValue(cursor, 0u)
       .skipSpace()
-    cursor = scanner.expectFlowSequenceStart(0u, cursor)
+    cursor = scanner.expectFlowSequenceStart(cursor, 0u)
       .skipSpace()
     cursor = scanner.expectPlainScalar("true", cursor, 0u)
     cursor = scanner.expectFlowItemSeparator(cursor)
@@ -1260,7 +1290,7 @@ Chomping: |
     cursor = scanner.expectPlainScalar("Integers", cursor, 0u)
     cursor = scanner.expectMappingValue(cursor, 0u)
       .skipSpace()
-    cursor = scanner.expectFlowSequenceStart(0u, cursor)
+    cursor = scanner.expectFlowSequenceStart(cursor, 0u)
       .skipSpace()
     cursor = scanner.expectPlainScalar("0", cursor, 0u)
     cursor = scanner.expectFlowItemSeparator(cursor)
@@ -1281,7 +1311,7 @@ Chomping: |
     cursor = scanner.expectPlainScalar("Floats", cursor, 0u)
     cursor = scanner.expectMappingValue(cursor, 0u)
       .skipSpace()
-    cursor = scanner.expectFlowSequenceStart(0u, cursor)
+    cursor = scanner.expectFlowSequenceStart(cursor, 0u)
       .skipLine(2)
     cursor = scanner.expectPlainScalar("0.", cursor, 2u)
     cursor = scanner.expectFlowItemSeparator(cursor)
@@ -1305,7 +1335,7 @@ Chomping: |
     cursor = scanner.expectPlainScalar("Also floats", cursor, 0u)
     cursor = scanner.expectMappingValue(cursor, 0u)
       .skipSpace()
-    cursor = scanner.expectFlowSequenceStart(0u, cursor)
+    cursor = scanner.expectFlowSequenceStart(cursor, 0u)
       .skipLine(2)
     cursor = scanner.expectPlainScalar(".inf", cursor, 2u)
     cursor = scanner.expectFlowItemSeparator(cursor)

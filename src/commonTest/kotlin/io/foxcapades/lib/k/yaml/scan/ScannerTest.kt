@@ -124,8 +124,8 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectFlowSequenceStart(
-    expectedIndent: UInt,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
+    expectedIndent: UInt = 0u,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     val expectedEnd = expectedStart.resolve(1, 0, 1)
