@@ -1111,7 +1111,19 @@ Chomping: |
 
   @Test
   fun example_7_5_double_quoted_line_breaks() {
+    //language=yaml
+    val input = "\"folded \n" +
+      "to a space,\t\n" +
+      " \n" +
+      "to a line feed, or \t\\\n" +
+      " \\ \tnon-content\""
+    val test = makeScanner(input)
 
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectDoubleQuotedScalar("folded to a space,\nto a line feed, or \t \tnon-content", cursor, 0u, cursor.resolve(62, 4, 16))
+
+    test.expectStreamEnd(cursor)
   }
 
   @Test
