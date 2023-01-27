@@ -1278,6 +1278,23 @@ Chomping: |
   }
 
   @Test
+  fun example_7_12_plain_lines() {
+    //language=yaml
+    val input = """
+      | 1st non-empty
+      | 
+      |  2nd non-empty 
+      | 	3rd non-empty
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+    pos = test.expectPlainScalar("1st non-empty\n2nd non-empty 3rd non-empty", pos, 0u, pos.resolve(45, 3, 14))
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

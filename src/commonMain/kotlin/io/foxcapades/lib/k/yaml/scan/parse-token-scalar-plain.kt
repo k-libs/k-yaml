@@ -62,7 +62,8 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlow() {
         bTailNL.claimNewLine(this.buffer, this.position)
 
         // Now we are starting a new line, which has no content yet.
-        lineContentIndicator = LineContentIndicatorBlanksOnly
+        this.lineContentIndicator = LineContentIndicatorBlanksOnly
+        this.indent = 0u
 
         lastWasBlank = true
       }
@@ -138,8 +139,8 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
   val bAmbiguous   = this.contentBuffer2
   val bTailWS      = this.trailingWSBuffer
   val bTailNL      = this.trailingNLBuffer
-  val endPosition  = this.position.copy()
-  var leadWSCount  = 0u
+  val confirmedEnd = this.position.copy()
+  val ambiguousEnd = this.position.copy()
   var lastWasBlank = false
 
   bConfirmed.clear()
@@ -156,16 +157,16 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       } else {
         skipASCII(this.buffer, this.position)
         this.indent++
-        leadWSCount++
       }
       lastWasBlank = true
     }
 
     else if (this.buffer.isTab()) {
-      if (lineContentIndicator.haveAnyContent)
+      if (lineContentIndicator.haveAnyContent) {
         bTailWS.claimASCII(this.buffer, this.position)
-      else
+      } else {
         skipASCII(this.buffer, this.position)
+      }
       lastWasBlank = true
     }
 
@@ -180,23 +181,23 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         // be empty.  This is fine.
 
         // Then collapse any new lines into the confirmed buffer
-        collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
-        endPosition.incPosition(leadWSCount)
-        leadWSCount = 0u
+        collapseBuffers(bConfirmed, bTailNL, bAmbiguous)
+        confirmedEnd.become(ambiguousEnd)
       }
 
       // Consume the newline character
       bTailNL.claimNewLine(this.buffer, this.position)
 
       // We don't have any content on this new line yet
-      lineContentIndicator = LineContentIndicatorBlanksOnly
+      this.lineContentIndicator = LineContentIndicatorBlanksOnly
       this.indent = 0u
       lastWasBlank = true
     }
 
     else if (this.indent < tokenIndent) {
-      collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
-      emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+      collapseBuffers(bConfirmed, bTailNL, bAmbiguous)
+      confirmedEnd.become(ambiguousEnd)
+      emitPlainScalar(bConfirmed, tokenIndent, start, confirmedEnd.mark())
       return
     }
 
@@ -210,7 +211,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         // we are to consider the content on this, separate line to be its own
         // separate plain scalar.
         if (bConfirmed.isNotEmpty) {
-          emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+          emitPlainScalar(bConfirmed, tokenIndent, start, confirmedEnd.mark())
 
           if (bAmbiguous.isNotEmpty) {
             val subStart = -(bAmbiguous.size + bTailWS.size)
@@ -225,8 +226,9 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
           }
           return
         } else {
-          collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
-          emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+          collapseBuffers(bConfirmed, bTailNL, bAmbiguous)
+          confirmedEnd.become(ambiguousEnd)
+          emitPlainScalar(bConfirmed, tokenIndent, start, confirmedEnd.mark())
           return
         }
       } else {
@@ -244,8 +246,9 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         (atStartOfLine && buffer.isDash(1) && buffer.isDash(2) && buffer.isBlankAnyBreakOrEOF(3))
         || (this.indent <= tokenIndent && buffer.isBlankAnyBreakOrEOF(1))
       ) {
-        collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
-        emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+        collapseBuffers(bConfirmed, bTailNL, bAmbiguous)
+        confirmedEnd.become(ambiguousEnd)
+        emitPlainScalar(bConfirmed, tokenIndent, start, confirmedEnd.mark())
         return
       }
 
@@ -258,8 +261,9 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       this.buffer.cache(4)
 
       if (this.buffer.isPeriod(1) && this.buffer.isPeriod(2) && this.buffer.isBlankAnyBreakOrEOF(3)) {
-        collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
-        emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+        collapseBuffers(bConfirmed, bTailNL, bAmbiguous)
+        confirmedEnd.become(ambiguousEnd)
+        emitPlainScalar(bConfirmed, tokenIndent, start, confirmedEnd.mark())
         return
       }
 
@@ -276,8 +280,9 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
       )
       || this.buffer.isEOF()
     ) {
-      collapseBuffers(bConfirmed, bTailNL, bAmbiguous, endPosition)
-      emitPlainScalar(bConfirmed, tokenIndent, start, endPosition.mark())
+      collapseBuffers(bConfirmed, bTailNL, bAmbiguous)
+      confirmedEnd.become(ambiguousEnd)
+      emitPlainScalar(bConfirmed, tokenIndent, start, confirmedEnd.mark())
       return
     }
 
@@ -286,6 +291,8 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
         bAmbiguous.claimASCII(bTailWS)
 
       bAmbiguous.claimUTF8(this.buffer, this.position)
+      ambiguousEnd.become(this.position)
+
       this.lineContentIndicator = LineContentIndicatorContent
       lastWasBlank = false
     }
@@ -296,20 +303,18 @@ private fun collapseBuffers(
   into:     UByteBuffer,
   newLines: UByteBuffer,
   from:     UByteSource,
-  pos:      SourcePositionTracker,
 ) {
   if (from.size > 0) {
     if (newLines.size == 1) {
       into.push(A_SPACE)
-      pos.incLine()
     } else if (newLines.size > 1) {
-      newLines.skipNewLine(pos)
+      newLines.skipNewLine()
       while (newLines.isNotEmpty)
-        into.claimNewLine(newLines, pos)
+        into.claimNewLine(newLines)
     }
 
     while (from.size > 0)
-      into.claimUTF8(from, pos)
+      into.claimUTF8(from)
   }
 }
 
