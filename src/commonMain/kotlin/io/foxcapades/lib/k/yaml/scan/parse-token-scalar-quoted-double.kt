@@ -14,6 +14,8 @@ internal fun YAMLStreamTokenizerImpl.parseDoubleQuotedStringToken() {
   val indent = this.indent
   val start = position.mark()
 
+  lineContentIndicator = LineContentIndicatorContent
+
   // Skip the first double quote character as we don't put it into the token
   // value.
   skipASCII(this.buffer, this.position)

@@ -1127,6 +1127,20 @@ Chomping: |
   }
 
   @Test
+  fun example_7_6_double_quoted_lines() {
+    //language=yaml
+    val input = "\" 1st non-empty\n" +
+      "\n 2nd non-empty \n" +
+      "\t3rd non-empty \""
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectDoubleQuotedScalar(" 1st non-empty\n2nd non-empty 3rd non-empty ", pos, 0u, pos.resolve(49, 3, 16))
+
+    test.expectStreamEnd(pos)
+  }
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
