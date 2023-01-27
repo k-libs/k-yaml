@@ -1459,6 +1459,37 @@ Chomping: |
   }
 
   @Test
+  fun example_7_18_flow_mapping_adjacent_values() {
+    //language=yaml
+    val input = """
+      | {
+      | "adjacent":value,
+      | "readable": value,
+      | "empty":
+      | }
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectFlowMappingStart(pos)
+    pos = test.expectDoubleQuotedScalar("adjacent", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectPlainScalar("value", pos)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectDoubleQuotedScalar("readable", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectPlainScalar("value", pos.skipSpace())
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectDoubleQuotedScalar("empty", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectFlowMappingEnd(pos.skipLine())
+
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
