@@ -1490,6 +1490,25 @@ Chomping: |
   }
 
   @Test
+  fun example_7_19_single_pair_flow_mappings() {
+    //language=yaml
+    val input = """
+      | [
+      | foo: bar
+      | ]
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+    var pos = test.expectStreamStart()
+    pos = test.expectFlowSequenceStart(pos)
+    pos = test.expectPlainScalar("foo", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectPlainScalar("bar", pos.skipSpace())
+    pos = test.expectFlowSequenceEnd(pos.skipLine())
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
