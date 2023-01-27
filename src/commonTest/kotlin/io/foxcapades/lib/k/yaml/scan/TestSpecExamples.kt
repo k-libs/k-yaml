@@ -43,7 +43,7 @@ class TestSpecExamples : ScannerTest() {
 
     //   ? sky
     //   : blue
-    scanner.expectMappingKey(2u, SourcePosition(33u, 4u, 2u))
+    scanner.expectMappingKey(SourcePosition(33u, 4u, 2u), 2u)
     scanner.expectPlainScalar("sky", SourcePosition(35u, 4u, 4u), 4u)
     scanner.expectMappingValue(SourcePosition(41u, 5u, 2u), 2u)
     scanner.expectPlainScalar("blue", SourcePosition(43u, 5u, 4u), 4u)
@@ -353,7 +353,7 @@ Not indented:
 
     scanner.expectStreamStart()
 
-    scanner.expectMappingKey(0u, SourcePosition(0u, 0u, 0u))
+    scanner.expectMappingKey(SourcePosition(0u, 0u, 0u), 0u)
     scanner.expectPlainScalar("a", SourcePosition(2u, 0u, 2u), 2u, SourcePosition(3u, 0u, 3u))
 
     scanner.expectMappingValue(SourcePosition(4u, 1u, 0u), 0u)
@@ -1051,6 +1051,33 @@ Chomping: |
     cursor = test.expectTag("!!", "str", cursor.skipLine(2), 2u)
     cursor = test.expectMappingValue(cursor.skipSpace(), 2u)
     cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 2u)
+    cursor = test.expectFlowItemSeparator(cursor)
+    cursor = test.expectFlowMappingEnd(cursor.skipLine())
+
+    test.expectStreamEnd(cursor)
+  }
+
+  @Test
+  fun example_7_3_completely_empty_flow_nodes() {
+    //language=yaml
+    val input = """
+      {
+        ? foo :,
+        : bar,
+      }
+    """.trimIndent()
+
+    val test = makeScanner(input)
+
+    var cursor = test.expectStreamStart()
+
+    cursor = test.expectFlowMappingStart(cursor)
+    cursor = test.expectMappingKey(cursor.skipLine(2), 2u)
+    cursor = test.expectPlainScalar("foo", cursor.skipSpace(), 4u)
+    cursor = test.expectMappingValue(cursor.skipSpace(), 4u)
+    cursor = test.expectFlowItemSeparator(cursor)
+    cursor = test.expectMappingValue(cursor.skipLine(2), 2u)
+    cursor = test.expectPlainScalar("bar", cursor.skipSpace(), 4u)
     cursor = test.expectFlowItemSeparator(cursor)
     cursor = test.expectFlowMappingEnd(cursor.skipLine())
 

@@ -70,17 +70,21 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectMappingKey(
-    expectedIndent: UInt,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
+    expectedIndent: UInt = 0u,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
+    val expectedEnd = expectedStart.resolve(1, 0, 1)
+
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenMappingKey>(this.nextToken()).also {
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
-      assertEquals(expectedStart.resolve(1, 0, 1), it.end)
+      assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLStreamTokenizer.expectMappingValue(
