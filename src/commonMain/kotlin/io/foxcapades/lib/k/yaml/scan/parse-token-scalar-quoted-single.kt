@@ -81,6 +81,9 @@ private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
     while (blanks.isNotEmpty)
       target.push(blanks.pop())
   }
+
+  newlines.clear()
+  blanks.clear()
 }
 
 @Suppress("NOTHING_TO_INLINE")
