@@ -1425,6 +1425,40 @@ Chomping: |
   }
 
   @Test
+  fun example_7_17_flow_mapping_separate_values() {
+    //language=yaml
+    val input = """
+      | {
+      | unquoted : "separate",
+      | https://foo.com,
+      | omitted value:,
+      | : omitted key,
+      | }
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectFlowMappingStart(pos)
+    pos = test.expectPlainScalar("unquoted", pos.skipLine())
+    pos = test.expectMappingValue(pos.skipSpace())
+    pos = test.expectDoubleQuotedScalar("separate", pos.skipSpace())
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectPlainScalar("https://foo.com", pos.skipLine())
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectPlainScalar("omitted value", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectMappingValue(pos.skipLine())
+    pos = test.expectPlainScalar("omitted key", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectFlowMappingEnd(pos.skipLine())
+
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

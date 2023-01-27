@@ -69,29 +69,21 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlow() {
       }
 
       this.buffer.isColon() -> {
-        // If we're in a flow sequence and there is no indication that a mapping
-        // value should be present, then eat the colon as part of the start of
-        // the sequence value.
-        if (inFlowSequence) {
-          buffer.cache(2)
+        buffer.cache(2)
 
-          if (
-            (lastToken is YAMLTokenFlowSequenceStart || lastToken is YAMLTokenFlowItemSeparator)
-            && !buffer.isBlankAnyBreakOrEOF(1)
-          ) {
-            claimFlowCharacter(bContent, bTailWS, bTailNL, endPosition)
-          } else {
-            emitPlainScalar(bContent, indent, start, endPosition.mark())
-            lineContentIndicator = LineContentIndicatorContent
-            return
-          }
-        }
-
-        // We're in a flow mapping
-        else {
+        if (
+          buffer.isBlankAnyBreakOrEOF(1)
+          || buffer.uIsComma(1)
+          || buffer.uIsCurlyClose(1)
+          || buffer.uIsCurlyOpen(1)
+          || buffer.uIsSquareClose(1)
+          || buffer.uIsSquareOpen(1)
+        ) {
           emitPlainScalar(bContent, indent, start, endPosition.mark())
           lineContentIndicator = LineContentIndicatorContent
           return
+        } else {
+          claimFlowCharacter(bContent, bTailWS, bTailNL, endPosition)
         }
 
         lastWasBlank = false
