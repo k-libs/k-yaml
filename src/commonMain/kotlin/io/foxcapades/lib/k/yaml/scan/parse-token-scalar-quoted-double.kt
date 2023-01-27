@@ -22,14 +22,13 @@ internal fun YAMLStreamTokenizerImpl.parseDoubleQuotedStringToken() {
     buffer.cache(1)
 
     if (buffer.isBackslash()) {
-      lineContentIndicator = LineContentIndicatorContent
       readPossibleEscapeSequence(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
     }
 
     else if (buffer.isDoubleQuote()) {
       lineContentIndicator = LineContentIndicatorContent
       skipASCII(this.buffer, this.position)
-      collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
+      collapseTrailingWhitespaceOrNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
       tokens.push(newDoubleQuotedStringToken(contentBuffer1.popToArray(), indent, start, position.mark()))
       return
     }
@@ -57,19 +56,21 @@ internal fun YAMLStreamTokenizerImpl.parseDoubleQuotedStringToken() {
 
     else {
       lineContentIndicator = LineContentIndicatorContent
-      collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
+      collapseTrailingWhitespaceOrNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
       contentBuffer1.claimUTF8(this.buffer, this.position)
     }
   }
 }
 
-private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
+private fun collapseTrailingWhitespaceOrNewlinesIntoBuffer(
   target:   UByteBuffer,
   newlines: UByteBuffer,
   blanks:   UByteBuffer,
 ) {
   if (newlines.isNotEmpty) {
-    if (newlines.size == 1) {
+    val width = newlines.utf8Width()
+
+    if (newlines.size == width && (target.isEmpty || !target.isBlank(target.lastIndex))) {
       target.push(A_SPACE)
       newlines.clear()
     } else {
@@ -101,12 +102,15 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
   buffer.cache(1)
 
   if (buffer.isEOF()) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BACKSLASH)
     warn("invalid or unfinished escape sequence due to EOF", start, position.mark())
   }
 
   else if (buffer.isAnyBreak()) {
+    while (wsBuffer.isNotEmpty)
+      into.push(wsBuffer.pop())
+
     nlBuffer.claimNewLine(this.buffer, this.position)
     indent = 0u
     lineContentIndicator = LineContentIndicatorBlanksOnly
@@ -119,43 +123,43 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
     || buffer.uIsSlash()
     || buffer.uIsTab()
   ) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.claimASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
   }
 
   // \xXX
   else if (buffer.uTest(A_LOWER_X)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     readHexEscape(start, into)
     lineContentIndicator = LineContentIndicatorContent
   }
 
   // \uXXXX
   else if (buffer.uTest(A_LOWER_U)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     readSmallUnicodeEscape(start, into)
     lineContentIndicator = LineContentIndicatorContent
   }
 
   // \UXXXXXXXX
   else if (buffer.uTest(A_UPPER_U)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     readBigUnicodeEscape(start, into)
     lineContentIndicator = LineContentIndicatorContent
   }
 
   // Line Feed
   else if (buffer.uTest(A_LOWER_N)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_LINE_FEED)
     skipASCII(this.buffer, this.position)
-    lineContentIndicator = LineContentIndicatorBlanksOnly
+    lineContentIndicator = LineContentIndicatorContent
   }
 
   // Null / Nil
   else if (buffer.uTest(A_DIGIT_0)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_NIL)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -163,7 +167,7 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Bell
   else if (buffer.uTest(A_LOWER_A)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BELL)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -171,7 +175,7 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Backspace
   else if (buffer.uTest(A_LOWER_B)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BACKSPACE)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -179,7 +183,7 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Tab
   else if (buffer.uTest(A_LOWER_T)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_TAB)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -187,7 +191,7 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Vertical Tab
   else if (buffer.uTest(A_LOWER_V)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_VERTICAL_TAB)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -195,7 +199,7 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Form Feed
   else if (buffer.uTest(A_LOWER_F)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_FORM_FEED)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -203,15 +207,15 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Carriage Return
   else if (buffer.uTest(A_LOWER_R)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_CARRIAGE_RETURN)
     skipASCII(this.buffer, this.position)
-    lineContentIndicator = LineContentIndicatorBlanksOnly
+    lineContentIndicator = LineContentIndicatorContent
   }
 
   // Escape
   else if (buffer.uTest(A_LOWER_E)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_ESCAPE)
     skipASCII(this.buffer, this.position)
     lineContentIndicator = LineContentIndicatorContent
@@ -219,16 +223,16 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Next Line
   else if (buffer.uTest(A_UPPER_N)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbC2)
     into.push(Ub85)
     skipASCII(this.buffer, this.position)
-    lineContentIndicator = LineContentIndicatorBlanksOnly
+    lineContentIndicator = LineContentIndicatorContent
   }
 
   // Non-Breaking Space
   else if (buffer.uTest(A_UNDERSCORE)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbC2)
     into.push(UbA0)
     skipASCII(this.buffer, this.position)
@@ -237,27 +241,27 @@ private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
 
   // Line Separator
   else if (buffer.uTest(A_UPPER_L)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbE2)
     into.push(Ub80)
     into.push(UbA8)
     skipASCII(this.buffer, this.position)
-    lineContentIndicator = LineContentIndicatorBlanksOnly
+    lineContentIndicator = LineContentIndicatorContent
   }
 
   // Paragraph Separator
   else if (buffer.uTest(A_UPPER_P)) {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(UbE2)
     into.push(Ub80)
     into.push(UbA9)
     skipASCII(this.buffer, this.position)
-    lineContentIndicator = LineContentIndicatorBlanksOnly
+    lineContentIndicator = LineContentIndicatorContent
   }
 
   // Junk
   else {
-    collapseTrailingWhitespaceAndNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
+    collapseTrailingWhitespaceOrNewlinesIntoBuffer(into, nlBuffer, wsBuffer)
     into.push(A_BACKSLASH)
     into.claimUTF8(this.buffer, this.position)
     warn("unrecognized or invalid escape sequence", start, position.mark())
