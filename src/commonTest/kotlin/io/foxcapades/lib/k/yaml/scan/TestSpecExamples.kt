@@ -1295,6 +1295,33 @@ Chomping: |
   }
 
   @Test
+  fun example_7_13_flow_sequence() {
+    //language=yaml
+    val input = """
+      | - [ one, two, ]
+      | - [three ,four]
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("one", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectPlainScalar("two", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("three", pos, 2u)
+    pos = test.expectFlowItemSeparator(pos.skipSpace())
+    pos = test.expectPlainScalar("four", pos, 2u)
+    pos = test.expectFlowSequenceEnd(pos)
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
