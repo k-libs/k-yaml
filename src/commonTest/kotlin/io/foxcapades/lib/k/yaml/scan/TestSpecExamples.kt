@@ -1322,6 +1322,45 @@ Chomping: |
   }
 
   @Test
+  fun example_7_14_flow_sequence_entries() {
+    //language=yaml
+    val input = """
+      | [
+      | "double
+      |  quoted", 'single
+      |            quoted',
+      | plain
+      |  text, [ nested ],
+      | single: pair,
+      | ]
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+    pos = test.expectFlowSequenceStart(pos)
+    pos = pos.skipLine()
+    pos = test.expectDoubleQuotedScalar("double quoted", pos, 0u, pos.resolve(16, 1, 8))
+    pos = test.expectFlowItemSeparator(pos)
+    pos = pos.skipSpace()
+    pos = test.expectSingleQuotedScalar("single quoted", pos, 1u, pos.resolve(26, 1, 8))
+    pos = test.expectFlowItemSeparator(pos)
+    pos = pos.skipLine()
+    pos = test.expectPlainScalar("plain text", pos, 0u, pos.resolve(11, 1, 5))
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectFlowSequenceStart(pos.skipSpace())
+    pos = test.expectPlainScalar("nested", pos.skipSpace())
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectPlainScalar("single", pos.skipLine())
+    pos = test.expectMappingValue(pos)
+    pos = test.expectPlainScalar("pair", pos.skipSpace())
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectFlowSequenceEnd(pos.skipLine())
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
