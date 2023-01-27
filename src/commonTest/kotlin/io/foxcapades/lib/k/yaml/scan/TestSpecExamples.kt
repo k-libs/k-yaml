@@ -1530,6 +1530,46 @@ Chomping: |
   }
 
   @Test
+  fun example_7_21_single_pair_implicit_entries() {
+    //language=yaml
+    val input = """
+      | - [ YAML : separate ]
+      | - [ : empty key entry ]
+      | - [ {JSON: like}:adjacent ]
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("YAML", pos.skipSpace(), 2u)
+    pos = test.expectMappingValue(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("separate", pos.skipSpace(), 2u)
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+    pos = test.expectMappingValue(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("empty key entry", pos.skipSpace(), 2u)
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+    pos = test.expectFlowMappingStart(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("JSON", pos, 2u)
+    pos = test.expectMappingValue(pos, 2u)
+    pos = test.expectPlainScalar("like", pos.skipSpace(), 2u)
+    pos = test.expectFlowMappingEnd(pos)
+    pos = test.expectMappingValue(pos, 2u)
+    pos = test.expectPlainScalar("adjacent", pos, 2u)
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

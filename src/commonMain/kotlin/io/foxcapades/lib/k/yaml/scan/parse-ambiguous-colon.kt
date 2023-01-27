@@ -28,10 +28,20 @@ import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
 internal fun YAMLStreamTokenizerImpl.parseAmbiguousColonToken() {
   this.buffer.cache(2)
 
-  if (!(this.inFlowMapping || this.buffer.isBlankAnyBreakOrEOF(1)))
-    return this.parsePlainScalar()
+  if (this.buffer.isBlankAnyBreakOrEOF(1))
+    return this.fetchMappingValueIndicatorToken()
 
-  this.fetchMappingValueIndicatorToken()
+  /*
+  So the character after the colon is not a blank, a line break, or the EOF.
+
+  This complicates things a little.  In some cases this means that the colon
+  should be considered part of a plain scalar, and in other cases it is just
+  adjacent value.
+  */
+  
+
+
+  return this.parsePlainScalar()
 }
 
 

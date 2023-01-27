@@ -95,7 +95,11 @@ open class ScannerTest {
     val expectedEnd = expectedStart.resolve(modIndex = 1, modColumn = 1)
 
     assertTrue(this.hasNextToken)
-    assertIs<YAMLTokenMappingValue>(this.nextToken()).also {
+
+    val token = nextToken()
+    println(token)
+
+    assertIs<YAMLTokenMappingValue>(token).also {
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
       assertEquals(expectedEnd, it.end)
@@ -281,7 +285,8 @@ open class ScannerTest {
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
-    assertIs<YAMLTokenScalarPlain>(this.nextToken()).also {
+    val token = nextToken()
+    assertIs<YAMLTokenScalarPlain>(token).also {
       assertEquals(expectedValue, it.value.toString())
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)
