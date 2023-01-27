@@ -42,15 +42,19 @@ internal fun YAMLStreamTokenizerImpl.parseSingleQuotedStringToken() {
         tokens.push(newSingleQuotedStringToken(contentBuffer1.popToArray(), indent, start))
         return
       }
+
       buffer.isBlank()      -> trailingWSBuffer.claimASCII(this.buffer, this.position)
+
       buffer.isAnyBreak()   -> {
         trailingWSBuffer.clear()
         trailingNLBuffer.claimNewLine(this.buffer, this.position)
       }
+
       buffer.isEOF()        -> {
         emitInvalidToken("incomplete string token; unexpected stream end", start)
         return
       }
+
       else                  -> {
         collapseTrailingWhitespaceAndNewlinesIntoBuffer(contentBuffer1, trailingNLBuffer, trailingWSBuffer)
         contentBuffer1.claimUTF8(this.buffer, this.position)

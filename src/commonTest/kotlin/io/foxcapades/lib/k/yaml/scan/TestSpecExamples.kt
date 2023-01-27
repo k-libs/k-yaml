@@ -157,7 +157,7 @@ class TestSpecExamples : ScannerTest() {
     scanner.expectStreamStart()
     scanner.expectPlainScalar("single", SourcePosition(0u, 0u, 0u), 0u)
     scanner.expectMappingValue(SourcePosition(6u, 0u, 6u), 0u)
-    scanner.testSingleQuotedScalar("text", 0u, SourcePosition(8u, 0u, 8u), SourcePosition(14u, 0u, 14u))
+    scanner.expectSingleQuotedScalar("text", SourcePosition(8u, 0u, 8u), 0u, SourcePosition(14u, 0u, 14u))
     scanner.expectPlainScalar("double", SourcePosition(15u, 1u, 0u), 0u, SourcePosition(21u, 1u, 6u))
     scanner.expectMappingValue(SourcePosition(21u, 1u, 6u), 0u)
     scanner.expectDoubleQuotedScalar("text", SourcePosition(23u, 1u, 8u), 0u, SourcePosition(29u, 1u, 14u))
@@ -1140,6 +1140,17 @@ Chomping: |
 
     test.expectStreamEnd(pos)
   }
+
+  @Test
+  fun example_7_7_single_quoted_characters() {
+    //language=yaml
+    val input = "'here''s to \"quotes\"'"
+    val test  = makeScanner(input)
+    var pos   = test.expectStreamStart()
+
+    pos = test.expectSingleQuotedScalar("here's to \"quotes\"", pos, 0u, pos.resolve(21, 0, 21))
+  }
+
   @Test
   fun example_8_10_folded_lines() {
     //language=yaml

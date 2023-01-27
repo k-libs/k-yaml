@@ -330,13 +330,16 @@ open class ScannerTest {
     return expectedEnd
   }
 
-  protected fun YAMLStreamTokenizer.testSingleQuotedScalar(
+  protected fun YAMLStreamTokenizer.expectSingleQuotedScalar(
     expectedValue:  String,
-    expectedIndent: UInt,
     expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition,
+    expectedIndent: UInt = 0u,
+    expectedEnd:    SourcePosition = expectedStart.resolve(
+      modIndex = expectedValue.length + 2,
+      modColumn = expectedValue.length + 2,
+    ),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
-  ) {
+  ): SourcePosition {
     assertTrue(this.hasNextToken)
     assertIs<YAMLTokenScalarQuotedSingle>(this.nextToken()).also {
       assertEquals(expectedValue, it.value.toString())
@@ -345,6 +348,8 @@ open class ScannerTest {
       assertEquals(expectedEnd, it.end)
       warningChecker(it.warnings)
     }
+
+    return expectedEnd
   }
 
   protected fun YAMLStreamTokenizer.expectDoubleQuotedScalar(
