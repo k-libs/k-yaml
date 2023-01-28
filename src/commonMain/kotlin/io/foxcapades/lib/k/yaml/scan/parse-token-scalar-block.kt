@@ -4,7 +4,6 @@ import io.foxcapades.lib.k.yaml.bytes.A_LINE_FEED
 import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
-import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarLiteral
 import io.foxcapades.lib.k.yaml.util.*
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -66,6 +65,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
 
   val haveBlanks = this.skipBlanks() > 0
   this.buffer.cache(1)
+  val endPosition = position.copy()
 
   when {
     haveBlanks && this.buffer.isPound() -> {
@@ -144,7 +144,6 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
 
     else if (this.buffer.isEOF()) {
       val content     = this.contentBuffer1
-      val endPosition = this.position.copy()
 
       content.clear()
 
@@ -163,11 +162,18 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       this.indent = this.position.column
 
       if (this.indent < minIndent) {
-        val content = contentBuffer1
+        val content     = this.contentBuffer1
+
         content.clear()
 
-        applyChomping(content, trailingNewLines, chompMode, endPos)
-        TODO("we have an empty scalar that may have newlines that need to be appended to the literal content")
+        applyChomping(content, trailingNewLines, chompMode, endPosition)
+
+        if (isLiteral)
+          finishLiteralScalar(content, actualIndent, startMark, endPosition)
+        else
+          finishFoldingScalar(content, actualIndent, startMark, endPosition)
+
+        return
       }
 
       if (this.indent < indentHint) {

@@ -15,6 +15,10 @@ typealias WarningChecker = (warnings: Array<SourceWarning>) -> Unit
 
 open class ScannerTest {
 
+  @Suppress("NOTHING_TO_INLINE")
+  protected inline fun p(i: Int = 0, l: Int = 0, c: Int = 0) =
+    SourcePosition(i.toUInt(), l.toUInt(), c.toUInt())
+
   protected fun makeScanner(input: ByteArray): YAMLStreamTokenizer =
     YAMLStreamTokenizerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input)))
 

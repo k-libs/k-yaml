@@ -78,3 +78,22 @@ const val INPUT_EXAMPLE_8_6 =
   "clip: >\n" +
   "\n" +
   "keep: |+\n"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_7 =
+  "|\n" +
+  " literal\n" +
+  " \ttext\n" +
+  "\n"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_8 =
+  "|\n" +
+  " \n" +
+  "  \n" +
+  "  literal\n" +
+  "   \n" +
+  "  \n" +
+  "  text\n" +
+  "\n" +
+  " # Comment"
