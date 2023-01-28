@@ -2,6 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_1
 import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_2
+import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_3
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1713,6 +1714,25 @@ Chomping: |
       pos = expectLiteralScalar(" explicit\n", 2u, pos.skipSpace(), SourcePosition(52u, 8u, 0u))
       pos = expectSequenceEntry(pos)
       pos = expectFoldedScalar("\t\ndetected\n", 2u, pos.skipSpace(), SourcePosition(68u, 10u, 9u))
+      expectStreamEnd(pos)
+    }
+  }
+
+  @Test
+  fun example_8_3_invalid_block_scalar_indentation_indicators() {
+    with(makeScanner(INPUT_EXAMPLE_8_3)) {
+      var pos = expectStreamStart()
+      pos = expectSequenceEntry(pos)
+      pos = expectLiteralScalar("\n\ntext\n", 2u, pos.skipSpace(), SourcePosition(13u, 3u, 0u))
+
+      pos = expectSequenceEntry(pos)
+      pos = expectFoldedScalar("text\n", 2u, pos.skipSpace(), SourcePosition(24u, 5u, 0u))
+
+      pos = expectPlainScalar("text", pos.skipSpace(), 1u)
+
+      pos = expectSequenceEntry(pos.skipLine())
+      pos = expectFoldedScalar("text\n", 2u, pos.skipSpace(), SourcePosition(40u, 7u, 5u))
+
       expectStreamEnd(pos)
     }
   }

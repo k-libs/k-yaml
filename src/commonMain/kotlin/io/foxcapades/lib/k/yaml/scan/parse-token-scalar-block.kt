@@ -162,7 +162,6 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       this.indent = this.position.column
 
       if (this.indent < minIndent) {
-        println(minIndent)
         TODO("we have an empty scalar that may have newlines that need to be appended to the literal content")
       }
 
