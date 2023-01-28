@@ -1,8 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_1
-import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_2
-import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_3
+import io.foxcapades.lib.k.yaml.*
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1731,7 +1729,65 @@ Chomping: |
       pos = expectPlainScalar("text", pos.skipSpace(), 1u)
 
       pos = expectSequenceEntry(pos.skipLine())
-      pos = expectFoldedScalar("text\n", 2u, pos.skipSpace(), SourcePosition(40u, 7u, 5u))
+      pos = expectLiteralScalar("text\n", 2u, pos.skipSpace(), SourcePosition(40u, 7u, 5u)) {
+        assertEquals(1, it.size)
+      }
+
+      expectStreamEnd(pos)
+    }
+  }
+
+  @Test
+  fun example_8_4_chomping_final_line_break() {
+    with(makeScanner(INPUT_EXAMPLE_8_4)) {
+      var pos = expectStreamStart()
+
+      pos = expectPlainScalar("strip", pos)
+      pos = expectMappingValue(pos)
+      pos = expectLiteralScalar("text", 0u, pos.skipSpace(), SourcePosition(16u, 1u, 6u))
+
+      pos = expectPlainScalar("clip", pos.skipLine())
+      pos = expectMappingValue(pos)
+      pos = expectLiteralScalar("text\n", 0u, pos.skipSpace(), SourcePosition(32u, 4u, 0u))
+
+      pos = expectPlainScalar("keep", pos)
+      pos = expectMappingValue(pos)
+      pos = expectLiteralScalar("text\n", 0u, pos.skipSpace(), SourcePosition(48u, 6u, 0u))
+
+      expectStreamEnd(pos)
+    }
+  }
+
+  @Test
+  fun example_8_5_chomping_trailing_lines() {
+    with(makeScanner(INPUT_EXAMPLE_8_5)) {
+      var pos = expectStreamStart()
+
+      pos = expectComment("Strip", 0u, false, pos)
+      pos = expectComment("Comments:", 2u, false, pos.skipLine(2))
+
+      pos = expectPlainScalar("strip", pos.skipLine())
+      pos = expectMappingValue(pos)
+      expectLiteralScalar("# text", 0u, pos.skipSpace(), SourcePosition(40u, 3u, 8u))
+
+      pos = expectComment("Clip", 1u, false, SourcePosition(45u, 5u, 1u))
+      pos = expectComment("comments:", 2u, false, pos.skipLine(2))
+
+      pos = pos.skipLine()
+
+      pos = expectPlainScalar("clip", pos.skipLine())
+      pos = expectMappingValue(pos)
+      expectLiteralScalar("# text\n", 0u, pos.skipSpace(), SourcePosition(84u, 10u, 0u))
+
+      pos = expectComment("Keep", 1u, false, SourcePosition(87u, 11u, 1u))
+      expectComment("comments:", 2u, false, pos.skipLine(2))
+
+      pos = expectPlainScalar("keep", SourcePosition(109u, 14u, 0u))
+      pos = expectMappingValue(pos)
+      pos = expectLiteralScalar("# text\n\n", 0u, pos.skipSpace(), SourcePosition(128u, 17u, 0u))
+
+      pos = expectComment("Trail", 1u, false, pos.skipSpace())
+      pos = expectComment("comments.", 2u, false, pos.skipLine(2))
 
       expectStreamEnd(pos)
     }

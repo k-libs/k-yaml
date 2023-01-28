@@ -166,7 +166,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       }
 
       if (this.indent < indentHint) {
-        TODO("we have an invalid indent value")
+        warn("block scalar is less indented than the indicated level")
       }
 
       minIndent = this.indent
@@ -190,14 +190,16 @@ internal fun applyChomping(
   endPosition: SourcePositionTracker
 ) {
   if (chompingMode == BlockScalarChompModeStrip) {
-    // Do nothing in this case.
+    trailingNewLines.clear()
   }
 
   else if (chompingMode == BlockScalarChompModeClip) {
     if (trailingNewLines.isEmpty)
       scalarContent.push(A_LINE_FEED)
-    else
+    else {
       scalarContent.claimNewLine(trailingNewLines, endPosition)
+      trailingNewLines.clear()
+    }
   }
 
   else if (chompingMode == BlockScalarChompModeKeep) {

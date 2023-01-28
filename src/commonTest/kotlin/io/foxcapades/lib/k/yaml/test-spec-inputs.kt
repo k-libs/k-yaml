@@ -39,3 +39,34 @@ val INPUT_EXAMPLE_8_3 = """
 - |2
  text
 """.trimIndent()
+
+//language=yaml
+const val INPUT_EXAMPLE_8_4 =
+  "strip: |-\n" +
+  "  text\n" +
+  "clip: |\n" +
+  "  text\n" +
+  "keep: |+\n" +
+  "  text\n"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_5 =
+  "# Strip\n" +
+  "  # Comments:\n" +
+  "strip: |-\n" +
+  "  # text\n  " +
+  "\n " +
+  "# Clip\n  " +
+  "# comments:\n" +
+  "\n" +
+  "clip: |\n" +
+  "  # text\n " +
+  "\n " +
+  "# Keep\n  " +
+  "# comments:\n" +
+  "\n" +
+  "keep: |+\n" +
+  "  # text\n" +
+  "\n " +
+  "# Trail\n  " +
+  "# comments."
