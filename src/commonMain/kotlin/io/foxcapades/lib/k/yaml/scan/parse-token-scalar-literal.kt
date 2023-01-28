@@ -1,5 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarLiteral
 import io.foxcapades.lib.k.yaml.util.*
@@ -18,6 +19,14 @@ internal fun YAMLStreamTokenizerImpl.fetchLiteralScalar(
   val keepIndentAfter  = this.indent - indentHint
 
   scalarContent.clear()
+
+  // Prefill the buffer with any leading spaces that were supposed to be present
+  // due to the indent hint.
+  if (indent > keepIndentAfter) {
+    var i = indent
+    while (i-- > keepIndentAfter)
+      scalarContent.push(A_SPACE)
+  }
 
   while (true) {
     this.buffer.cache(1)
