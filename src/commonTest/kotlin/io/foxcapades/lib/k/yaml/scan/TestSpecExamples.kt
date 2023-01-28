@@ -1794,6 +1794,13 @@ Chomping: |
   }
 
   @Test
+  fun example_8_6_empty_scalar_chomping() {
+    with(makeScanner(INPUT_EXAMPLE_8_6)) {
+      
+    }
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

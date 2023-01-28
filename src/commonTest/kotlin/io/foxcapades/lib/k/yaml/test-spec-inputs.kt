@@ -70,3 +70,11 @@ const val INPUT_EXAMPLE_8_5 =
   "\n " +
   "# Trail\n  " +
   "# comments."
+
+//language=yaml
+const val INPUT_EXAMPLE_8_6 =
+  "strip: >-\n" +
+  "\n" +
+  "clip: >\n" +
+  "\n" +
+  "keep: |+\n"
