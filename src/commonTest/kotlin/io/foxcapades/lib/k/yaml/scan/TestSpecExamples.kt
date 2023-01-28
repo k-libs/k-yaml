@@ -1680,6 +1680,38 @@ Chomping: |
   }
 
   @Test
+  fun example_8_1_block_scalar_header() {
+    //language=yaml
+    val input = """
+      | - | # Empty header
+      |   literal
+      | - >1 # Indentation indicator
+      |   folded
+      | - |+ # Chomping indicator
+      |   keep
+      | 
+      | - >1- # Both indicators
+      |   strip
+    """.trimMargin("| ")
+    val test = makeScanner(input)
+    var pos = test.expectStreamStart()
+    pos = test.expectSequenceEntry(pos)
+    pos = pos.skipSpace()
+    pos = test.expectLiteralScalar("literal\n", 2u, pos, SourcePosition(29u, 2u, 0u))
+    test.expectComment("Empty header", 2u, true, SourcePosition(4u, 0u, 4u))
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectFoldedScalar(" folded\n", 2u, pos.skipSpace(), SourcePosition(67u, 4u, 0u))
+    test.expectComment("Indentation indicator", 2u, true, SourcePosition(34u, 2u, 5u))
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectLiteralScalar("keep\n\n", 2u, pos.skipSpace(), SourcePosition(101u, 7u, 0u))
+    test.expectComment("Chomping indicator", 2u, true, SourcePosition(72u, 4u, 5u))
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectFoldedScalar(" strip", 2u, pos.skipSpace(), SourcePosition(132u, 8u, 7u))
+    test.expectComment("Both indicators", 2u, true, SourcePosition(107u, 7u, 6u))
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

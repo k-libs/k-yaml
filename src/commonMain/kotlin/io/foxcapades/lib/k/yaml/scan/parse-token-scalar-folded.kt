@@ -21,6 +21,14 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
 
   scalarContent.clear()
 
+  // Prefill the buffer with any leading spaces that were supposed to be present
+  // due to the indent hint.
+  if (indent > keepIndentAfter) {
+    var i = indent
+    while (i-- > keepIndentAfter)
+      scalarContent.push(A_SPACE)
+  }
+
   while (true) {
     buffer.cache(1)
 
@@ -37,20 +45,12 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
       else {
         // If the leading blank character count is equal to the mark where we
         // want to start keeping the indent characters
-        if (indent == keepIndentAfter) {
+        if (indent >= keepIndentAfter) {
           // Then eat all the trailing newlines into the content buffer
           while (trailingNewLines.isNotEmpty)
             scalarContent.claimNewLine(trailingNewLines)
 
           // And claim the space as part of the content as well
-          scalarContent.claimASCII(buffer, position)
-          endPosition.become(position)
-        }
-
-        // else, if the leading blank character count is greater than the mark
-        // where we want to start keeping the indent characters
-        else if (indent > keepIndentAfter) {
-          // then claim the space as part of the content
           scalarContent.claimASCII(buffer, position)
           endPosition.become(position)
         }
