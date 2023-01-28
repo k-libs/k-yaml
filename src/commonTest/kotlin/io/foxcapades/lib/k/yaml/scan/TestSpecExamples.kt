@@ -1796,7 +1796,11 @@ Chomping: |
   @Test
   fun example_8_6_empty_scalar_chomping() {
     with(makeScanner(INPUT_EXAMPLE_8_6)) {
-      
+      var pos = expectStreamStart()
+
+      pos = expectPlainScalar("strip", pos)
+      pos = expectMappingValue(pos)
+      pos = expectFoldedScalar("", 0u, pos.skipSpace(), pos.skipSpace(2))
     }
   }
 
