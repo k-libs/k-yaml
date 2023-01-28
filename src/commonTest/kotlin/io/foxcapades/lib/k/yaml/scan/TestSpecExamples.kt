@@ -1651,6 +1651,35 @@ Chomping: |
   }
 
   @Test
+  fun example_7_24_flow_nodes() {
+    //language=yaml
+    val input = """
+      | - !!str "a"
+      | - 'b'
+      | - &anchor "c"
+      | - *anchor
+      | - !!str
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectTag("!!", "str", pos.skipSpace(), 2u)
+    pos = test.expectDoubleQuotedScalar("a", pos.skipSpace(), 2u)
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectSingleQuotedScalar("b", pos.skipSpace(), 2u)
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectAnchor("anchor", pos.skipSpace(), 2u)
+    pos = test.expectDoubleQuotedScalar("c", pos.skipSpace(), 2u)
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectAlias("anchor", pos.skipSpace(), 2u)
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectTag("!!", "str", pos.skipSpace(), 2u)
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
