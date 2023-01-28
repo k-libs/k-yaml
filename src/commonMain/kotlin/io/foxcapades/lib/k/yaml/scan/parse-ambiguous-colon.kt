@@ -1,7 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.token.YAMLTokenMappingValue
-import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
+import io.foxcapades.lib.k.yaml.token.*
 
 /**
  * # Fetch Ambiguous Colon Token
@@ -38,7 +37,13 @@ internal fun YAMLStreamTokenizerImpl.parseAmbiguousColonToken() {
   should be considered part of a plain scalar, and in other cases it is just
   adjacent value.
   */
-  
+  if (
+    inFlow
+    && lastToken !is YAMLTokenFlowSequenceStart
+    && lastToken !is YAMLTokenFlowMappingStart
+    && lastToken !is YAMLTokenFlowItemSeparator
+  )
+    return this.fetchMappingValueIndicatorToken()
 
 
   return this.parsePlainScalar()

@@ -4,6 +4,7 @@ import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.token.YAMLToken
+import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.token.YAMLTokenStreamEnd
 import io.foxcapades.lib.k.yaml.util.*
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
@@ -87,12 +88,15 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
       parseNextToken()
     }
 
-    lastToken = tokens.pop()
+    val token = tokens.pop()
 
-    if (lastToken is YAMLTokenStreamEnd)
+    if (token !is YAMLTokenComment)
+      lastToken = token
+
+    if (token is YAMLTokenStreamEnd)
       streamEndProduced = true
 
-    return lastToken
+    return token
   }
 
   // endregion Public Methods
