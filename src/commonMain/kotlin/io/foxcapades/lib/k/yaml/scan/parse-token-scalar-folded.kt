@@ -13,9 +13,9 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
   tailComment: YAMLTokenComment?,
   trailingNewLines: UByteBuffer,
 ) {
-  val scalarContent     = contentBuffer1
-  val keepIndentAfter   = indent - indentHint
-  val endPosition       = position.copy()
+  val scalarContent   = contentBuffer1
+  val keepIndentAfter = indent - indentHint
+  val endPosition     = position.copy()
 
   var lastLineHadLeadingWhitespace = false
 
@@ -83,15 +83,10 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
           TODO("emit a warning for a tab character in the indentation")
         }
 
-        else if (indent == keepIndentAfter) {
+        else if (indent >= keepIndentAfter) {
           while (trailingNewLines.isNotEmpty)
             scalarContent.claimNewLine(trailingNewLines)
 
-          scalarContent.claimASCII(buffer, position)
-          endPosition.become(position)
-        }
-
-        else if (indent > keepIndentAfter) {
           scalarContent.claimASCII(buffer, position)
           endPosition.become(position)
         }

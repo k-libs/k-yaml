@@ -1,5 +1,7 @@
 package io.foxcapades.lib.k.yaml.scan
 
+import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_1
+import io.foxcapades.lib.k.yaml.INPUT_EXAMPLE_8_2
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1681,34 +1683,38 @@ Chomping: |
 
   @Test
   fun example_8_1_block_scalar_header() {
-    //language=yaml
-    val input = """
-      | - | # Empty header
-      |   literal
-      | - >1 # Indentation indicator
-      |   folded
-      | - |+ # Chomping indicator
-      |   keep
-      | 
-      | - >1- # Both indicators
-      |   strip
-    """.trimMargin("| ")
-    val test = makeScanner(input)
+    val test = makeScanner(INPUT_EXAMPLE_8_1)
     var pos = test.expectStreamStart()
     pos = test.expectSequenceEntry(pos)
     pos = pos.skipSpace()
-    pos = test.expectLiteralScalar("literal\n", 2u, pos, SourcePosition(29u, 2u, 0u))
+    pos = test.expectLiteralScalar("literal\n", 2u, pos, SourcePosition(28u, 2u, 0u))
     test.expectComment("Empty header", 2u, true, SourcePosition(4u, 0u, 4u))
     pos = test.expectSequenceEntry(pos)
-    pos = test.expectFoldedScalar(" folded\n", 2u, pos.skipSpace(), SourcePosition(67u, 4u, 0u))
-    test.expectComment("Indentation indicator", 2u, true, SourcePosition(34u, 2u, 5u))
+    pos = test.expectFoldedScalar(" folded\n", 2u, pos.skipSpace(), SourcePosition(66u, 4u, 0u))
+    test.expectComment("Indentation indicator", 2u, true, SourcePosition(33u, 2u, 5u))
     pos = test.expectSequenceEntry(pos)
-    pos = test.expectLiteralScalar("keep\n\n", 2u, pos.skipSpace(), SourcePosition(101u, 7u, 0u))
-    test.expectComment("Chomping indicator", 2u, true, SourcePosition(72u, 4u, 5u))
+    pos = test.expectLiteralScalar("keep\n\n", 2u, pos.skipSpace(), SourcePosition(99u, 7u, 0u))
+    test.expectComment("Chomping indicator", 2u, true, SourcePosition(71u, 4u, 5u))
     pos = test.expectSequenceEntry(pos)
-    pos = test.expectFoldedScalar(" strip", 2u, pos.skipSpace(), SourcePosition(132u, 8u, 7u))
-    test.expectComment("Both indicators", 2u, true, SourcePosition(107u, 7u, 6u))
+    pos = test.expectFoldedScalar(" strip", 2u, pos.skipSpace(), SourcePosition(130u, 8u, 7u))
+    test.expectComment("Both indicators", 2u, true, SourcePosition(105u, 7u, 6u))
     test.expectStreamEnd(pos)
+  }
+
+  @Test
+  fun example_8_2_block_indentation_indicator() {
+    with(makeScanner(INPUT_EXAMPLE_8_2)) {
+      var pos = expectStreamStart()
+      pos = expectSequenceEntry(pos)
+      pos = expectLiteralScalar("detected\n", 2u, pos.skipSpace(), SourcePosition(14u, 2u, 0u))
+      pos = expectSequenceEntry(pos)
+      pos = expectFoldedScalar("\n\n# detected\n", 2u, pos.skipSpace(), SourcePosition(36u, 6u, 0u))
+      pos = expectSequenceEntry(pos)
+      pos = expectLiteralScalar(" explicit\n", 2u, pos.skipSpace(), SourcePosition(52u, 8u, 0u))
+      pos = expectSequenceEntry(pos)
+      pos = expectFoldedScalar("\t\ndetected\n", 2u, pos.skipSpace(), SourcePosition(68u, 10u, 9u))
+      expectStreamEnd(pos)
+    }
   }
 
   @Test

@@ -109,9 +109,9 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       }
     }
 
-    this.buffer.isAnyBreak()            -> { /* Do nothing. */ }
+    this.buffer.isAnyBreak() -> { /* Do nothing. */ }
 
-    this.buffer.isEOF()                 -> {
+    this.buffer.isEOF() -> {
       if (isLiteral)
         emitEmptyLiteralScalar(this.indent, startMark)
       else
@@ -158,7 +158,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
     }
 
     else {
-      lineContentIndicator = LineContentIndicatorContent
+      lineContentIndicator = if (buffer.isTab()) LineContentIndicatorBlanksOnly else LineContentIndicatorContent
       this.indent = this.position.column
 
       if (this.indent < minIndent) {
