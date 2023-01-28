@@ -1612,6 +1612,45 @@ Chomping: |
   }
 
   @Test
+  fun example_7_23_flow_content() {
+    //language=yaml
+    val input = """
+      | - [ a, b ]
+      | - { a: b }
+      | - "a"
+      | - 'b'
+      | - c
+    """.trimMargin("| ")
+
+    val test = makeScanner(input)
+
+    var pos = test.expectStreamStart()
+
+    pos = test.expectSequenceEntry(pos)
+    pos = test.expectFlowSequenceStart(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("a", pos.skipSpace(), 2u)
+    pos = test.expectFlowItemSeparator(pos)
+    pos = test.expectPlainScalar("b", pos.skipSpace(), 2u)
+    pos = test.expectFlowSequenceEnd(pos.skipSpace())
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectFlowMappingStart(pos.skipSpace(), 2u)
+    pos = test.expectPlainScalar("a", pos.skipSpace(), 2u)
+    pos = test.expectMappingValue(pos, 2u)
+    pos = test.expectPlainScalar("b", pos.skipSpace(), 2u)
+    pos = test.expectFlowMappingEnd(pos.skipSpace())
+
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectDoubleQuotedScalar("a", pos.skipSpace(), 2u)
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectSingleQuotedScalar("b", pos.skipSpace(), 2u)
+    pos = test.expectSequenceEntry(pos.skipLine())
+    pos = test.expectPlainScalar("c", pos.skipSpace(), 2u)
+
+    test.expectStreamEnd(pos)
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """
