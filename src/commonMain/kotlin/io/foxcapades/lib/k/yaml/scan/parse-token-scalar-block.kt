@@ -124,7 +124,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
     else -> TODO("handle invalid/unexpected character on the same line as the folding scalar start indicator")
   }
 
-  trailingNewLines.claimNewLine(this.buffer, this.position)
+  skipNewLine(this.buffer, this.position)
   lineContentIndicator = LineContentIndicatorBlanksOnly
 
   // Determine the scalar block's indent level
@@ -184,9 +184,6 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       break
     }
   }
-
-  if (trailingNewLines.size == 1)
-    trailingNewLines.clear()
 
   if (isLiteral)
     fetchLiteralScalar(startMark, chompMode, indentHint, minIndent, actualIndent, tailComment, trailingNewLines)
