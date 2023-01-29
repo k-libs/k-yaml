@@ -1798,21 +1798,19 @@ Chomping: |
     with(makeScanner(INPUT_EXAMPLE_8_6)) {
       var pos = expectStreamStart()
 
-      pos = expectPlainScalar("strip", pos)
-      pos = expectMappingValue(pos)
-      pos = pos.skipSpace()
-      expectFoldedScalar("", 0u, pos, pos.skipSpace(2))
+      expectPlainScalar("strip", p(), 0u, p(5, 0, 5))
+      expectMappingValue(p(5, 0, 5))
+      expectFoldedScalar("", 0u, p(7, 0, 7), p(10, 1, 0))
 
-      pos = expectPlainScalar("clip", SourcePosition(11u, 2u, 0u))
-      pos = expectMappingValue(pos)
-      pos = pos.skipSpace()
-      expectFoldedScalar("\n", 0u, pos, SourcePosition(19u, 3u, 0u))
+      expectPlainScalar("clip", p(11, 2, 0), 0u, p(15, 2, 4))
+      expectMappingValue(p(15, 2, 4))
+      expectFoldedScalar("\n", 0u, p(17, 2, 6), p(20, 4, 0))
 
-      pos = expectPlainScalar("keep", SourcePosition(20u, 4u, 0u))
-      pos = expectMappingValue(pos)
-      expectLiteralScalar("\n", 0u, pos.skipSpace(), SourcePosition(29u, 5u, 0u))
+      expectPlainScalar("keep", p(20, 4, 0), 0u, p(24, 4, 4))
+      pos = expectMappingValue(p(24, 4, 4))
+      expectLiteralScalar("\n", 0u, pos.skipSpace(), p(30, 6, 0))
 
-      expectStreamEnd(SourcePosition(29u, 5u, 0u))
+      expectStreamEnd(p(30, 6, 0))
     }
   }
 
@@ -1829,8 +1827,8 @@ Chomping: |
   fun example_8_8_literal_content() {
     with(makeScanner(INPUT_EXAMPLE_8_8)) {
       expectStreamStart()
-      expectLiteralScalar("\n\nliteral\n \n\ntext\n", 0u, p(), p(32, 8, 0))
-      expectComment("Comment", 0u, false, p(33, 8, 1), p(42, 8, 10))
+      expectLiteralScalar("\n\nliteral\n \n\ntext\n", 0u, p(), p(31, 7, 0))
+      expectComment("Comment", 1u, false, p(33, 8, 1), p(42, 8, 10))
       expectStreamEnd(p(42, 8, 10))
     }
   }

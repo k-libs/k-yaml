@@ -65,7 +65,6 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
 
   val haveBlanks = this.skipBlanks() > 0
   this.buffer.cache(1)
-  val endPosition = position.copy()
 
   when {
     haveBlanks && this.buffer.isPound() -> {
@@ -126,6 +125,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
 
   skipNewLine(this.buffer, this.position)
   lineContentIndicator = LineContentIndicatorBlanksOnly
+  val endPosition = position.copy()
 
   // Determine the scalar block's indent level
   while (true) {
@@ -143,8 +143,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
     }
 
     else if (this.buffer.isEOF()) {
-      val content     = this.contentBuffer1
-
+      val content = this.contentBuffer1
       content.clear()
 
       applyChomping(content, trailingNewLines, chompMode, endPosition)
@@ -162,8 +161,7 @@ internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {
       this.indent = this.position.column
 
       if (this.indent < minIndent) {
-        val content     = this.contentBuffer1
-
+        val content = this.contentBuffer1
         content.clear()
 
         applyChomping(content, trailingNewLines, chompMode, endPosition)

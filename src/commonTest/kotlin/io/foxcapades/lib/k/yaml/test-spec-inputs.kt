@@ -77,7 +77,8 @@ const val INPUT_EXAMPLE_8_6 =
   "\n" +
   "clip: >\n" +
   "\n" +
-  "keep: |+\n"
+  "keep: |+\n" +
+  "\n"
 
 //language=yaml
 const val INPUT_EXAMPLE_8_7 =
