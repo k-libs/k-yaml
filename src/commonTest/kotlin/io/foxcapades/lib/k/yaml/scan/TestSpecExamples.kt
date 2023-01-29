@@ -26,6 +26,30 @@ class TestSpecExamples : ScannerTest() {
   }
 
   @Test
+  fun example_2_2_mapping_scalars_to_scalars() {
+    with(makeScanner(INPUT_EXAMPLE_2_2)) {
+      expectStreamStart()
+
+      expectPlainScalar("hr", p())
+      expectMappingValue(p(2, 0, 2))
+      expectPlainScalar("65", p(5, 0, 5))
+      expectComment("Home runs", 0u, true, p(11, 0, 11))
+
+      expectPlainScalar("avg", p(23, 1, 0))
+      expectMappingValue(p(26, 1, 3))
+      expectPlainScalar("0.278", p(28, 1, 5))
+      expectComment("Batting average", 0u, true, p(34, 1, 11))
+
+      expectPlainScalar("rbi", p(52, 2, 0))
+      expectMappingValue(p(55, 2, 3))
+      expectPlainScalar("147", p(57, 2, 5))
+      expectComment("Runs Batted In", 0u, true, p(63, 2, 11))
+
+      expectStreamEnd(p(79, 2, 27))
+    }
+  }
+
+  @Test
   fun example_5_3_block_structure_indicators() {
     //language=yaml
     val input = "sequence:\n" +

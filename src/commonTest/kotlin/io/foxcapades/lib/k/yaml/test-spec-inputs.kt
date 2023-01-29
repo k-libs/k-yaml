@@ -7,6 +7,12 @@ const val INPUT_EXAMPLE_2_1 =
   "- Ken Griffey"
 
 //language=yaml
+const val INPUT_EXAMPLE_2_2 =
+  "hr:  65    # Home runs\n" +
+  "avg: 0.278 # Batting average\n" +
+  "rbi: 147   # Runs Batted In"
+
+//language=yaml
 val INPUT_EXAMPLE_8_1 = """
 - | # Empty header
  literal
