@@ -2,6 +2,7 @@ package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.foxcapades.lib.k.yaml.scan.stream.YAMLStreamTokenizerImpl
 import io.foxcapades.lib.k.yaml.token.YAMLTokenInvalid
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedDouble
 import io.foxcapades.lib.k.yaml.util.SourcePosition
