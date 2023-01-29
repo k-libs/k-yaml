@@ -1834,6 +1834,15 @@ Chomping: |
   }
 
   @Test
+  fun example_8_9_folded_scalar() {
+    with(makeScanner(INPUT_EXAMPLE_8_9)) {
+      expectStreamStart()
+      expectFoldedScalar("folded text\n", 0u, p(), p(16, 3, 0))
+      expectStreamEnd(p(17, 4, 0))
+    }
+  }
+
+  @Test
   fun example_8_10_folded_lines() {
     //language=yaml
     val input = """

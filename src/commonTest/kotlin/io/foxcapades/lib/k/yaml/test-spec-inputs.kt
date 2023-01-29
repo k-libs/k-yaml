@@ -98,3 +98,12 @@ const val INPUT_EXAMPLE_8_8 =
   "  text\n" +
   "\n" +
   " # Comment"
+
+//language=yaml
+val INPUT_EXAMPLE_8_9 = """
+  | >
+  |  folded
+  |  text
+  | 
+  | 
+""".trimMargin("| ")
