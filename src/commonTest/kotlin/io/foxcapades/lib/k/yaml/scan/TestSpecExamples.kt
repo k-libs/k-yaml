@@ -1968,6 +1968,32 @@ Chomping: |
   }
 
   @Test
+  fun example_8_17_explicit_block_mapping_entries() {
+    with(makeScanner(INPUT_EXAMPLE_8_17)) {
+      expectStreamStart()
+
+      expectMappingKey(p())
+      expectPlainScalar("explicit key", p(2, 0, 2), 2u)
+      expectComment("Empty value", 2u, true, p(15, 0, 15))
+
+      expectMappingKey(p(29, 1, 0))
+      expectLiteralScalar("block key\n", 2u, p(31, 1, 2), p(45, 3, 0))
+
+      expectMappingValue(p(45, 3, 0))
+
+      expectSequenceEntry(p(47, 3, 2), 2u)
+      expectPlainScalar("one", p(49, 3, 4), 4u)
+      expectComment("Explicit compact", 4u, true, p(53, 3, 8))
+
+      expectSequenceEntry(p(74, 4, 2), 2u)
+      expectPlainScalar("two", p(76, 4, 4), 4u)
+      expectComment("block value", 4u, true, p(80, 4, 8))
+
+      expectStreamEnd(p(94, 5, 0))
+    }
+  }
+
+  @Test
   fun example_10_9_core_tag_resolution() {
     //language=yaml
     val input = """

@@ -156,3 +156,11 @@ const val INPUT_EXAMPLE_8_15 =
 const val INPUT_EXAMPLE_8_16 =
   "block mapping:\n" +
   " key: value\n"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_17 =
+  "? explicit key # Empty value\n" +
+  "? |\n" +
+  "  block key\n" +
+  ": - one # Explicit compact\n" +
+  "  - two # block value\n"
