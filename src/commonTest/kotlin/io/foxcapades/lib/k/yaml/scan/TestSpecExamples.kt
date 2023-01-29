@@ -1721,7 +1721,7 @@ Chomping: |
     with(makeScanner(INPUT_EXAMPLE_8_3)) {
       var pos = expectStreamStart()
       pos = expectSequenceEntry(pos)
-      pos = expectLiteralScalar("\n\ntext\n", 2u, pos.skipSpace(), SourcePosition(13u, 3u, 0u))
+      pos = expectLiteralScalar("\ntext\n", 2u, pos.skipSpace(), SourcePosition(13u, 3u, 0u))
 
       pos = expectSequenceEntry(pos)
       pos = expectFoldedScalar("text\n", 2u, pos.skipSpace(), SourcePosition(24u, 5u, 0u))

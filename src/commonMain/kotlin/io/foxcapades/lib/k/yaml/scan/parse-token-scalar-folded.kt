@@ -134,17 +134,22 @@ internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
         lastLineHadLeadingWhitespace = false
       } else {
         if (trailingNewLines.isNotEmpty) {
-          val width = trailingNewLines.utf8Width()
-
-          if (trailingNewLines.size == width) {
-            scalarContent.push(A_SPACE)
-            trailingNewLines.clear()
-          } else if (trailingNewLines.size > width) {
-            trailingNewLines.skipNewLine()
+          if (scalarContent.isEmpty) {
             while (trailingNewLines.isNotEmpty)
               scalarContent.claimNewLine(trailingNewLines)
           } else {
-            throw IllegalStateException("trailingNewLines had fewer bytes than the UTF-8 width of the next character")
+            val width = trailingNewLines.utf8Width()
+
+            if (trailingNewLines.size == width) {
+              scalarContent.push(A_SPACE)
+              trailingNewLines.clear()
+            } else if (trailingNewLines.size > width) {
+              trailingNewLines.skipNewLine()
+              while (trailingNewLines.isNotEmpty)
+                scalarContent.claimNewLine(trailingNewLines)
+            } else {
+              throw IllegalStateException("trailingNewLines had fewer bytes than the UTF-8 width of the next character")
+            }
           }
         }
       }
