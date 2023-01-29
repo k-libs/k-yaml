@@ -1844,27 +1844,7 @@ Chomping: |
 
   @Test
   fun example_8_10_folded_lines() {
-    //language=yaml
-    val input = """
-      >
-
-       folded
-       line
-      
-       next
-       line
-         * bullet
-      
-         * list
-         * lines
-
-       last
-       line
-
-      # Comment
-    """.trimIndent()
-
-    val test = makeScanner(input)
+    val test = makeScanner(INPUT_EXAMPLE_8_10)
 
     var cursor = test.expectStreamStart()
 
@@ -1895,14 +1875,7 @@ Chomping: |
 
   @Test
   fun examples_8_14_block_sequence() {
-    val input = """
-      block sequence:
-        - one
-        - two : three
-      
-    """.trimIndent()
-
-    val test = makeScanner(input)
+    val test = makeScanner(INPUT_EXAMPLE_8_14)
     var cursor: SourcePosition
 
     cursor = test.expectStreamStart()
@@ -1918,17 +1891,8 @@ Chomping: |
   }
 
   @Test
-  fun examples_8_15_block_sequence_entry_type() {
-    val input = """
-      - # Empty
-      - |
-       block node
-      - - one # Compact
-        - two # sequence
-      - one: two # Compact mapping
-    """.trimIndent()
-
-    val test = makeScanner(input)
+  fun examples_8_15_block_sequence_entry_types() {
+    val test = makeScanner(INPUT_EXAMPLE_8_15)
     var cursor: SourcePosition
 
     cursor = test.expectStreamStart()
@@ -1950,6 +1914,19 @@ Chomping: |
     cursor = test.expectComment("Compact mapping", 2u, true, cursor.skipSpace())
 
     test.expectStreamEnd(cursor)
+  }
+
+  @Test
+  fun example_8_16_block_mappings() {
+    with(makeScanner(INPUT_EXAMPLE_8_16)) {
+      expectStreamStart()
+      expectPlainScalar("block mapping", p())
+      expectMappingValue(p(13, 0, 13))
+      expectPlainScalar("key", p(16, 1, 1), 1u)
+      expectMappingValue(p(19, 1, 4), 1u)
+      expectPlainScalar("value", p(21, 1, 6), 1u)
+      expectStreamEnd(p(27, 2, 0))
+    }
   }
 
   @Test

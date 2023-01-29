@@ -100,10 +100,47 @@ const val INPUT_EXAMPLE_8_8 =
   " # Comment"
 
 //language=yaml
-val INPUT_EXAMPLE_8_9 = """
-  | >
-  |  folded
-  |  text
-  | 
-  | 
-""".trimMargin("| ")
+const val INPUT_EXAMPLE_8_9 =
+  ">\n" +
+  " folded\n" +
+  " text\n" +
+  "\n"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_10 =
+  ">\n" +
+  "\n" +
+  " folded\n" +
+  " line\n" +
+  "\n" +
+  " next\n" +
+  " line\n" +
+  "   * bullet\n" +
+  "\n" +
+  "   * list\n" +
+  "   * lines\n" +
+  "\n" +
+  " last\n" +
+  " line\n" +
+  "\n" +
+  "# Comment"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_14 =
+  "block sequence:\n" +
+  "  - one\n" +
+  "  - two : three\n"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_15 =
+  "- # Empty\n" +
+  "- |\n" +
+  " block node\n" +
+  "- - one # Compact\n" +
+  "  - two # sequence\n" +
+  "- one: two # Compact mapping"
+
+//language=yaml
+const val INPUT_EXAMPLE_8_16 =
+  "block mapping:\n" +
+  " key: value\n"
