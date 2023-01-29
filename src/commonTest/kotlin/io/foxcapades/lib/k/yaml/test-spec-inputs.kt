@@ -1,6 +1,12 @@
 package io.foxcapades.lib.k.yaml
 
 //language=yaml
+const val INPUT_EXAMPLE_2_1 =
+  "- Mark McGwire\n" +
+  "- Sammy Sosa\n" +
+  "- Ken Griffey"
+
+//language=yaml
 val INPUT_EXAMPLE_8_1 = """
 - | # Empty header
  literal

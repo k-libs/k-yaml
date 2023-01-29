@@ -12,6 +12,20 @@ import kotlin.test.assertEquals
 class TestSpecExamples : ScannerTest() {
 
   @Test
+  fun example_2_1_sequence_of_scalars() {
+    with(makeScanner(INPUT_EXAMPLE_2_1)) {
+      expectStreamStart()
+      expectSequenceEntry(p())
+      expectPlainScalar("Mark McGwire", p(2, 0, 2), 2u)
+      expectSequenceEntry(p(15, 1, 0))
+      expectPlainScalar("Sammy Sosa", p(17, 1, 2), 2u)
+      expectSequenceEntry(p(28, 2, 0))
+      expectPlainScalar("Ken Griffey", p(30, 2, 2), 2u)
+      expectStreamEnd(p(41, 2, 13))
+    }
+  }
+
+  @Test
   fun example_5_3_block_structure_indicators() {
     //language=yaml
     val input = "sequence:\n" +
