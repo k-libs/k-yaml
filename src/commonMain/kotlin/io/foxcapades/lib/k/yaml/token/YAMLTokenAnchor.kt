@@ -9,9 +9,9 @@ data class YAMLTokenAnchor(
            val anchor:   UByteString,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
-           val indent:   UInt,
+  override val indent:   UInt,
   override val warnings: Array<SourceWarning>
-) : YAMLToken {
+) : YAMLTokenNodeProperty {
   override fun toString() =
     "Anchor(anchor=$anchor, start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 

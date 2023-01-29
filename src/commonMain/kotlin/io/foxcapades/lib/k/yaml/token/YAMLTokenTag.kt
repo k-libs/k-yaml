@@ -8,11 +8,11 @@ import io.foxcapades.lib.k.yaml.warn.SourceWarning
 data class YAMLTokenTag(
            val handle:   UByteString,
            val suffix:   UByteString,
-           val indent:   UInt,
+  override val indent:   UInt,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>,
-) : YAMLToken {
+) : YAMLTokenNodeProperty {
   override fun toString() =
     "Tag(handle=$handle, suffix=$suffix, indent=$indent, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 

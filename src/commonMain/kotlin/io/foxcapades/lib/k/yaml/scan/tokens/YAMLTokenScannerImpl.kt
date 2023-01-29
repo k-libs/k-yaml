@@ -2,7 +2,10 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
 import io.foxcapades.lib.k.yaml.YAMLTokenScanner
+import io.foxcapades.lib.k.yaml.scan.stream.FlowTypeMapping
+import io.foxcapades.lib.k.yaml.scan.stream.FlowTypeSequence
 import io.foxcapades.lib.k.yaml.token.*
+import io.foxcapades.lib.k.yaml.util.ByteStack
 import io.foxcapades.lib.k.yaml.util.Queue
 
 class YAMLTokenScannerImpl : YAMLTokenScanner {
@@ -12,7 +15,15 @@ class YAMLTokenScannerImpl : YAMLTokenScanner {
 
   private var inDocument = false
 
-  private var flowLevel = 0
+  private var flows = ByteStack()
+  private inline val flowLevel
+    get() = flows.size
+  private inline val inFlow
+    get() = flows.isNotEmpty
+  private inline val inFlowMapping
+    get() = inFlow && flows.peek() == FlowTypeMapping
+  private inline val inFlowSequence
+    get() = inFlow && flows.peek() == FlowTypeSequence
 
   private val scanner: YAMLStreamTokenizer
 
@@ -35,8 +46,26 @@ class YAMLTokenScannerImpl : YAMLTokenScanner {
     val next = scanner.nextToken()
 
     when (next) {
-      is YAMLTokenStreamStart -> TODO()
-      is YAMLTokenStreamEnd   -> TODO()
+      is YAMLTokenScalar -> TODO()
+
+      is YAMLTokenMappingValue -> TODO()
+      is YAMLTokenMappingKey -> TODO()
+
+      is YAMLTokenSequenceEntry -> TODO()
+
+      is YAMLTokenFlowItemSeparator -> TODO()
+
+      is YAMLTokenFlowMappingEnd -> TODO()
+      is YAMLTokenFlowMappingStart -> TODO()
+
+      is YAMLTokenFlowSequenceEnd -> TODO()
+      is YAMLTokenFlowSequenceStart -> TODO()
+
+      is YAMLTokenInvalid -> TODO()
+
+      is YAMLTokenNodeProperty -> TODO()
+      is YAMLTokenAlias -> TODO()
+      is YAMLTokenComment -> TODO()
 
       is YAMLTokenDirectiveTag -> TODO()
       is YAMLTokenDirectiveYAML -> TODO()
@@ -44,25 +73,9 @@ class YAMLTokenScannerImpl : YAMLTokenScanner {
       is YAMLTokenDocumentStart -> TODO()
       is YAMLTokenDocumentEnd -> TODO()
 
-      is YAMLTokenInvalid -> TODO()
-
-      is YAMLTokenAlias -> TODO()
-      is YAMLTokenAnchor -> TODO()
-      is YAMLTokenComment -> TODO()
-      is YAMLTokenFlowItemSeparator -> TODO()
-      is YAMLTokenFlowMappingEnd -> TODO()
-      is YAMLTokenFlowMappingStart -> TODO()
-      is YAMLTokenFlowSequenceEnd -> TODO()
-      is YAMLTokenFlowSequenceStart -> TODO()
-      is YAMLTokenMappingKey -> TODO()
-      is YAMLTokenMappingValue -> TODO()
-      is YAMLTokenScalarFolded -> TODO()
-      is YAMLTokenScalarLiteral -> TODO()
-      is YAMLTokenScalarPlain -> TODO()
-      is YAMLTokenScalarQuotedDouble -> TODO()
-      is YAMLTokenScalarQuotedSingle -> TODO()
-      is YAMLTokenSequenceEntry -> TODO()
-      is YAMLTokenTag -> TODO()
+      is YAMLTokenStreamStart -> TODO()
+      is YAMLTokenStreamEnd   -> TODO()
     }
   }
+
 }
