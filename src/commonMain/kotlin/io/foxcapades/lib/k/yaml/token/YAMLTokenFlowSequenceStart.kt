@@ -9,7 +9,7 @@ class YAMLTokenFlowSequenceStart(
   override val end:      SourcePosition,
            val indent:   UInt,
   override val warnings: Array<SourceWarning>
-) : YAMLToken {
+) : YAMLTokenFlow {
   override fun toString() =
     "FlowSequenceStart(start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 

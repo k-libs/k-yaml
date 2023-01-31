@@ -34,3 +34,10 @@ sealed interface YAMLToken {
   val warnings: Array<SourceWarning>
 }
 
+sealed interface YAMLTokenBlock : YAMLToken
+
+data class YAMLTokenBlockMappingStart() : YAMLTokenBlock
+data class YAMLTokenBlockMappingEnd() : YAMLTokenBlock
+
+data class YAMLTokenBlockSequenceStart() : YAMLTokenBlock
+data class YAMLTokenBlockSequenceEnd() : YAMLTokenBlock

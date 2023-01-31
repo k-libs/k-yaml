@@ -38,14 +38,8 @@ library.
   stream.
 | {icon-heavy-check}
 
-| YAML Token Scanner
-| Token scanner that produces a valid stream of tokens representing the contents
-  of a YAML input stream.  The YAML Token Scanner differs from the Input Stream
-  Tokenizer in that the token scanner emits all the necessary explicit or
-  implicit tokens necessary to construct a clear picture of the YAML document,
-  while the Input Stream Tokenizer simply produces a stream of the literal
-  tokens that appear in the input stream without regard for correctness or
-  implied necessary leading or trailing tokens.
+| YAML Event Emitter
+|
 |
 
 | YAML Document Loader

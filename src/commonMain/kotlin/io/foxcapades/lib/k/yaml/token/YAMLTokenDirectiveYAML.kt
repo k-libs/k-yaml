@@ -10,7 +10,7 @@ class YAMLTokenDirectiveYAML(
   override val start:        SourcePosition,
   override val end:          SourcePosition,
   override val warnings:     Array<SourceWarning>,
-) : YAMLToken {
+) : YAMLTokenDirective {
   override fun toString() =
     "YAMLDirective(majorVersion=$majorVersion, minorVersion=$minorVersion, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 

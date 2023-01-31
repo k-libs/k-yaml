@@ -11,7 +11,7 @@ class YAMLTokenDirectiveTag(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>,
-) : YAMLToken {
+) : YAMLTokenDirective {
   override fun toString() =
     "TagDirective(handle=$handle, prefix=$prefix, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 

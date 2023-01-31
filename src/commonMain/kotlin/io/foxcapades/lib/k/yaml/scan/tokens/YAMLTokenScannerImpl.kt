@@ -2,28 +2,25 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
 import io.foxcapades.lib.k.yaml.YAMLTokenScanner
+import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.scan.stream.FlowTypeMapping
 import io.foxcapades.lib.k.yaml.scan.stream.FlowTypeSequence
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.ByteStack
 import io.foxcapades.lib.k.yaml.util.Queue
+import io.foxcapades.lib.k.yaml.util.TokenStack
 
 class YAMLTokenScannerImpl : YAMLTokenScanner {
   private var streamEndEmitted = false
 
   private var tokens = Queue<YAMLToken>(4)
 
-  private var inDocument = false
+  private lateinit var lastToken: YAMLToken
 
-  private var flows = ByteStack()
-  private inline val flowLevel
-    get() = flows.size
-  private inline val inFlow
-    get() = flows.isNotEmpty
-  private inline val inFlowMapping
-    get() = inFlow && flows.peek() == FlowTypeMapping
-  private inline val inFlowSequence
-    get() = inFlow && flows.peek() == FlowTypeSequence
+  private var context = TokenStack(8)
+
+  private val inDocument
+    get() = context.isNotEmpty
 
   private val scanner: YAMLStreamTokenizer
 
@@ -34,48 +31,69 @@ class YAMLTokenScannerImpl : YAMLTokenScanner {
     if (tokens.isEmpty)
       fetchNextToken()
 
-    val out = tokens.pop()
+    lastToken = tokens.pop()
 
-    if (out is YAMLTokenStreamEnd)
+    if (lastToken is YAMLTokenStreamEnd)
       streamEndEmitted = true
 
-    return out
+    return lastToken
   }
 
-  fun fetchNextToken() {
-    val next = scanner.nextToken()
+  private fun inFlow(): YAMLTokenFlow? {
+    for (i in 0 .. context.lastIndex)
+      if (context[i] is YAMLTokenFlow)
+        return context[i] as YAMLTokenFlow
 
-    when (next) {
+    return null
+  }
+
+  private fun queueNextToken() {
+    tokens.push(scanner.nextToken())
+  }
+
+  private fun fetchNextToken() {
+    queueNextToken()
+
+    when (val token = inFlow()) {
+      null -> fetchNextTokenInBlock()
+      is YAMLTokenFlowMappingStart  -> TODO()
+      is YAMLTokenFlowSequenceStart -> TODO()
+      else -> throw IllegalStateException("invalid flow context: $token")
+    }
+  }
+
+  private fun fetchNextTokenInBlock() {
+    when (tokens[0]) {
       is YAMLTokenScalar -> TODO()
 
-      is YAMLTokenMappingValue -> TODO()
-      is YAMLTokenMappingKey -> TODO()
+      is YAMLTokenFlow -> TODO()
 
       is YAMLTokenSequenceEntry -> TODO()
 
-      is YAMLTokenFlowItemSeparator -> TODO()
+      is YAMLTokenMappingValue -> TODO()
 
-      is YAMLTokenFlowMappingEnd -> TODO()
-      is YAMLTokenFlowMappingStart -> TODO()
+      is YAMLTokenComment -> TODO()
 
-      is YAMLTokenFlowSequenceEnd -> TODO()
-      is YAMLTokenFlowSequenceStart -> TODO()
+      is YAMLTokenNodeProperty -> TODO()
 
       is YAMLTokenInvalid -> TODO()
 
-      is YAMLTokenNodeProperty -> TODO()
+      is YAMLTokenMappingKey -> TODO()
+
       is YAMLTokenAlias -> TODO()
-      is YAMLTokenComment -> TODO()
 
-      is YAMLTokenDirectiveTag -> TODO()
-      is YAMLTokenDirectiveYAML -> TODO()
+      is YAMLTokenDirective -> TODO()
 
-      is YAMLTokenDocumentStart -> TODO()
       is YAMLTokenDocumentEnd -> TODO()
+      is YAMLTokenDocumentStart -> TODO()
 
+      is YAMLTokenStreamEnd -> TODO()
       is YAMLTokenStreamStart -> TODO()
-      is YAMLTokenStreamEnd   -> TODO()
     }
   }
+
+  private fun fetchNextTokenInFlowMapping() {}
+
+  private fun fetchNextTokenInFlowSequence() {}
 
 }

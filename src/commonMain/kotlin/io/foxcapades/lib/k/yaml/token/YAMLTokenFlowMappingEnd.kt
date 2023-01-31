@@ -8,7 +8,7 @@ class YAMLTokenFlowMappingEnd(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>
-) : YAMLToken {
+) : YAMLTokenFlow {
   override fun toString() =
     "FlowMappingEnd(start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
