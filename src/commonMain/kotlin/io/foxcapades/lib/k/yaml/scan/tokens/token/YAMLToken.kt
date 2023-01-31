@@ -1,4 +1,4 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
 import io.foxcapades.lib.k.yaml.YAMLTokenScanner
 import io.foxcapades.lib.k.yaml.util.SourcePosition
@@ -34,4 +34,4 @@ sealed interface YAMLToken {
   val warnings: Array<SourceWarning>
 }
 
-sealed interface YAMLTokenBlock : YAMLToken
+sealed interface YAMLTokenBlock : io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken

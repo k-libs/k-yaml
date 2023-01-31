@@ -3,7 +3,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
 import io.foxcapades.lib.k.yaml.YAMLVersion
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.token.YAMLToken
+import io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.token.YAMLTokenStreamEnd
 import io.foxcapades.lib.k.yaml.util.*
@@ -38,8 +38,8 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
    */
   internal val warnings = Queue<SourceWarning>(4)
 
-  internal val tokens = Queue<YAMLToken>(4)
-  internal lateinit var lastToken: YAMLToken
+  internal val tokens = Queue<io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken>(4)
+  internal lateinit var lastToken: io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
 
   internal var lineContentIndicator = LineContentIndicatorBlanksOnly
 
@@ -80,7 +80,7 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
   override val hasNextToken: Boolean
     get() = !streamEndProduced
 
-  override fun nextToken(): YAMLToken {
+  override fun nextToken(): io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken {
     if (streamEndProduced)
       throw IllegalStateException("nextToken called on a YAML scanner that has already produced the end of the input YAML stream")
 

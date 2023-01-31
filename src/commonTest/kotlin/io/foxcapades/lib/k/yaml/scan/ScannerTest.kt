@@ -248,7 +248,7 @@ open class ScannerTest {
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
-    assertIs<YAMLTokenAlias>(this.nextToken()).also {
+    assertIs<io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLTokenAlias>(this.nextToken()).also {
       assertEquals(expectedAlias, it.alias.toString())
       assertEquals(expectedIndent, it.indent)
       assertEquals(expectedStart, it.start)

@@ -53,5 +53,13 @@ internal fun YAMLStreamTokenizerImpl.parseAliasToken() {
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 private inline fun YAMLStreamTokenizerImpl.emitAlias(alias: UByteArray, start: SourcePosition, end: SourcePosition) {
-  this.tokens.push(YAMLTokenAlias(UByteString(alias), start, end, this.indent, popWarnings()))
+  this.tokens.push(
+    io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLTokenAlias(
+      UByteString(alias),
+      start,
+      end,
+      this.indent,
+      popWarnings()
+    )
+  )
 }

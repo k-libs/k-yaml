@@ -1,4 +1,4 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition

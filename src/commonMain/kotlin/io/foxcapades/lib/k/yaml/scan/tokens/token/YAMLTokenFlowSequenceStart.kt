@@ -1,25 +1,25 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
-import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
-data class YAMLTokenMappingKey(
+class YAMLTokenFlowSequenceStart(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
            val indent:   UInt,
   override val warnings: Array<SourceWarning>
-) : YAMLToken {
+) : YAMLTokenFlow {
   override fun toString() =
-    "MappingKeyIndicator(start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
+    "FlowSequenceStart(start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    start.hashCode() + end.hashCode() + indent.hashCode() + warnings.contentHashCode()
+    this.start.hashCode() + this.end.hashCode() + this.indent.hashCode() + this.warnings.contentHashCode()
 
   override fun equals(other: Any?) =
     this === other
     || (
-      other is YAMLTokenMappingKey
+      other is YAMLTokenFlowSequenceStart
       && this.start == other.start
       && this.end == other.end
       && this.indent == other.indent

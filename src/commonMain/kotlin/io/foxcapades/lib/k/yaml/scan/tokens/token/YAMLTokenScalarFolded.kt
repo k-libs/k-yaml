@@ -1,35 +1,35 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
-data class YAMLTokenScalarPlain(
+class YAMLTokenScalarFolded(
   override val value:    UByteString,
   override val indent:   UInt,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
-  override val warnings: Array<SourceWarning>
+  override val warnings: Array<SourceWarning>,
 ) : YAMLTokenScalar {
   override fun toString() =
-    "PlainScalar(value=$value, indent=$indent, start=$start, end=$end, $warnings=${warnings.toFlowSequence()})"
-
-  override fun hashCode() =
-    value.contentHashCode() +
-    indent.hashCode() +
-    start.hashCode() +
-    end.hashCode() +
-    warnings.contentHashCode()
+    "FoldedScalar(value=$value, indent=$indent, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun equals(other: Any?) =
     this === other
     || (
-      other is YAMLTokenScalarPlain
+      other is YAMLTokenScalarFolded
       && this.value.contentEquals(other.value)
       && this.indent == other.indent
       && this.start == other.start
       && this.end == other.end
       && this.warnings.contentEquals(other.warnings)
     )
+
+  override fun hashCode() =
+    this.value.contentHashCode() +
+    this.indent.hashCode() +
+    this.start.hashCode() +
+    this.end.hashCode() +
+    this.warnings.contentHashCode()
 }

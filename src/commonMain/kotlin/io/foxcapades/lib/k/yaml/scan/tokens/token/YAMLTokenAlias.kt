@@ -1,22 +1,22 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
-data class YAMLTokenAnchor(
-           val anchor:   UByteString,
+data class YAMLTokenAlias(
+           val alias:    UByteString,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
-  override val indent:   UInt,
+           val indent:   UInt,
   override val warnings: Array<SourceWarning>
-) : YAMLTokenNodeProperty {
+) : io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken {
   override fun toString() =
-    "Anchor(anchor=$anchor, start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
+    "Alias(alias=$alias, start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    anchor.contentHashCode() +
+    alias.contentHashCode() +
     start.hashCode() +
     end.hashCode() +
     indent.hashCode() +
@@ -25,8 +25,8 @@ data class YAMLTokenAnchor(
   override fun equals(other: Any?) =
     this === other
     || (
-      other is YAMLTokenAnchor
-      && this.anchor.contentEquals(other.anchor)
+      other is io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLTokenAlias
+      && this.alias.contentEquals(other.alias)
       && this.start == other.start
       && this.end == other.end
       && this.indent == other.indent

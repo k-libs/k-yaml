@@ -1,23 +1,25 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
-import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
+import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
-class YAMLTokenDirectiveTag(
+data class YAMLTokenTag(
            val handle:   UByteString,
-           val prefix:   UByteString,
+           val suffix:   UByteString,
+  override val indent:   UInt,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>,
-) : YAMLTokenDirective {
+) : YAMLTokenNodeProperty {
   override fun toString() =
-    "TagDirective(handle=$handle, prefix=$prefix, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
+    "Tag(handle=$handle, suffix=$suffix, indent=$indent, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
     handle.contentHashCode() +
-    prefix.contentHashCode() +
+    suffix.contentHashCode() +
+    indent.hashCode() +
     start.hashCode() +
     end.hashCode() +
     warnings.contentHashCode()
@@ -25,9 +27,10 @@ class YAMLTokenDirectiveTag(
   override fun equals(other: Any?) =
     this === other
     || (
-      other is YAMLTokenDirectiveTag
+      other is YAMLTokenTag
       && this.handle.contentEquals(other.handle)
-      && this.prefix.contentEquals(other.prefix)
+      && this.suffix.contentEquals(other.suffix)
+      && this.indent == other.indent
       && this.start == other.start
       && this.end == other.end
       && this.warnings.contentEquals(other.warnings)

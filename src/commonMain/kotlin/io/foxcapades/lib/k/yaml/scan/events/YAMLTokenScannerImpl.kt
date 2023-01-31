@@ -9,9 +9,9 @@ import io.foxcapades.lib.k.yaml.util.TokenStack
 class YAMLTokenScannerImpl : YAMLTokenScanner {
   private var streamEndEmitted = false
 
-  private var tokens = Queue<YAMLToken>(4)
+  private var tokens = Queue<io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken>(4)
 
-  private lateinit var lastToken: YAMLToken
+  private lateinit var lastToken: io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
 
   private var context = TokenStack(8)
 
@@ -23,7 +23,7 @@ class YAMLTokenScannerImpl : YAMLTokenScanner {
   override val hasNextToken: Boolean
     get() = !streamEndEmitted
 
-  override fun nextToken(): YAMLToken {
+  override fun nextToken(): io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken {
     if (tokens.isEmpty)
       fetchNextToken()
 
@@ -76,7 +76,7 @@ class YAMLTokenScannerImpl : YAMLTokenScanner {
 
       is YAMLTokenMappingKey -> TODO()
 
-      is YAMLTokenAlias -> TODO()
+      is io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLTokenAlias -> TODO()
 
       is YAMLTokenDirective -> TODO()
 

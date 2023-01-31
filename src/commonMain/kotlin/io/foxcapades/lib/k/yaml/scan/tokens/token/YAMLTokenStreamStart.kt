@@ -1,4 +1,4 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
 import io.foxcapades.lib.k.yaml.YAMLEncoding
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
@@ -10,7 +10,7 @@ class YAMLTokenStreamStart(
   override val start:    SourcePosition,
   override val end:      SourcePosition,
   override val warnings: Array<SourceWarning>,
-): YAMLToken {
+): io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken {
   override fun toString() =
     "StreamStart(encoding=$encoding, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 

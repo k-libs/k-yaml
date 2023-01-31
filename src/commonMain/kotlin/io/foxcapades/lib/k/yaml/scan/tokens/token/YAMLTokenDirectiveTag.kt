@@ -1,35 +1,35 @@
-package io.foxcapades.lib.k.yaml.token
+package io.foxcapades.lib.k.yaml.scan.tokens.token
 
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.toFlowSequence
 
-data class YAMLTokenScalarQuotedSingle(
-  override val value:    UByteString,
+class YAMLTokenDirectiveTag(
+           val handle:   UByteString,
+           val prefix:   UByteString,
   override val start:    SourcePosition,
   override val end:      SourcePosition,
-  override val indent:   UInt,
   override val warnings: Array<SourceWarning>,
-) : YAMLTokenScalar {
+) : YAMLTokenDirective {
   override fun toString() =
-    "SingleQuotedScalar(value=$value, start=$start, end=$end, indent=$indent, warnings=${warnings.toFlowSequence()})"
+    "TagDirective(handle=$handle, prefix=$prefix, start=$start, end=$end, warnings=${warnings.toFlowSequence()})"
 
   override fun hashCode() =
-    value.contentHashCode() +
+    handle.contentHashCode() +
+    prefix.contentHashCode() +
     start.hashCode() +
     end.hashCode() +
-    indent.hashCode() +
     warnings.contentHashCode()
 
   override fun equals(other: Any?) =
     this === other
     || (
-      other is YAMLTokenScalarQuotedSingle
-      && this.value.contentEquals(other.value)
+      other is YAMLTokenDirectiveTag
+      && this.handle.contentEquals(other.handle)
+      && this.prefix.contentEquals(other.prefix)
       && this.start == other.start
       && this.end == other.end
-      && this.indent == other.indent
       && this.warnings.contentEquals(other.warnings)
     )
 }
