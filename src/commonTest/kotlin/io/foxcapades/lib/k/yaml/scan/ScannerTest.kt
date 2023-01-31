@@ -4,7 +4,7 @@ import io.foxcapades.lib.k.yaml.YAMLEncoding
 import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
 import io.foxcapades.lib.k.yaml.io.ByteArrayReader
 import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
-import io.foxcapades.lib.k.yaml.scan.stream.YAMLStreamTokenizerImpl
+import io.foxcapades.lib.k.yaml.scan.tokens.YAMLStreamTokenizerImpl
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
