@@ -2,6 +2,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.bytes.A_LINE_FEED
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 internal fun UByteBuffer.claimNewLine(from: UByteSource, position: SourcePositionTracker) {
   when {

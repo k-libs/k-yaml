@@ -3,6 +3,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 import io.foxcapades.lib.k.yaml.bytes.*
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedDouble
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -65,9 +66,9 @@ internal fun YAMLStreamTokenizerImpl.parseDoubleQuotedStringToken() {
 }
 
 private fun collapseTrailingWhitespaceOrNewlinesIntoBuffer(
-  target:   UByteBuffer,
+  target: UByteBuffer,
   newlines: UByteBuffer,
-  blanks:   UByteBuffer,
+  blanks: UByteBuffer,
 ) {
   if (newlines.isNotEmpty) {
     val width = newlines.utf8Width()
@@ -91,7 +92,7 @@ private fun collapseTrailingWhitespaceOrNewlinesIntoBuffer(
 
 
 private fun YAMLStreamTokenizerImpl.readPossibleEscapeSequence(
-  into:     UByteBuffer,
+  into: UByteBuffer,
   nlBuffer: UByteBuffer,
   wsBuffer: UByteBuffer,
 ) {

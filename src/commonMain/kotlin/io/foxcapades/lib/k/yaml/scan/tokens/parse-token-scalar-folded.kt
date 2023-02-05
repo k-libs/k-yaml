@@ -3,6 +3,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.*
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 internal fun YAMLStreamTokenizerImpl.fetchFoldedScalar(
   start: SourcePosition,
@@ -171,7 +172,7 @@ internal inline fun YAMLStreamTokenizerImpl.emitEmptyFoldedScalar(indent: UInt, 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 internal inline fun YAMLStreamTokenizerImpl.finishFoldingScalar(
-  scalarContent:    UByteBuffer,
+  scalarContent: UByteBuffer,
   actualIndent:     UInt,
   start:            SourcePosition,
   endPosition:      SourcePositionTracker,

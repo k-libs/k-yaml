@@ -17,21 +17,7 @@ import io.foxcapades.lib.k.yaml.warn.SourceWarning
  * @author Elizabeth Paige Harper - https://github.com/foxcapades
  */
 sealed interface YAMLToken {
-
-  /**
-   * Token start position.
-   */
   val start: SourcePosition
-
-  /**
-   * Token end position.
-   */
   val end: SourcePosition
-
-  /**
-   * Warnings kicked up by the [YAMLTokenScanner] while parsing this token.
-   */
   val warnings: Array<SourceWarning>
 }
-
-sealed interface YAMLTokenBlock : io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken

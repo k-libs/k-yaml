@@ -1,5 +1,5 @@
 plugins {
-  kotlin("multiplatform") version "1.7.21"
+  kotlin("multiplatform") version "1.8.0"
 }
 
 group = "io-klibs"
@@ -29,6 +29,7 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
+        implementation("io.k-libs:stack:0.2.0")
       }
     }
     val commonTest by getting {

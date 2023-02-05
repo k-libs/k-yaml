@@ -2,6 +2,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveTag
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLStreamTokenizerImpl.fetchTagDirectiveToken(startMark: SourcePosition) {

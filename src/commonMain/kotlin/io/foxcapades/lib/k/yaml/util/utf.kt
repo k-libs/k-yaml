@@ -1,6 +1,7 @@
 package io.foxcapades.lib.k.yaml.util
 
 import io.foxcapades.lib.k.yaml.bytes.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 internal class UTFException(message: String) : Throwable(message)
 

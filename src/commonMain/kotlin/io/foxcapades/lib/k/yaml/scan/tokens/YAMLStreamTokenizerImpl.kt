@@ -7,6 +7,9 @@ import io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.token.YAMLTokenStreamEnd
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.ByteStack
+import io.foxcapades.lib.k.yaml.util.collections.Queue
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 
 
@@ -38,7 +41,7 @@ internal class YAMLStreamTokenizerImpl : YAMLStreamTokenizer {
    */
   internal val warnings = Queue<SourceWarning>(4)
 
-  internal val tokens = Queue<io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken>(4)
+  internal val tokens = Queue<YAMLToken>(4)
   internal lateinit var lastToken: io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
 
   internal var lineContentIndicator = LineContentIndicatorBlanksOnly

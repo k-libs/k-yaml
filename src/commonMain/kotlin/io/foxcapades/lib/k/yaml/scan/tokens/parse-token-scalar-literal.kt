@@ -4,6 +4,7 @@ import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarLiteral
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 internal fun YAMLStreamTokenizerImpl.fetchLiteralScalar(
   start: SourcePosition,

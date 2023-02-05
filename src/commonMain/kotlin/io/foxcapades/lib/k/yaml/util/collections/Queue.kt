@@ -1,4 +1,7 @@
-package io.foxcapades.lib.k.yaml.util
+package io.foxcapades.lib.k.yaml.util.collections
+
+import io.foxcapades.lib.k.yaml.util.max
+import io.foxcapades.lib.k.yaml.util.min
 
 /**
  * Generic Queue

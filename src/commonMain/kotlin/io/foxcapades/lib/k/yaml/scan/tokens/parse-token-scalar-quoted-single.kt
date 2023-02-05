@@ -3,6 +3,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedSingle
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLStreamTokenizerImpl.parseSingleQuotedStringToken() {
@@ -64,9 +65,9 @@ internal fun YAMLStreamTokenizerImpl.parseSingleQuotedStringToken() {
 }
 
 private fun collapseTrailingWhitespaceAndNewlinesIntoBuffer(
-  target:   UByteBuffer,
+  target: UByteBuffer,
   newlines: UByteBuffer,
-  blanks:   UByteBuffer,
+  blanks: UByteBuffer,
 ) {
   if (newlines.isNotEmpty) {
     if (newlines.size == 1) {

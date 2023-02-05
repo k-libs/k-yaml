@@ -1,6 +1,7 @@
 package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 
 @Suppress("NOTHING_TO_INLINE")

@@ -1,13 +1,13 @@
 package io.foxcapades.lib.k.yaml.scan.events.event
 
-sealed interface YAMLEvent
+import io.foxcapades.lib.k.yaml.util.ImmutableArray
+import io.foxcapades.lib.k.yaml.util.SourcePosition
 
-class YAMLEventMappingStart : YAMLEvent
-class YAMLEventMappingEnd : YAMLEvent
-
-class YAMLEventSequenceStart : YAMLEvent
-class YAMLEventSequenceEnd : YAMLEvent
-
-
-
+data class YAMLEvent(
+  var type:     YAMLEventType,
+  var data:     YAMLEventData?,
+  var start:    SourcePosition,
+  var end:      SourcePosition,
+  var warnings: ImmutableArray<String>,
+)
 

@@ -10,7 +10,7 @@ import io.foxcapades.lib.k.yaml.bytes.UbFF
 import io.foxcapades.lib.k.yaml.err.YAMLReaderException
 import io.foxcapades.lib.k.yaml.io.ByteReader
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.UByteBuffer
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 import io.foxcapades.lib.k.yaml.util.popUTF16LE
 import io.foxcapades.lib.k.yaml.util.utf16Width
 import io.foxcapades.lib.k.yaml.util.utf8Width

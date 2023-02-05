@@ -5,6 +5,7 @@ import io.foxcapades.lib.k.yaml.err.UIntOverflowException
 import io.foxcapades.lib.k.yaml.err.YAMLScannerException
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal fun YAMLStreamTokenizerImpl.parseBlockScalar(isLiteral: Boolean) {

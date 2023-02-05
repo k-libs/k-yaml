@@ -1,6 +1,5 @@
 package io.foxcapades.lib.k.yaml
 
-import io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
 
 interface YAMLStreamTokenizer {
   val hasNextToken: Boolean

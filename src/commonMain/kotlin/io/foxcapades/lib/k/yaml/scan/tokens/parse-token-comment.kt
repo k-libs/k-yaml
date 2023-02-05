@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.token.YAMLTokenComment
 import io.foxcapades.lib.k.yaml.util.SourcePosition
-import io.foxcapades.lib.k.yaml.util.UByteBuffer
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 import io.foxcapades.lib.k.yaml.util.UByteString
 import io.foxcapades.lib.k.yaml.util.isBlank
 
@@ -85,7 +85,7 @@ internal fun YAMLStreamTokenizerImpl.parseCommentToken() {
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 private inline fun YAMLStreamTokenizerImpl.emitCommentToken(
-  content:  UByteBuffer,
+  content: UByteBuffer,
   indent:   UInt,
   trailing: Boolean,
   start: SourcePosition,

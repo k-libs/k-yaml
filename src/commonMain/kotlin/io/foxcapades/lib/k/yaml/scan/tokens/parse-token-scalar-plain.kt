@@ -3,6 +3,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 import io.foxcapades.lib.k.yaml.bytes.A_SPACE
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarPlain
 import io.foxcapades.lib.k.yaml.util.*
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 
 internal fun YAMLStreamTokenizerImpl.parsePlainScalar() {
   // TODO: catch the case where the first character in the plain scalar is a tab
@@ -108,8 +109,8 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInFlow() {
 
 private fun YAMLStreamTokenizerImpl.claimFlowCharacter(
   content: UByteBuffer,
-  tailWS:  UByteBuffer,
-  tailNL:  UByteBuffer,
+  tailWS: UByteBuffer,
+  tailNL: UByteBuffer,
   endPos:  SourcePositionTracker,
 ) {
   while (tailWS.isNotEmpty)
@@ -290,7 +291,7 @@ private fun YAMLStreamTokenizerImpl.fetchPlainScalarInBlock() {
 }
 
 private fun collapseBuffers(
-  into:     UByteBuffer,
+  into: UByteBuffer,
   newLines: UByteBuffer,
   from:     UByteSource,
 ) {
@@ -369,7 +370,7 @@ private fun collapseNewLinesInto(into: UByteBuffer, newLines: UByteBuffer, pos: 
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalUnsignedTypes::class)
 private inline fun YAMLStreamTokenizerImpl.emitPlainScalar(
-  value:  UByteBuffer,
+  value: UByteBuffer,
   indent: UInt,
   start:  SourcePosition,
   end:    SourcePosition = this.position.mark()

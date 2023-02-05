@@ -2,7 +2,7 @@ package io.foxcapades.lib.k.yaml.scan.tokens
 
 import io.foxcapades.lib.k.yaml.token.YAMLTokenTag
 import io.foxcapades.lib.k.yaml.util.*
-import io.foxcapades.lib.k.yaml.util.UByteBuffer
+import io.foxcapades.lib.k.yaml.util.collections.UByteBuffer
 import io.foxcapades.lib.k.yaml.util.uIsExclamation
 import io.foxcapades.lib.k.yaml.util.uIsLessThan
 

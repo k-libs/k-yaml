@@ -1,13 +1,14 @@
-package io.foxcapades.lib.k.yaml.util
+package io.foxcapades.lib.k.yaml.util.collections
 
-import io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken
+import io.foxcapades.lib.k.yaml.util.max
+import io.foxcapades.lib.k.yaml.util.min
 
-class TokenStack(
+class ByteStack(
       initialCapacity: Int   = 16,
   val scaleFactor:     Float = 1.5F,
   val maxCapacity:     Int   = Int.MAX_VALUE
 ) {
-  private var raw = arrayOfNulls<io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken>(initialCapacity)
+  private var raw = ByteArray(initialCapacity)
 
   var size = 0
     private set
@@ -28,14 +29,11 @@ class TokenStack(
       throw IllegalArgumentException("attempted to construct an ByteStack instance with a scale factor value that is less than or equal to 1")
   }
 
-  fun pop(): io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken? {
+  fun pop() =
     if (isEmpty)
       throw NoSuchElementException("attempted to pop a value from an empty ByteStack")
-
-    val out = raw[--size]
-    raw[size] = null
-    return out
-  }
+    else
+      raw[--size]
 
   fun peek() =
     if (isEmpty)
@@ -43,7 +41,7 @@ class TokenStack(
     else
       raw[size - 1]
 
-  fun push(value: io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken) {
+  fun push(value: Byte) {
     ensureCapacity(size + 1)
     raw[size++] = value
   }
@@ -55,7 +53,7 @@ class TokenStack(
     if (raw.size >= minCapacity)
       return
 
-    raw = raw.copyInto(arrayOfNulls(min(max(minCapacity, (raw.size.toFloat() * scaleFactor).toInt()), maxCapacity)))
+    raw = raw.copyInto(ByteArray(min(max(minCapacity, (raw.size.toFloat() * scaleFactor).toInt()), maxCapacity)))
   }
 
   operator fun get(i: Int) =
@@ -64,11 +62,10 @@ class TokenStack(
     else
       raw[lastIndex - i]
 
-  operator fun set(i: Int, value: io.foxcapades.lib.k.yaml.scan.tokens.token.YAMLToken) {
+  operator fun set(i: Int, value: Byte) {
     if (i < 0 || i >= size)
       throw IndexOutOfBoundsException("attempted to set a value at index $i in an ByteStack of size $size")
     else
       raw[lastIndex - i] = value
   }
-
 }
