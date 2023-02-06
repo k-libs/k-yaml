@@ -1,11 +1,10 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.klibs.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.scan.tokens.YAMLStreamTokenizerImpl
 import io.foxcapades.lib.k.yaml.token.YAMLTokenInvalid
 import io.foxcapades.lib.k.yaml.token.YAMLTokenScalarQuotedDouble
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.klibs.yaml.util.SourcePosition
 import kotlin.test.*
 
 class TestDoubleQuotedStringHexEscapeSequences {

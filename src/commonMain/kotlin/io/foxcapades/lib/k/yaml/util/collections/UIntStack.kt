@@ -1,7 +1,7 @@
 package io.foxcapades.lib.k.yaml.util.collections
 
-import io.foxcapades.lib.k.yaml.util.max
-import io.foxcapades.lib.k.yaml.util.min
+import io.klibs.yaml.util.max
+import io.klibs.yaml.util.min
 
 @OptIn(ExperimentalUnsignedTypes::class)
 class UIntStack(

@@ -1,6 +1,6 @@
 package io.foxcapades.lib.k.yaml.err
 
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.klibs.yaml.util.SourcePosition
 
 open class YAMLException(message: String) : Throwable(message)
 

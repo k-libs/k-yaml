@@ -1,7 +1,6 @@
 package io.foxcapades.lib.k.yaml
 
-import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.klibs.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.scan.tokens.YAMLStreamTokenizerImpl
 
 val input1 = """

@@ -1,12 +1,11 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.YAMLEncoding
+import io.klibs.yaml.YAMLEncoding
 import io.foxcapades.lib.k.yaml.YAMLStreamTokenizer
-import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.klibs.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.scan.tokens.YAMLStreamTokenizerImpl
 import io.foxcapades.lib.k.yaml.token.*
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.klibs.yaml.util.SourcePosition
 import io.foxcapades.lib.k.yaml.warn.SourceWarning
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -27,9 +26,9 @@ open class ScannerTest {
     YAMLStreamTokenizerImpl(BufferedUTFStreamReader(1024, ByteArrayReader(input.encodeToByteArray())))
 
   protected fun YAMLStreamTokenizer.expectStreamStart(
-    expectedEncoding: YAMLEncoding   = YAMLEncoding.UTF8,
-    expectedStart:    SourcePosition = SourcePosition(0u, 0u, 0u),
-    expectedEnd:      SourcePosition = expectedStart,
+    expectedEncoding: YAMLEncoding = YAMLEncoding.UTF8,
+    expectedStart: SourcePosition = SourcePosition(0u, 0u, 0u),
+    expectedEnd: SourcePosition = expectedStart,
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
@@ -44,7 +43,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectStreamEnd(
-    expectedStart:    SourcePosition,
+    expectedStart: SourcePosition,
     warningChecker:   WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
@@ -93,7 +92,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectMappingValue(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt           = 0u,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
@@ -115,7 +114,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectSequenceEntry(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt           = 0u,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
@@ -150,7 +149,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectFlowSequenceEnd(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     val expectedEnd = expectedStart.resolve(1, 0, 1)
@@ -166,7 +165,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectFlowMappingStart(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt = 0u,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
@@ -200,7 +199,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectFlowItemSeparator(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     val expectedEnd = expectedStart.resolve(1, 0, 1)
@@ -217,9 +216,9 @@ open class ScannerTest {
 
   protected fun YAMLStreamTokenizer.expectAnchor(
     expectedAnchor: String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt           = 0u,
-    expectedEnd:    SourcePosition = expectedStart.resolve(
+    expectedEnd: SourcePosition = expectedStart.resolve(
       modIndex = expectedAnchor.length + 1,
       modColumn = expectedAnchor.length + 1
     ),
@@ -239,9 +238,9 @@ open class ScannerTest {
 
   protected fun YAMLStreamTokenizer.expectAlias(
     expectedAlias:  String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt           = 0u,
-    expectedEnd:    SourcePosition = expectedStart.resolve(
+    expectedEnd: SourcePosition = expectedStart.resolve(
       modIndex = expectedAlias.length + 1,
       modColumn = expectedAlias.length + 1,
     ),
@@ -262,7 +261,7 @@ open class ScannerTest {
   protected fun YAMLStreamTokenizer.expectTag(
     expectedHandle: String,
     expectedSuffix: String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt = 0u,
     tokenLength:    Int = expectedHandle.length + expectedSuffix.length,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
@@ -284,9 +283,9 @@ open class ScannerTest {
 
   protected fun YAMLStreamTokenizer.expectPlainScalar(
     expectedValue:  String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt           = 0u,
-    expectedEnd:    SourcePosition = expectedStart.resolve(expectedValue.length, 0, expectedValue.length),
+    expectedEnd: SourcePosition = expectedStart.resolve(expectedValue.length, 0, expectedValue.length),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
@@ -305,8 +304,8 @@ open class ScannerTest {
   protected fun YAMLStreamTokenizer.expectLiteralScalar(
     expectedValue:  String,
     expectedIndent: UInt,
-    expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition,
+    expectedStart: SourcePosition,
+    expectedEnd: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
@@ -324,8 +323,8 @@ open class ScannerTest {
   protected fun YAMLStreamTokenizer.expectFoldedScalar(
     expectedValue:  String,
     expectedIndent: UInt,
-    expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition,
+    expectedStart: SourcePosition,
+    expectedEnd: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
@@ -342,9 +341,9 @@ open class ScannerTest {
 
   protected fun YAMLStreamTokenizer.expectSingleQuotedScalar(
     expectedValue:  String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt = 0u,
-    expectedEnd:    SourcePosition = expectedStart.resolve(
+    expectedEnd: SourcePosition = expectedStart.resolve(
       modIndex = expectedValue.length + 2,
       modColumn = expectedValue.length + 2,
     ),
@@ -364,9 +363,9 @@ open class ScannerTest {
 
   protected fun YAMLStreamTokenizer.expectDoubleQuotedScalar(
     expectedValue:  String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     expectedIndent: UInt           = 0u,
-    expectedEnd:    SourcePosition = expectedStart.resolve(
+    expectedEnd: SourcePosition = expectedStart.resolve(
       modIndex = expectedValue.length + 2,
       modColumn = expectedValue.length + 2,
     ),
@@ -388,8 +387,8 @@ open class ScannerTest {
     expectedValue:    String,
     expectedIndent:   UInt,
     expectedTrailing: Boolean,
-    expectedStart:    SourcePosition,
-    expectedEnd:      SourcePosition = expectedStart.resolve(
+    expectedStart: SourcePosition,
+    expectedEnd: SourcePosition = expectedStart.resolve(
       modIndex  = expectedValue.length + 2,
       modColumn = expectedValue.length + 2,
     ),
@@ -411,8 +410,8 @@ open class ScannerTest {
   protected fun YAMLStreamTokenizer.expectYAMLDirective(
     expectedMajor:  UInt,
     expectedMinor:  UInt,
-    expectedStart:  SourcePosition,
-    expectedEnd:    SourcePosition = expectedStart.resolve(9, 0, 9),
+    expectedStart: SourcePosition,
+    expectedEnd: SourcePosition = expectedStart.resolve(9, 0, 9),
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     assertTrue(this.hasNextToken)
@@ -430,7 +429,7 @@ open class ScannerTest {
   protected fun YAMLStreamTokenizer.expectTagDirective(
     expectedHandle: String,
     expectedPrefix: String,
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     tokenLength: Int = 6 + expectedHandle.length + expectedPrefix.length,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
@@ -449,7 +448,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectDocumentStart(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     val expectedEnd = expectedStart.resolve(3, 0, 3)
@@ -465,7 +464,7 @@ open class ScannerTest {
   }
 
   protected fun YAMLStreamTokenizer.expectDocumentEnd(
-    expectedStart:  SourcePosition,
+    expectedStart: SourcePosition,
     warningChecker: WarningChecker = this@ScannerTest::defaultWarningChecker,
   ): SourcePosition {
     val expectedEnd = expectedStart.resolve(3, 0, 3)

@@ -1,8 +1,7 @@
 package io.foxcapades.lib.k.yaml.util.collections
 
-import io.foxcapades.lib.k.yaml.io.ByteReader
-import io.foxcapades.lib.k.yaml.util.UByteSource
-import io.foxcapades.lib.k.yaml.util.max
+import io.klibs.yaml.util.UByteSource
+import io.klibs.yaml.util.max
 
 @OptIn(ExperimentalUnsignedTypes::class)
 internal class UByteBuffer : UByteSource {

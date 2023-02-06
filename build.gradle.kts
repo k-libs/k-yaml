@@ -29,7 +29,8 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation("io.k-libs:stack:0.2.0")
+        implementation("io.k-libs:io-stream:0.1.0")
+        implementation("io.k-libs:stack:0.3.0")
       }
     }
     val commonTest by getting {

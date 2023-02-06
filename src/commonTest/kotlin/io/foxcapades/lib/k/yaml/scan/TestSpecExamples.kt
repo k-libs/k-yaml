@@ -1,7 +1,7 @@
 package io.foxcapades.lib.k.yaml.scan
 
 import io.foxcapades.lib.k.yaml.*
-import io.foxcapades.lib.k.yaml.util.SourcePosition
+import io.klibs.yaml.util.SourcePosition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

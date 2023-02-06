@@ -1,7 +1,6 @@
 package io.foxcapades.lib.k.yaml.scan
 
-import io.foxcapades.lib.k.yaml.io.ByteArrayReader
-import io.foxcapades.lib.k.yaml.read.BufferedUTFStreamReader
+import io.klibs.yaml.read.BufferedUTFStreamReader
 import io.foxcapades.lib.k.yaml.scan.tokens.YAMLStreamTokenizerImpl
 import io.foxcapades.lib.k.yaml.token.YAMLTokenDirectiveTag
 import io.foxcapades.lib.k.yaml.token.YAMLTokenInvalid
